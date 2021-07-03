@@ -1,0 +1,3 @@
+
+updatedb
+locate python
