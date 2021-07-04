@@ -15,12 +15,19 @@
 - 1989年，Andrew S.Tanenbaum将Minix系统运行于x86的PC平台。
 - 1990年，芬兰赫尔辛基大学学生Linus Torvalds首次接触Minix系统。
 - 1991年，Linus Torvalds开始在Minix上编写各种驱动程序等操作系统内核组件。
-- 1991年年底，Linus Torvalds公开了[Linux内核源码0.02版](http://www.kernel.org)，注意，这里公开的Linux内核源码并不是我们现在使用的Linux系统的全部，而- 仅仅是Linux内核（kernel）部分的代码。
+- 1991年年底，Linus Torvalds公开了[Linux内核源码0.02版](http://www.kernel.org)，注意，这里公开的Linux内核源码并不是我们现在使用的Linux系统的全部，而仅仅是Linux内核（kernel）部分的代码。
 - 1993年，Linux 1.0版发行，Linux转向GPL版权协议。
 - 1994年，Linux的第一个商业发行版Slackware问世。
+- 1995年，Red Hat软件公司成立，同年发布了Red Hat Linux 2.0。
 - 1996年，美国国家标准技术局的计算机系统实验室确认Linux版本1.2.13（由Open Linux公司打包）符合POSIX标准。
+- 1997年，Red Hat Linux 5.0发布，它支持Intel、alpha和Sparc平台和大多数的应用软件。极其简单易用的RPM模块化的安装、配置和卸载工具，使程序的安装可在15分钟内完成。软件升级也方便了。
 - 1999年，Linux的简体中文发行版问世。
-- 2000年后，Linux系统日趋成熟，涌现大量基于Linux服务器平台的应用，并广泛应用于基于ARM技术的嵌入式系统中
+- 2003年4月，Red Hat Linux 9.0发布。重点放在改善桌面应用方面，包括改进安装过程、更好的字体浏览、更好的打印服务等。2003年，Red Hat的Linux市场份额超过80%。
+- 2004年4月，Red Hat公司正式停止对Red Hat 9.0版本的支持，标志着Red Hat Linux的正式完结。原本的桌面版Red Hat Linux发行包则与来自民间的Fedora计划合并，成为Fedora Core发行版本。Red Hat公司不再开发桌面版的Linux发行包，而将全部力量集中在服务器版的开发上，也就是Red HatEnterprise Linux版。
+- 2005年10月RHEL4（Red Hat Enterprise Linux 4）发布。
+- 2007年3月，主流版本RHEL5（Red Hat Enterprise Linux 5）发布，CentOS系统开始在中国互联网公司流行。
+- 2010年4月，RHEL6（RedHat Enterprise Linux 6.0）BETA测试版发布。
+- 2014年6月RedHat Enterprise Linux 7.0发布，RHEL7.0版本和RHEL6.0以前的版本有了较大的变化，例如：内核版本升级到3.10以上，系统启动和基本管理变化较大，文件系统也有传统的ext改为xfs，同时在大数据、云计算、Docker方面做了很大优化。
 
 #### 数据库发展历史大事记
 - 1951：Univac系统使用磁带和穿孔卡片作为数据存储。
