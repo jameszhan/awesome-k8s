@@ -63,6 +63,7 @@
 - NAT: Network Address Translation
 - CentOS: Community Enterprise Operating System
 - TFTP: Trivial File Transfer Protocol
+- CDN: Content Delivery Network 内容分发网络
 - TCP: 
   - SYN: Synchronize Sequence Numbers, 同步序列编号，该标志仅在三次握手建立TCP连接时有效。表示一个新的TCP连接请求。
   - ACK: Acknowledgement Number, 确认编号, 是对TCP请求的确认标志，同时提示对端系统已经成功接收了所有的数据。
