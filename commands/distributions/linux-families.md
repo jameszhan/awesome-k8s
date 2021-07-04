@@ -5,6 +5,7 @@
     - [ ] openSUSE
 - [ ] Debian
   - [ ] MX Linux
+  - [ ] Raspbian
   - [ ] Ubuntu
     - [ ] Mint
     - [ ] elementary
@@ -65,6 +66,12 @@
 7. Gentoo
   Gentoo最初由Daniel Robbins（前Stampede Linux和FreeBSD的开发者之一）创建。由于开发者对FreeBSD的熟识，所以Gentoo拥有媲美FreeBSD的广受美誉的ports系统——Portage。Gentoo是一个非常特殊的Linux发行版，因为Gentoo是一种基于源代码的发行版，尽管可以使用编译好的二进制软件，但是大部分使用Gentoo的用户都选择自己手动编译软件管理系统，其优点是高度可定制性，而缺点是编译源代码耗时相当巨大。
 
+
+#### Raspberry PI相关系统
+- [Ubuntu Mate](https://ubuntu-mate.org/raspberry-pi/): 一个`Ubuntu Mate`的优化版本，可以在树莓派2代和树莓派3代上运行。如果想将树莓派作为桌面使用或者已经熟悉了`Ubuntu`那就更好了。
+- [OpenElec](http://libreelec.tv/): 一个围绕Kodi（一个开源媒体中心）构建的嵌入式操作系统，这个操作系统只服务于将树莓派作为媒体中心的用户。
+- [Open Source Media Center](https://osmc.tv/download/): 另一个仅基于开源软件的媒体中心的软件发行版。
+- [PiNet](http://pinet.org.uk/): 在网络拓扑中运行的发行版，以便教育工作者在课堂上使用树莓派
 
 #### KDE主要包含以下应用程序。
 
