@@ -12,7 +12,10 @@
 - LTS: Long Term Support
 - GPT: Globally Unique Identifier Partition Table 全局唯一标识符分区表
 - UEFI: UnifiedExtensible Firmware Interface 统一可扩展固件接口
-- POSIX: Portable Operating System Interface
+- POSIX: Portable Operating System Interface/Portable Operating System Interface for UNIX
+- IEEE: Institute ofElectrical and Electronic Engineers
+- GNOME: The GNU Network Object Model Environment
+- LXDE: Lightweight X11 Desktop Environment
 - GNU: Gnu is Not UNIX
 - RMS: Richard Matthew Stallman
 - KDE: K Desktop Environment K桌面环境
@@ -46,6 +49,14 @@
 - HTML: Hyper Text Markup Language
 - DHCP: Dynamic Host Configuration Protocol
 - IDE: 集成开发环境
+- MBR: Master Boot Record
+- SMB: Server Message Block
+- CIFS: Common Internet File System
+- PAM: Pluggable Authentication Modules
+- MAC: Mandatory Access Control
+- MMU: Memory Management Unit
+- IPVS: IP virtual server 即LVS
+- NAT: Network Address Translation
 - TCP: 
   - SYN: Synchronize Sequence Numbers, 同步序列编号，该标志仅在三次握手建立TCP连接时有效。表示一个新的TCP连接请求。
   - ACK: Acknowledgement Number, 确认编号, 是对TCP请求的确认标志，同时提示对端系统已经成功接收了所有的数据。
