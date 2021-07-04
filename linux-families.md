@@ -21,7 +21,8 @@
 - [ ] SUSE
   - [ ] openSUSE
 - [ ] RedHat
-- [ ] Fedora
+  - [ ] CentOS
+  - [ ] Fedora
 - [ ] Solus
 - [ ] Manjaro
 
