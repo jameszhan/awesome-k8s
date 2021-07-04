@@ -16,11 +16,14 @@
 - IEEE: Institute ofElectrical and Electronic Engineers
 - GNOME: The GNU Network Object Model Environment
 - LXDE: Lightweight X11 Desktop Environment
-- GNU: Gnu is Not UNIX
 - RMS: Richard Matthew Stallman
 - KDE: K Desktop Environment K桌面环境
 - FSF: Free Software Foundation
+- GNU: Gnu is Not UNIX
 - GPL: GNU General Public License
+- MPL: Mozilla Public License，Mozilla公共许可
+- BSD: Berkeley Software Distribution，伯克利软件发布版许可协议
+- MIT: Massachusetts Institute of Technology
 - RPM: Red-Hat Package Manager
 - yum: Yellow dog Updater Modified 基于RPM的shell前端包管理器
 - POST： Pwoer On Self Test 加电自检
@@ -53,10 +56,13 @@
 - SMB: Server Message Block
 - CIFS: Common Internet File System
 - PAM: Pluggable Authentication Modules
+- SELinux: Security-Enhanced Linux
 - MAC: Mandatory Access Control
 - MMU: Memory Management Unit
 - IPVS: IP virtual server 即LVS
 - NAT: Network Address Translation
+- CentOS: Community Enterprise Operating System
+- TFTP: Trivial File Transfer Protocol
 - TCP: 
   - SYN: Synchronize Sequence Numbers, 同步序列编号，该标志仅在三次握手建立TCP连接时有效。表示一个新的TCP连接请求。
   - ACK: Acknowledgement Number, 确认编号, 是对TCP请求的确认标志，同时提示对端系统已经成功接收了所有的数据。
