@@ -4,13 +4,21 @@
 $ echo "PWD = $PWD"
 $ echo "OLDPWD = $OLDPWD"
 
-echo "PS1 = $PS1"                   
-echo "PS2 = $PS2"                   
-echo "PS3 = $PS3"                   
-echo "PS4 = $PS4"    
+$ echo "PS1 = $PS1"                   
+$ echo "PS2 = $PS2"                   
+$ echo "PS3 = $PS3"                   
+$ echo "PS4 = $PS4"    
 ```
 
+```bash
+# 获得字符串的长度
+$ echo ${#PATH}
+$ echo ${#PS1}
 
+# 获取当前使用SHELL
+$ echo $SHELL
+$ echo $0
+```
 
 
 ```bash
