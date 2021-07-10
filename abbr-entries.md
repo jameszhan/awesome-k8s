@@ -75,6 +75,7 @@
 - NSCD: Name Service Caching Daemon，名称服务缓存进程
 - MTU: Maximum Transmission Unit，最大传输单元
 - CMDB: Configuration Management Database，配置管理数据库
+- vmstat: Virtual Meomory Statistics, 虚拟内存统计
 
 #### 重要概念
 
