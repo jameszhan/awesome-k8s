@@ -68,7 +68,13 @@
   - SYN: Synchronize Sequence Numbers, 同步序列编号，该标志仅在三次握手建立TCP连接时有效。表示一个新的TCP连接请求。
   - ACK: Acknowledgement Number, 确认编号, 是对TCP请求的确认标志，同时提示对端系统已经成功接收了所有的数据。
   - FIN: FINISH 结束标志, 用来结束一个TCP回话。但对应端口仍然处于开放状态, 准备接收后续数据。
+- CDN: Content Delivery Network, 内容分发网络
+- BGP: 边界网关协议
 
 #### 重要概念
 
 - [ ] runlevel
+
+#### Todos
+
+- [ ] 智能Bind系统
