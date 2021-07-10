@@ -45,6 +45,7 @@
   - [ ] Ubuntu Container
   - [ ] Ubuntu IoT
 
+Linux有很多发行版。发行版是指某些公司、组织或个人把Linux内核、源代码及相关的应用程序组织在一起发行。经典的Linux发行版有Red Hat、SlackWare、Debian等，目前流行的Linux发行版基本上都是基于这些发行版的，例如，Red Hat的社区版本FedoraCore；Novell发行的SuSE Linux；Mandriva发行的Mandriva Linux；使用LiveCD技术的Knoppix、Slax和基于Debian的Ubuntu Linux。
 
 经典的Linux发行版有Red Hat、SlackWare、Debian等。目前流行的Linux发行版基本上都是基于这些发行版的。例如，Red Hat的社区版本Fedora Core，Novell发行的SuSE Linux，Mandriva发行的Mandriva Linux，使用LiveCD技术的Knoppix和Slax，以及目前异常流行的基于Debian的Ubuntu Linux。
 
