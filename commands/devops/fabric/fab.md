@@ -1,0 +1,3 @@
+#### Fabric在性能方面的不足
+
+Fabric的底层设计是基于Python的paramiko基础库的，它并不支持原生的OpenSSH，原生的OpenSSH的Multiplexing及pipeline的很多特性都不支持，而这些通过优化都能极大地提升性能。相对而言，Fabric适合集群内的自动化运维方案（集群内机器数量不多），如果机器数量多，可以考虑Ansible。
