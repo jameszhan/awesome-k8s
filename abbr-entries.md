@@ -96,6 +96,7 @@
 - CRI: Container Runtime Interface
 - FQDN: Fully Qualified Domain Name，完整域名/完全限定域名
 - IaC: Infrastructure as Code
+- DRBD: Distributed Replicated Block Device
 
 
 
