@@ -70,6 +70,11 @@
   - FIN: FINISH 结束标志, 用来结束一个TCP回话。但对应端口仍然处于开放状态, 准备接收后续数据。
 - CDN: Content Delivery Network, 内容分发网络
 - BGP: 边界网关协议
+- DNS: Domain Name System，域名系统
+- BIND: Berkeley Internet Name Domain，伯克利互联网名称域
+- NSCD: Name Service Caching Daemon，名称服务缓存进程
+- MTU: Maximum Transmission Unit，最大传输单元
+- CMDB: Configuration Management Database，配置管理数据库
 
 #### 重要概念
 
