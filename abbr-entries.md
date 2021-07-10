@@ -75,7 +75,29 @@
 - NSCD: Name Service Caching Daemon，名称服务缓存进程
 - MTU: Maximum Transmission Unit，最大传输单元
 - CMDB: Configuration Management Database，配置管理数据库
+- GIAC: Global Information Assurance Certification，全球信息安全认证
 - vmstat: Virtual Meomory Statistics, 虚拟内存统计
+- ARM: Advanced RISC Machine
+- RDMA: Remote Direct Memory Access
+- JBOD: Just A Bunch Of Disks
+- IOPS: Input/Output Operations Per Second
+- NVMe: Non-Volatile Memory Express
+- SLA: Service-Level Agreement，服务水平协议
+  - RTO: Recovery TimeObjective，恢复时间目标
+  - RPO: Recovery Point Objective，恢复点目标
+- CI: ContinuousIntegration，持续集成
+- CD: Continuous Delivery，持续交付
+- AKS: Azure Kubernetes Services
+- EKS: Elastic container service for Kubernetes For AWS
+- GKE: Google Kubernetes Engine
+- PaaS: Platform as a Service，平台即服务
+- IaaS: Infrastructure as a Service，基础设施即服务
+- SaaS: Software as a Service，软件即服务
+- CRI: Container Runtime Interface
+- FQDN: Fully Qualified Domain Name，完整域名/完全限定域名
+- IaC: Infrastructure as Code
+
+
 
 #### 重要概念
 

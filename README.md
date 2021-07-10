@@ -14,7 +14,12 @@
 
 
 
-
+- https://azure.microsoft.com/
+- https://github.com/gluster/glusterfs
+- https://github.com/zfsonlinux/zfs
+- https://github.com/kubernetes/kubernetes
+- https://github.com/elastic/elasticsearch
+- https://github.com/saltstack/sal
 
 
 
@@ -57,3 +62,6 @@
 [playonlinux]: https://??? "PlayOnLinux"
 [distro-watch]: https://distrowatch.com/ "可以查看一些最受欢迎的Linux发行版"
 [x-window]: http://www.x.org/ "X Window 系统"
+
+
+
