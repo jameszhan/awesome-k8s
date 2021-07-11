@@ -38,6 +38,18 @@
 - GStreamer
 - ffmpeg
 
+#### 邮件客户端
+
+- Thunderbird
+
+#### 其他
+- [ ] 博客
+  - [ ] Typecho
+- [ ] 下载
+  - [ ] Aria2
+
+
+
 #### Linux中特殊用途的文件系统有以下类型
 
 - `proc`: 挂载在`/proc`。`proc`是进程（process）的缩写。`/proc`目录中的子目录以系统中的`PID`命名，子目录中的文件代表的是进程的各种状态。文件`/proc/self`表示当前进程。`Linux`系统的`proc`文件系统包括大量的内核和硬件系统信息，保存在像`/proc/cpuinfo`这样的文件中。（后来有人提出将进程无关的信息从`/proc`移至`/sys`。）
