@@ -98,6 +98,11 @@
 - IaC: Infrastructure as Code
 - DRBD: Distributed Replicated Block Device
 - VRRP: Virtual Router Redundancy Protocol，虚拟路由器冗余协议
+- OASIS: 结构化信息标准促进组织
+- uClinux: micro-control Linux，微控制器领域中的Linux系统
+- MQTT: Message Queue Telemetry Transport，消息队列遥测传输协议
+- MQTT-SN: MQTT for Sensor Network协议是MQTT协议的传感器版
+- CoAP: Constrained Application Protocol
 
 
 

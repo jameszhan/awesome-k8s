@@ -1,0 +1,40 @@
+
+默认支持Prometheus的软件或组件:
+- App Connect Enterprise
+- Ballerina
+- BFE
+- Ceph
+- CockroachDB
+- Collectd
+- Concourse
+- CRG Roller DerbyScoreboard（direct）
+- Diffusion
+- Docker Daemon
+- Doorman（direct）
+- Envoy
+- Etcd（direct）
+- Flink
+- FreeBSD Kernel
+- Grafana
+- JavaMelody
+- Kong
+- Kubernetes（direct）
+- Linkerd
+- mgmt
+- MidoNet
+- midonet-kubernetes（direct）
+- Minio
+- Netdata
+- Pretix
+- Quobyte（direct）
+- RabbitMQ
+- RobustIRC
+- ScyllaDB
+- Skipper
+- SkyDNS（direct）
+- Telegraf
+- Traef ik
+- VerneMQ
+- WeaveFlux
+- Xandikos（direct）
+- Zipkin
