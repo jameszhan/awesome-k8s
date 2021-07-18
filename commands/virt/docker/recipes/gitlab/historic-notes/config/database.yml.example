@@ -1,0 +1,8 @@
+production:
+  ## Connection information
+  # Please be aware that the DATABASE_URL environment variable will take
+  # precedence over the following 6 parameters. For more information, see
+  # doc/administration/environment_variables.md
+  adapter: postgresql
+  encoding: unicode
+  url: <%= ENV['DATABASE_URL'] %>
