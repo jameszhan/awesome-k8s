@@ -90,3 +90,9 @@ $ curl -X GET \
     -H "Content-Type: application/json" \
     -i http://git.zizhizhan.com/sidekiq
 ```
+
+
+```bash
+
+$ sudo docker exec -it gitlab cat /opt/gitlab/embedded/service/gitlab-rails/db/fixtures/production/002_admin.rb
+```
