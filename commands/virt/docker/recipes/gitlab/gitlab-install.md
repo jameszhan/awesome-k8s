@@ -17,14 +17,16 @@ $ mkdir -p /opt/var/gitlab/{data,logs,config}
 #### 启动GitLab镜像
 
 ```bash
-$ docker run --detach \
-    --hostname git.zizhizhan.com --publish 443:443 --publish 8081:80 --publish 2222:22 \
+$ sudo docker run --detach \
+    --hostname git.zizhizhan.com --publish 443:443 --publish 80:80 --publish 2222:22 \
     --name gitlab \
     --restart always \
     --volume /opt/var/gitlab/config:/etc/gitlab \
     --volume /opt/var/gitlab/logs:/var/log/gitlab \
     --volume /opt/var/gitlab/data:/var/opt/gitlab \
-    gitlab/gitlab-ce:latest
+    gitlab/gitlab-ee:latest
+
+$ sudo docker logs -f gitlab
 ```
 
 #### 配置GitLab

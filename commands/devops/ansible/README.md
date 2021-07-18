@@ -1,5 +1,12 @@
 
 
+#### Install Ansible
+
+```bash
+$ python -m ensurepip
+$ python -m pip install -v --upgrade ansible
+$ ansible --version
+```
 
 #### Ansible 常用模块
 - setup
@@ -15,3 +22,4 @@
 - yum
 - cron
 - service
+

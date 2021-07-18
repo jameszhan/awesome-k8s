@@ -42,7 +42,19 @@
 - https://github.com/saltstack/sal
 
 
+# 我的工具箱
 
+
+
+### 分布式
+
+#### 分布式存储
+
+
+
+
+
+## 附录
 ##### 常用搜索引擎
 
 - [Google][google]
@@ -51,6 +63,7 @@
 - [密迹搜索][mijisou]
 - [免费学术搜索引擎][semanticscholar]
 - [知识搜索引擎][wolframalpha]
+
 
 [google]:   http://google.com/      "Google Search"
 [bing]:     http://bing.com/        "Microsoft Bing"
@@ -82,6 +95,8 @@
 [playonlinux]: https://??? "PlayOnLinux"
 [distro-watch]: https://distrowatch.com/ "可以查看一些最受欢迎的Linux发行版"
 [x-window]: http://www.x.org/ "X Window 系统"
+[gluster]: http://www.gluster.org/                  "Gluster FS"
+[glusterfs]: https://github.com/gluster/glusterfs   "GlusterFS Source Code"
 
 
 
