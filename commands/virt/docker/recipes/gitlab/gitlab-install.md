@@ -24,7 +24,7 @@ $ sudo docker run --detach \
     --volume /opt/var/gitlab/config:/etc/gitlab \
     --volume /opt/var/gitlab/logs:/var/log/gitlab \
     --volume /opt/var/gitlab/data:/var/opt/gitlab \
-    gitlab/gitlab-ee:latest
+    gitlab/gitlab-ce:latest
 
 $ sudo docker logs -f gitlab
 ```
@@ -34,8 +34,8 @@ $ sudo docker logs -f gitlab
 GitLab容器版本使用官方Omnibus发行版，所有配置都存在`/etc/gitlab/gitlab.rb`文件中。如果要修改该文件，可以进入容器再修改：
 
 ```bash
-$ docker exec -it gitlab vi /etc/gitlab/gitlab.rb
-$ docker restart gitlab
+$ sudo docker exec -it gitlab vi /etc/gitlab/gitlab.rb
+$ sudo docker restart gitlab
 $ sudo docker logs -f gitlab
 ```
 
@@ -45,40 +45,48 @@ GitLab的版本一直持续更新，这也是作者在使用过程中最担心�
 
 ```bash
 # 停止现有的容器
-$ docker stop gitlab
+$ sudo docker stop gitlab
 # 删除现有容器
-$ docker rm gitlab
+$ sudo docker rm gitlab
 
 # 获取最新版本Gitlab镜像
-$ docker pull gitlab/gitlab-ce
+$ sudo docker pull gitlab/gitlab-ce
 
 # 再次运行GitLab命令
-$ docker run --detach \
-    --hostname git.zizhizhan.com --publish 443:443 --publish 8081:80 --publish 2222:22 \
-    --name gitlab \
-    --restart always \
-    --volume /opt/var/gitlab/config:/etc/gitlab \
-    --volume /opt/var/gitlab/logs:/var/log/gitlab:Z \
-    --volume /opt/var/gitlab/data:/var/opt/gitlab:Z \
-    gitlab/gitlab-ce:latest
-```
-
-sudo docker run --hostname git.zizhizhan.com --publish 443:443 --publish 8081:80 --publish 2222:22 \
-    --name gitlab \
-    --restart always \
-    --volume /opt/var/gitlab/config:/etc/gitlab \
-    --volume /opt/var/gitlab/logs:/var/log/gitlab:Z \
-    --volume /opt/var/gitlab/data:/var/opt/gitlab:Z \
-    gitlab/gitlab-ce:latest
-
-
-
-sudo docker run --detach \
-    --hostname git.zizhizhan.com \
-    --publish 443:443 --publish 80:80 --publish 22:2222 \
+$ sudo docker run --detach \
+    --hostname git.zizhizhan.com --publish 443:443 --publish 80:80 --publish 2222:22 \
     --name gitlab \
     --restart always \
     --volume /opt/var/gitlab/config:/etc/gitlab \
     --volume /opt/var/gitlab/logs:/var/log/gitlab \
     --volume /opt/var/gitlab/data:/var/opt/gitlab \
-    gitlab/gitlab-ee:latest
+    gitlab/gitlab-ce:latest
+
+$ sudo docker exec -it gitlab bash
+```
+
+```bash
+$ gitlab-rails console
+> User.all.each{ |u| User.column_names.collect{|un| puts "#{un}: #{u[un]}" } }
+
+> user = User.find(1)
+> user = User.where(username: 'root').first
+> user.password = 'git@zizhizhan.com'
+> user.password_confirmation = 'git@zizhizhan.com'
+> user.save!
+```
+
+
+
+```bash
+$ /opt/gitlab/bin/gitlab-psql -d template1 -c "CREATE USER \"gitlab\""
+$ /opt/gitlab/bin/gitlab-psql -d template1 -c "CREATE USER \"gitlab\""
+
+```
+
+
+```bash
+$ curl -X GET \
+    -H "Content-Type: application/json" \
+    -i http://git.zizhizhan.com/sidekiq
+```
