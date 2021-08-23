@@ -1,0 +1,4 @@
+- name: User Deploy
+  hosts: k8s_masters
+  roles:
+    - users

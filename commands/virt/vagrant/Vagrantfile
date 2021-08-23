@@ -1,0 +1,26 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+hosts = {
+  "n1" => "192.168.1.201",
+  "n2" => "192.168.1.202",
+  "n3" => "192.168.1.203",
+  "n4" => "192.168.1.204"
+}
+
+Vagrant.configure("2") do |config|
+  config.ssh.insert_key = false
+  config.ssh.forward_agent = true
+  check_guest_additions = false
+  functional_vboxsf     = false
+  config.vm.box = "generic/ubuntu2004"
+
+  hosts.each do |name, ip|
+    config.vm.define name do |machine|
+      machine.vm.network :private_network, ip: ip
+      machine.vm.provider "virtualbox" do |v|
+        v.name = name
+      end
+    end
+  end
+
+end

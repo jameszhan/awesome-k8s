@@ -32,3 +32,9 @@ gitlab_rails['redis_ssl'] = false
 # gitlab_rails['redis_password'] = nil
 gitlab_rails['redis_database'] = 0
 gitlab_rails['redis_enable_client'] = true
+
+gitlab_rails['initial_root_password'] = '<my_strong_password>'
+
+### GitLab Shell settings for GitLab
+# gitlab_rails['gitlab_shell_ssh_port'] = 22
+# gitlab_rails['gitlab_shell_git_timeout'] = 800

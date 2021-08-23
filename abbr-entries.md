@@ -103,7 +103,7 @@
 - MQTT: Message Queue Telemetry Transport，消息队列遥测传输协议
 - MQTT-SN: MQTT for Sensor Network协议是MQTT协议的传感器版
 - CoAP: Constrained Application Protocol
-
+- NIST: National Institute of Standards and Technology，美国国家标准与技术研究院
 
 
 #### 重要概念

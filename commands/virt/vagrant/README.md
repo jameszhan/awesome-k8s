@@ -3,6 +3,8 @@
 使用`Vagrant`可以很便捷地建立起一个虚拟环境，而且可以模拟多台虚拟机，这样我们平时还可以开发机模拟分布式系统。
 
 
+https://app.vagrantup.com/boxes/search?order=desc&page=1&sort=downloads
+
 ```bash
 $ vagrant box add ubuntu2004 ubuntu-20.04-amd64.box
 $ vagrant init ubuntu2004 
