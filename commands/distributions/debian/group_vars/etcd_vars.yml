@@ -1,0 +1,10 @@
+etcd_01_host: 192.168.1.61
+etcd_02_host: 192.168.1.62
+etcd_03_host: 192.168.1.63
+
+etcd_01_name: etcd-01
+etcd_02_name: etcd-02
+etcd_03_name: etcd-03
+
+etcd_data_dir: /var/lib/etcd
+

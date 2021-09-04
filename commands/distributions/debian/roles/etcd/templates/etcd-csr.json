@@ -1,0 +1,17 @@
+{
+  "CN": "etcd",
+  "hosts": ["127.0.0.1", "k8s-master01", "k8s-master02", "k8s-master03"],
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "CN",
+      "ST": "Guangdong",
+      "L": "Shenzhen",
+      "O": "k8s",
+      "OU": "etcd"
+    }
+  ]
+}

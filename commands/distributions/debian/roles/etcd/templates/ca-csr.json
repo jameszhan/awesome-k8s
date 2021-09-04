@@ -1,0 +1,19 @@
+{
+  "CN": "etcd-ca",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "CN",
+      "ST": "Guangdong",
+      "L": "Shenzhen",
+      "O": "k8s",
+      "OU": "etcd-ca"
+    }
+  ],
+  "ca": {
+    "expiry": "87600h"
+  }
+}

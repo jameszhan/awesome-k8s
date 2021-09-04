@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+*.pyc
 *.py[cod]
 *$py.class
 
@@ -131,3 +132,8 @@ dmypy.json
 .DS_Store
 
 appendix/troubleshooting/
+
+.idea/
+*.iml
+*.ipr
+*.iws
