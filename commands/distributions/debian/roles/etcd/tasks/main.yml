@@ -79,6 +79,16 @@
   args:
     chdir: /etc/etcd/ssl
     creates: /etc/etcd/ssl/etcd.pem
+  when: 
+    - etcd_name == "etcd-01"
+
+- name: Transfer file from ServerA to ServerB
+  synchronize:
+    src: /etc/etcd/ssl
+    dest: /etc/etcd/ssl
+    mode: pull
+  delegate_to: k8s-master02
+
 
 - name: copy config to /etc/etcd/etcd.conf
   become: true
