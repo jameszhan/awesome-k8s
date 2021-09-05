@@ -25,7 +25,7 @@
 - name: ssh without password
   become: true
   ansible.builtin.copy:
-    src: ~/.ssh/id_ed25519.pub
+    src: ~/.ssh/id_rsa.pub
     dest: /home/deploy/.ssh/authorized_keys
     owner: deploy
     group: deploy
@@ -34,8 +34,8 @@
 - name: copy local key_pair(public) to remote
   become: true
   ansible.builtin.copy:
-    src: ~/.ssh/id_ed25519.pub
-    dest: /home/deploy/.ssh/id_ed25519.pub
+    src: ~/.ssh/id_rsa.pub
+    dest: /home/deploy/.ssh/id_rsa.pub
     owner: deploy
     group: deploy
     mode: u+rw,g-wx,o-wx
@@ -43,8 +43,8 @@
 - name: copy local key_pair(private) to remote
   become: true
   ansible.builtin.copy:
-    src: ~/.ssh/id_ed25519
-    dest: /home/deploy/.ssh/id_ed25519
+    src: ~/.ssh/id_rsa
+    dest: /home/deploy/.ssh/id_rsa
     owner: deploy
     group: deploy
     mode: u+rw,g-rwx,o-rwx
