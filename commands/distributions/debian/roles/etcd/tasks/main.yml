@@ -86,7 +86,7 @@
   become: true
   fetch:
     src: "/etc/etcd/ssl/{{ item }}"
-    dest: "/tmp/{{ item }}"
+    dest: /tmp
   with_items: ["ca.csr", "ca-key.pem", "ca.pem", "etcd.csr", "etcd-key.pem", "etcd.pem"]
   when: 
     - etcd_name == "etcd-01"
@@ -94,8 +94,8 @@
 - name: copy etcd-01 ssl to etcd-01 and ectd-02
   become: true
   copy:
-    src: "/tmp/{{ item }}"
-    dest: /etc/etcd/ssl/
+    src: "/tmp/k8s-master/etc/eted/ssl/{{ item }}"
+    dest: "/etc/etcd/ssl/{{ item }}"
   with_items: ["ca.csr", "ca-key.pem", "ca.pem", "etcd.csr", "etcd-key.pem", "etcd.pem"]
   when: 
     - etcd_name == "etcd-02" or etcd_name == "etcd-03"

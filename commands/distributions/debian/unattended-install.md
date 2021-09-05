@@ -14,6 +14,8 @@ $ ansible -i hosts all -m apt
 
 
 ```bash
+$ ansible -i hosts all -m shell -a "rm -fr /etc/etcd/ssl" -u deploy -v --become
+
 $ ansible-playbook -i hosts k8s-deploy.yml -u deploy -v
 ```
 
