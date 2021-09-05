@@ -63,6 +63,8 @@
     - ca-csr.json
     - ca-config.json
     - etcd-csr.json
+  when: 
+    - etcd_name == "etcd-01"
 
 # cfssl gencert -initca ca-csr.json | cfssljson -bare ca
 - name: generate ca-key.pem, ca.csr, ca.pem
@@ -71,6 +73,8 @@
   args:
     chdir: /etc/etcd/ssl
     creates: /etc/etcd/ssl/*.pem
+  when: 
+    - etcd_name == "etcd-01"
   
 # cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=k8s-etcd etcd-csr.json | cfssljson -bare etcd
 - name: generate etcd.pem, etcd-key.pem etcd.csr
@@ -100,41 +104,41 @@
   when: 
     - etcd_name == "etcd-02" or etcd_name == "etcd-03"
 
-# - name: copy config to /etc/etcd/etcd.conf
-#   become: true
-#   template:
-#     src: templates/etcd.j2
-#     dest: /etc/etcd/etcd.conf
+- name: copy config to /etc/etcd/etcd.conf
+  become: true
+  template:
+    src: templates/etcd.j2
+    dest: /etc/etcd/etcd.conf
 
-# - name: Copy etcd.service to /usr/lib/systemd/system/
-#   become: true
-#   template:
-#     src: templates/etcd.service
-#     dest: /usr/lib/systemd/system/
+- name: Copy etcd.service to /usr/lib/systemd/system/
+  become: true
+  template:
+    src: templates/etcd.service
+    dest: /usr/lib/systemd/system/
 
-# - name: ensure data dir
-#   become: true
-#   file:
-#     path: "{{ item }}"
-#     state: directory
-#     mode: '0755'
-#   with_items:
-#     - "{{ etcd_data_dir }}"
+- name: ensure data dir
+  become: true
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ etcd_data_dir }}"
 
-# - name: Enable service etcd and ensure it is not masked
-#   become: true
-#   ansible.builtin.systemd:
-#     name: etcd
-#     enabled: yes
-#     masked: no
+- name: Enable service etcd and ensure it is not masked
+  become: true
+  ansible.builtin.systemd:
+    name: etcd
+    enabled: yes
+    masked: no
 
-# - name: Just force systemd to reread configs
-#   become: true
-#   ansible.builtin.systemd:
-#     daemon_reload: yes
+- name: Just force systemd to reread configs
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: yes
 
-# - name: Make sure etcd service is running
-#   become: true
-#   ansible.builtin.systemd:
-#     name: etcd
-#     state: started
+- name: Make sure etcd service is running
+  become: true
+  ansible.builtin.systemd:
+    name: etcd
+    state: started
