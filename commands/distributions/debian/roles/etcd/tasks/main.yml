@@ -83,9 +83,10 @@
     - etcd_name == "etcd-01"
 
 - name: fetch etcd-01 to local tmp
+  become: true
   fetch:
     src: "/etc/etcd/ssl/{{ item }}"
-    dest: /tmp
+    dest: "/tmp/{{ item }}"
   with_items: ["ca.csr", "ca-key.pem", "ca.pem", "etcd.csr", "etcd-key.pem", "etcd.pem"]
   when: 
     - etcd_name == "etcd-01"
