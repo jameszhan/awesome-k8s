@@ -94,7 +94,7 @@
 - name: copy etcd-01 ssl to etcd-01 and ectd-02
   become: true
   copy:
-    src: "/tmp/k8s-master/etc/eted/ssl/{{ item }}"
+    src: "/tmp/k8s-master01/etc/etcd/ssl/{{ item }}"
     dest: "/etc/etcd/ssl/{{ item }}"
   with_items: ["ca.csr", "ca-key.pem", "ca.pem", "etcd.csr", "etcd-key.pem", "etcd.pem"]
   when: 
