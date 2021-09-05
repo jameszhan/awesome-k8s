@@ -87,7 +87,8 @@
     src: /etc/etcd/ssl
     dest: /tmp
     mode: pull
-  delegate_to: k8s-master01
+  when: 
+    - etcd_name == "etcd-01"
 
 # - name: copy config to /etc/etcd/etcd.conf
 #   become: true

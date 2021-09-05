@@ -8,6 +8,8 @@
 $ ansible-playbook -i hosts -c paramiko --ask-pass --ask-become-pass user-deploy.yml -v
 
 $ ansible -i hosts all -m ping -u deploy
+
+$ ansible -i hosts all -m apt 
 ```
 
 
