@@ -4,7 +4,7 @@
   ansible.builtin.user:
     name: deploy
     comment: Deploy For User
-    groups: sudo,users
+    groups: sudo,users,adm
     shell: /bin/bash
 
 - name: sudo without password
