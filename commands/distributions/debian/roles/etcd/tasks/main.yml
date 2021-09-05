@@ -82,49 +82,46 @@
   when: 
     - etcd_name == "etcd-01"
 
-- name: Transfer file from ServerA to ServerB
-  synchronize:
+- name: fetch etcd-01 to local tmp
+  fetch:
     src: /etc/etcd/ssl
-    dest: /etc/etcd/ssl
-    mode: pull
-  delegate_to: k8s-master02
+    dest: /tmp
 
+# - name: copy config to /etc/etcd/etcd.conf
+#   become: true
+#   template:
+#     src: templates/etcd.j2
+#     dest: /etc/etcd/etcd.conf
 
-- name: copy config to /etc/etcd/etcd.conf
-  become: true
-  template:
-    src: templates/etcd.j2
-    dest: /etc/etcd/etcd.conf
+# - name: Copy etcd.service to /usr/lib/systemd/system/
+#   become: true
+#   template:
+#     src: templates/etcd.service
+#     dest: /usr/lib/systemd/system/
 
-- name: Copy etcd.service to /usr/lib/systemd/system/
-  become: true
-  template:
-    src: templates/etcd.service
-    dest: /usr/lib/systemd/system/
+# - name: ensure data dir
+#   become: true
+#   file:
+#     path: "{{ item }}"
+#     state: directory
+#     mode: '0755'
+#   with_items:
+#     - "{{ etcd_data_dir }}"
 
-- name: ensure data dir
-  become: true
-  file:
-    path: "{{ item }}"
-    state: directory
-    mode: '0755'
-  with_items:
-    - "{{ etcd_data_dir }}"
+# - name: Enable service etcd and ensure it is not masked
+#   become: true
+#   ansible.builtin.systemd:
+#     name: etcd
+#     enabled: yes
+#     masked: no
 
-- name: Enable service etcd and ensure it is not masked
-  become: true
-  ansible.builtin.systemd:
-    name: etcd
-    enabled: yes
-    masked: no
+# - name: Just force systemd to reread configs
+#   become: true
+#   ansible.builtin.systemd:
+#     daemon_reload: yes
 
-- name: Just force systemd to reread configs
-  become: true
-  ansible.builtin.systemd:
-    daemon_reload: yes
-
-- name: Make sure etcd service is running
-  become: true
-  ansible.builtin.systemd:
-    name: etcd
-    state: started
+# - name: Make sure etcd service is running
+#   become: true
+#   ansible.builtin.systemd:
+#     name: etcd
+#     state: started
