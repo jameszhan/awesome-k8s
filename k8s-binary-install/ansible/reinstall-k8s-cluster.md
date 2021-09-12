@@ -4,7 +4,7 @@
 $ ansible -i hosts all -m shell -a "systemctl stop etcd" -u deploy -v --become
 $ ansible -i hosts all -m shell -a "systemctl disable etcd" -u deploy -v --become
 
-$ ansible -i hosts all -m shell -a "rm -fr /etc/etcd/ssl" -u deploy -v --become
+$ ansible -i hosts all -m shell -a "rm -fr /etc/etcd" -u deploy -v --become
 $ ansible -i hosts all -m shell -a "rm -fr /var/lib/etcd" -u deploy -v --become
 $ ansible -i hosts all -m shell -a "rm -fr /usr/local/bin/*" -u deploy -v --become
 $ ansible -i hosts all -m shell -a "rm -fr /tmp/etcd*" -u deploy -v --become
