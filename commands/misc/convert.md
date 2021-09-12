@@ -1,2 +1,0 @@
-
-[ImageMagick](www.imagemagick.org)

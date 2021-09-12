@@ -1,102 +1,41 @@
-# linux-ecology
+Kubernetes不仅是一个管理系统，它同时还可应用这些最佳实践为开发者和管理员提供高水平的服务。下面将介绍几种设计模式。
 
-#### Linux操作系统的特点
+1．边车模式
+边车模式除主应用容器之外，还在Pod中共同定位另一个容器。应用容器并不知道边车容器，只是单纯执行自己的任务。中央日志代理（Central Logging Agent）就是一个很好的例子。主容器只将日志记录到stdout，但边车容器会将所有日志发送到一个中央日志服务，这些日志将在此处聚合整个系统的日志。使用边车容器相较于将中央日志添加到主应用容器有巨大的优势，应用不再受到中央日志的负担，如果要升级或更改中央日志记录策略或切换到新的提供商，只需更新并部署边车容器，应用容器并没有任何改变，因此不会由于意外情况而遭到破坏。
+2．外交官模式
+外交官模式是指将远程服务当作本地服务，并使其强制执行部分策略。外交官模式的一个很好的例子是，如果有一个Redis集群，该集群中一个主机用于编写，其余副本用于读取，则本地外交官容器可作为代理，并将Redis暴露给本地主机上的主应用容器。主应用容器简单地连接到localhost:6379（Redis缺省端口）上的Redis，但是它其实只是连接到在相同Pod中运行的外交官容器，该容器过滤请求，将编写请求发送到真正的Redis主机，并将读取请求随机发送到其中一个读取副本上，与挎斗模式类似，主应用在这期间并不了解运行过程。当测试真正的本地Redis集群时，这会有很大的帮助。此外，如果Redis集群配置发生改变，则只需要修改外交官容器，主应用同样不了解这一运行过程。
+3．适配器模式
+适配器模式是关于主应用容器的标准化输出。逐步推出的服务可能会面临如下问题：服务可能会生成不符合先前版本的格式报表，而其他使用该输出的服务和应用还未升级。适配器容器可以与新的应用容器共同部署在同一Pod上，并将其输出与旧版本相匹配，直到所有的用户都被升级。适配器容器与主应用程序容器共享文件系统，以此监控本地文件系统，每当新应用写入某个文件时，适配器容器将立即进行适配。
+4．多节点模式
+单节点模式都是直接由Kubernetes通过Pod直接进行支持的。而多节点模式并不被直接支持，例如负责人选举、工作队列和分散收集等，但使用标准接口组合Pod可实现Kubernetes支持。
 
-1. Linux操作系统的特点
-2. 良好的可移植性
-3. 设备独立性
-4. 多种人机交互界面
-5. 多用户，多任务支持
-6. 完善的网络功能
-7. 多种文件系统的支持
-8. 便捷的开发和维护手段
+#### master组件
 
-#### Linux优势
-- 开源、免费
-- 跨平台的硬件支持
-- 丰富的软件支持
-- 多用户多任务
-- 可靠的安全性
-- 良好的稳定性
-- 完善的网络功能
+##### API服务器
+Kube API服务器（Kube-API Server）提供Kubernetes REST API。由于其具有无状态性，因此它可以很轻松地水平缩放。它的所有数据都存储在etcd集群中。API服务器是Kubernetes控制平面的体现。
+##### etcd
+etcd是一种非常可靠的分布式数据存储。Kubernetes使用它来存储整个集群状态。在小型的瞬态集群中，单个etcd可以与所有其他主组件在同一节点上运行。但考虑到冗余和高可用性，更大型的集群通常包含3个，甚至5个etcd集群。
+##### 控制器管理器
+控制器管理器是各种管理器的集合，这些管理器被打包成一个二进制文件。它包含副本控制器、Pod控制器、服务控制器和端点控制器等。所有这些控制器通过API监控集群状态，它们的任务是将集群控制在目标状态。
+##### 调度器
+Kube调度器负责将Pod调度到节点中。这是一个非常复杂的任务，因为它需要考虑多个相互作用的因素，例如以下几点。
+- 资源需求。
+- 服务要求。
+- 硬/软件策略约束。
+- 亲和性和反亲和性规范。
+- 数据局部性。
+- 截止日期。
+##### DNS
+从Kubernetes 1.3开始，DNS服务便成为标准Kubernetes集群的一部分。它被调度成一个普通的Pod。除Headless服务外的每个服务都会接收DNS名称，Pod也可以接收DNS名称，这对于自动化探索非常有用。
 
-##### Linux设计思想
+#### node组件
 
-01. 一切皆文件
-> 在Linux系统中，不只数据以文件的形式存在，其他资源（包括硬件设备）也被组织为文件的形式。例如，硬盘以及硬盘中的每个分区在Linux中都被视为一个文件。
-02. 整个系统由众多的小程序组成
-> 在Linux中，很少有像Windows系统中那样动辄几GB的大型程序，整个Linux系统是由众多单一功能的小程序组成的。每个小程序只负责实现某一项具体功能，我们之后要学习的绝大多数Linux命令，其实各自有一个相应的小程序。如果要完成一项复杂任务，只需将相应的命令组合在一起使用即可。
-03. 尽量避免与用户交互
-> 避免与用户交互，是指在对系统进行管理操作的过程中，要尽量减少用户的参与。Linux（尤其是CentOS）系统，是主要用作服务器的操作系统，其操作方式与我们平常在PC 上使用的Windows系统有很大区别。由于服务器管理员不可能全天候地守护在服务器旁边，而且一名管理员往往需要同时管理成百上千台服务器，因此在服务器上执行的操作最好通过编写脚本程序来完成，从而使其自动化地完成某些功能。
-04. 使用纯文本文件保存配置信息
-> 无论是Linux系统本身还是系统中的应用程序，它们的配置信息往往都保存在一个纯文本的配置文件中。如果需要改动系统或程序中的某项功能，那么只需编辑相应的配置文件
-
-
-
-
-- https://azure.microsoft.com/
-- https://github.com/gluster/glusterfs
-- https://github.com/zfsonlinux/zfs
-- https://github.com/kubernetes/kubernetes
-- https://github.com/elastic/elasticsearch
-- https://github.com/saltstack/sal
-
-
-# 我的工具箱
-
-
-
-### 分布式
-
-#### 分布式存储
-
-
-
-
-
-## 附录
-##### 常用搜索引擎
-
-- [Google][google]
-- [Bing][bing]
-- [俄罗斯最大的搜索引擎][yandex]
-- [密迹搜索][mijisou]
-- [免费学术搜索引擎][semanticscholar]
-- [知识搜索引擎][wolframalpha]
-
-
-[google]:   http://google.com/      "Google Search"
-[bing]:     http://bing.com/        "Microsoft Bing"
-[yandex]:   https://yandex.com/     "Yandex"
-[mijisou]:  https://mijisou.com/    "密迹搜索"
-[semanticscholar]: https://www.semanticscholar.org/ "Semantic Scholar"
-[wolframalpha]: https://www.wolframalpha.com/   "WolframAlpha"
-[baiduxs]: http://xueshu.baidu.com/ "百度学术"
-[pixabay]: https://pixabay.com/ "Stunning free images & royalty free stock"
-[pexels]: https://www.pexels.com/ "The best free stock photos & videos shared by talented creators"
-[islide]: https://www.islide.cc/ "iSlide是一款基于PowerPoint的插件工具"
-[db-engines]: https://db-engines.com/en/ "跟踪数据库流行度的网站"
-[operatorhub]: https://operatorhub.io/ "OperatorHub.io is a new home for the Kubernetes community to share Operators"
-[ubuntu-releases]: http://releases.ubuntu.com/ ""
-[rufus]: https://rufus.akeo.ie/ "Create bootable USB drives the easy way"
-[mint]: https://linuxmint.com "Mint Linux"
-[clang]: https://clang.llvm.org/ "Clang"
-[llvm]: https://llvm.org "LLVM"
-[uget]: http://??? "uGet"
-[aria2]: http://??? "aria2"
-[vlc]: http://??? "VLC 全媒体播放器"
-[darktable]: http://??? "Darktable 专业数码照片编辑应用"
-[kazom]: http://??? "Kazom 高效录屏工具"
-[shotcut]: http://??? "ShotCut 视频后期处理"
-[handbrake]: http://??? "HandBrake 多媒体格式转换"
-[wine]: https://??? "WINE Windows 兼容层"
-[winehq]: https://appdb.winehq.org "WINE应用数据库"
-[winetricks]: https://??? "WINE黄金搭档"
-[playonlinux]: https://??? "PlayOnLinux"
-[distro-watch]: https://distrowatch.com/ "可以查看一些最受欢迎的Linux发行版"
-[x-window]: http://www.x.org/ "X Window 系统"
-[gluster]: http://www.gluster.org/                  "Gluster FS"
-[glusterfs]: https://github.com/gluster/glusterfs   "GlusterFS Source Code"
-
-
-
+##### 代理
+Kube代理在每个节点上进行低水平的网络维护，它用于呈现本地Kubernetes服务，可以执行TCP及UDP转发，通过环境变量或DNS寻找集群IP。
+##### Kubelet
+Kubelet是节点上Kubernetes的代表。它负责监控与主组件的通信并管理运行中的Pod，包括以下几个方面的内容。
+- 从API服务器下载Pod机密。
+- 装载卷。
+- 运行Pod的容器（Docker或Rkt）。
+- 报告节点和每个Pod的状态。
+- 运行容器活性探针。

@@ -1,0 +1,74 @@
+version: '3'
+services:
+  db:
+    image: postgres:10
+    environment:
+      POSTGRES_USER: git
+      POSTGRES_PASSWORD: git
+    volumes:
+      - /james/var/volumes/data/db:/var/lib/postgresql/data
+
+  resque:
+    image: "redis:alpine"
+    volumes:
+       - /james/var/volumes/data/redis/resque:/data
+    depends_on:
+       - db
+
+  redis_cache:
+    image: "redis:alpine"
+    volumes:
+       - /james/var/volumes/data/redis/redis_cache:/data
+    depends_on:
+        - db
+
+  redis_queues:
+    image: "redis:alpine"
+    volumes:
+       - /james/var/volumes/data/redis/redis_queues:/data
+    depends_on:
+        - db
+
+  redis_shared_state:
+    image: "redis:alpine"
+    volumes:
+       - /james/var/volumes/data/redis/redis_shared_state:/data
+    depends_on:
+        - db
+
+  app:
+    build:
+      context: ""
+      dockerfile: Dockerfile
+    environment:
+      RAILS_ENV: production
+      DATABASE_URL: postgresql://git:git@db.local/gitlab
+      PGPASSWORD: git
+    links:
+      - db:db.local
+    expose:
+      - "8080"
+      - "9001"
+      - "22"
+    volumes:
+      - /james/var/volumes/public:/home/git/gitlab/public
+      - /james/var/volumes/log:/home/git/gitlab/log
+      - /james/var/volumes/repositories:/home/git/repositories
+      - ./var/.ssh:/home/git/.ssh
+    ports:
+      - "9001:9001"
+      - "2222:22"
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:1.15-alpine
+    volumes:
+      - /james/var/volumes/public:/usr/share/nginx/html
+      - ./var/nginx.conf:/etc/nginx/conf.d/default.conf
+    links:
+      - app
+    ports:
+      - "80:80"
+    depends_on:
+      - app

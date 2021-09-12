@@ -1,1 +1,0 @@
-mussh的全称是MUltihost SSH Wrapper，它其实是一个SSH封装器，由一个shell脚本实现。通过mussh可以实现批量管理多台远程主机的功能。

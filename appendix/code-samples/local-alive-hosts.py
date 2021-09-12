@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
-import os
 import re
 import time
-import sys
 import subprocess
 
 lifeline = re.compile(r"(\d) packets received")
