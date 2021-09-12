@@ -11,7 +11,7 @@
     remote_src: yes
 
 - name: get executable-files in remote /tmp/kubernetes/server/bin
-  find:
+  ansible.builtin.find:
     paths: "/tmp/kubernetes/server/bin"
     recurse: false
     file_type: file

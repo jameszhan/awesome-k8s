@@ -1,6 +1,3 @@
-
-
-
 #### Remove etcd cluster
 
 ```bash
