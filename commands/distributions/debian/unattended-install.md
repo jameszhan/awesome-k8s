@@ -15,6 +15,7 @@ $ ansible -i hosts all -m apt
 
 ```bash
 $ ansible -i hosts all -m shell -a "rm -fr /etc/etcd/ssl" -u deploy -v --become
+$ ansible -i hosts all -m shell -a "rm -fr /usr/local/bin/kubernetes" -u deploy -v --become
 
 $ ansible-playbook -i hosts k8s-deploy.yml -u deploy -v
 ```
@@ -27,12 +28,62 @@ $ for h in k8s-master01 k8s-master02 k8s-master03; do ssh-copy-id -i ~/.ssh/id_r
 ```
 
 
+
+/usr/local/bin/kube-controller-manager \
+    --allocate-node-cidrs=true \
+    --authentication-kubeconfig=/etc/kubernetes/kube-controller-manager.kubeconfig \
+    --authorization-kubeconfig=/etc/kubernetes/kube-controller-manager.kubeconfig \
+    --bind-address=127.0.0.1 \
+    --client-ca-file=/etc/kubernetes/ssl/ca.pem \
+    --cluster-cidr=10.244.0.0/16 \
+    --cluster-name=kubernetes \
+    --cluster-signing-cert-file=/etc/kubernetes/ssl/ca.pem \
+    --cluster-signing-key-file=/etc/kubernetes/ssl/ca-key.pem \
+    --controllers=*,bootstrapsigner,tokencleaner \
+    --cluster-signing-duration=876000h0m0s \
+    --kubeconfig=/etc/kubernetes/kube-controller-manager.kubeconfig \
+    --leader-elect=true \
+    --port=0 \
+    --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.pem \
+    --root-ca-file=/etc/kubernetes/ssl/ca.pem \
+    --service-account-private-key-file=/etc/kubernetes/ssl/ca-key.pem \
+    --service-cluster-ip-range=192.168.1.128/25 \
+    --use-service-account-credentials=true \
+    --v=2
+
+/usr/local/bin/kube-controller-manager \
+    --allocate-node-cidrs=true \
+    --authentication-kubeconfig=/etc/kubernetes/kube-controller-manager.kubeconfig \
+    --authorization-kubeconfig=/etc/kubernetes/kube-controller-manager.kubeconfig \
+    --bind-address=127.0.0.1 \
+    --client-ca-file=/etc/kubernetes/ssl/ca.pem \
+    --cluster-cidr=10.244.0.0/16 \
+    --cluster-name=kubernetes \
+    --cluster-signing-cert-file=/etc/kubernetes/ssl/ca.pem \
+    --cluster-signing-key-file=/etc/kubernetes/ssl/ca-key.pem \
+    --controllers=*,bootstrapsigner,tokencleaner \
+    --cluster-signing-duration=876000h0m0s \
+    --kubeconfig=/etc/kubernetes/kube-controller-manager.kubeconfig \
+    --leader-elect=true \
+    --port=0 \
+    --root-ca-file=/etc/kubernetes/ssl/ca.pem \
+    --service-account-private-key-file=/etc/kubernetes/ssl/ca-key.pem \
+    --service-cluster-ip-range=192.168.1.128/25 \
+    --use-service-account-credentials=true \
+    --v=2
+
 #### ETCD
+
+ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=https://192.168.1.61:2379 endpoint health
 
 ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 endpoint health
 
 ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=http://192.168.1.61:2379,http://192.168.1.62:2379,http://192.168.1.63:2379 endpoint health
 
+
+
+$ curl --cacert /etc/etcd/ssl/ca.pem --cert /etc/etcd/ssl/etcd.pem --key /etc/etcd/ssl/etcd-key.pem https://192.168.1.61:2379/health
+$ curl --cacert /etc/etcd/ssl/ca.pem --cert /etc/etcd/ssl/etcd.pem --key /etc/etcd/ssl/etcd-key.pem https://127.0.0.1:2379/health
 
 
 - 数据存储的路径: 
@@ -109,3 +160,4 @@ ETCD_INITIAL_CLUSTER="etcd1=https://172.20.120.11:2380,etcd2=https://172.20.120.
 ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
 ETCD_INITIAL_CLUSTER_STATE="new"
 ```
+

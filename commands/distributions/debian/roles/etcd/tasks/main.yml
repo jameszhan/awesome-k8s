@@ -95,7 +95,7 @@
   when: 
     - etcd_name == "etcd-01"
 
-- name: copy etcd-01 ssl to etcd-01 and ectd-02
+- name: copy etcd-01 ssl to etcd-02 and ectd-03
   become: true
   copy:
     src: "/tmp/k8s-master01/etc/etcd/ssl/{{ item }}"

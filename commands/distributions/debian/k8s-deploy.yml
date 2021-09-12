@@ -1,6 +1,7 @@
 - name: k8s deployment
   hosts: k8s_masters
   roles:
-    - etcd
+    # - etcd
+    - k8s-master
   vars_files:
     - group_vars/etcd_vars.yml
