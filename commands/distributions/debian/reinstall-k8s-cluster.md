@@ -39,9 +39,17 @@ $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/
 ```
 
 ```bash
+$ sudo systemctl restart kube-scheduler
+$ sudo systemctl restart kube-controller-manager
+$ sudo systemctl restart kube-apiserver
+$ sudo systemctl restart etcd
+
 $ systemctl status etcd
 $ systemctl status kube-apiserver
 $ systemctl status kube-controller-manager
 $ systemctl status kube-scheduler
 
+$ kubectl cluster-info
+$ kubectl get componentstatuses
+$ kubectl get all --all-namespaces
 ```
