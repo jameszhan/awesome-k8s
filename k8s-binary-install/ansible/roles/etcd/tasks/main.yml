@@ -1,144 +1,149 @@
 - name: Get etcd binary files
-  get_url:
-    url: http://192.168.1.6:8888/etcd-v3.5.0-linux-amd64.tar.gz
-    dest: /tmp/etcd.tar.gz
-    mode: '0644'
-
-- name: Extract etcd.tar.gz into /tmp
-  unarchive:
-    src: /tmp/etcd.tar.gz
-    dest: /tmp/
-    remote_src: yes
-
-#- name: Display /tmp/etcd
-#  debug: msg={{ lookup('fileglob', '/tmp/etcd/etcd*') }}
-
-- name: Copy etcd tools to /usr/local/bin
-  become: true
-  copy:
-    src: "/tmp/etcd-v3.5.0-linux-amd64/{{ item }}"
-    dest: "/usr/local/bin/"
-    mode: ugo+x
-    remote_src: yes
-  with_items:
-    - etcd
-    - etcdctl
-    - etcdutl
-
-# - name: Copy etcd tools to /usr/local/bin
-#   command: "{{ item }}"
-#   with_items:
-#     - etcd --version
-#     - etcdctl version
-#     - etcdutl version
-
-- name: Get cfssl binary files
-  become: true
-  get_url:
-    url: http://192.168.1.6:8888/{{ item.url }}
-    dest: /usr/local/bin/{{ item.target }}
-    mode: '0755'
-  with_items:
-    - { "url": "cfssl_1.6.0_linux_amd64", "target": "cfssl" }
-    - { "url": "cfssljson_1.6.0_linux_amd64", "target": "cfssljson" }
-    - { "url": "cfssl-certinfo_1.6.0_linux_amd64", "target": "cfssl-certinfo" }
-    - { "url": "cfssl-newkey_1.6.0_linux_amd64", "target": "cfssl-newkey" }
-    - { "url": "cfssl-scan_1.6.0_linux_amd64", "target": "cfssl-scan" }
-
-- name: ensure directory /etc/etcd/ssl exists
-  become: true
-  file:
-    path: /etc/etcd/ssl
-    state: directory
-    owner: root
-    group: root
-    mode: '0755'
-
-- name: Copy ca-csr.json to /etc/etcd/ssl
-  become: true
-  template:
-    src: "templates/{{ item }}"
-    dest: /etc/etcd/ssl/
-  with_items:
-    - ca-csr.json
-    - ca-config.json
-    - etcd-csr.json
-  when: 
-    - etcd_name == "etcd-01"
-
-# cfssl gencert -initca ca-csr.json | cfssljson -bare ca
-- name: generate ca-key.pem, ca.csr, ca.pem
-  become: true
-  shell: "cfssl gencert -initca ca-csr.json | cfssljson -bare ca"
-  args:
-    chdir: /etc/etcd/ssl
-    creates: /etc/etcd/ssl/*.pem
-  when: 
-    - etcd_name == "etcd-01"
-  
-# cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=k8s-etcd etcd-csr.json | cfssljson -bare etcd
-- name: generate etcd.pem, etcd-key.pem etcd.csr
-  become: true
-  shell: "cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=k8s-etcd etcd-csr.json | cfssljson -bare etcd"
-  args:
-    chdir: /etc/etcd/ssl
-    creates: /etc/etcd/ssl/etcd.pem
-  when: 
-    - etcd_name == "etcd-01"
-
-- name: fetch etcd-01 to local tmp
-  become: true
-  fetch:
-    src: "/etc/etcd/ssl/{{ item }}"
+  ansible.builtin.unarchive:
+    src: http://192.168.1.6:8888/kubernetes-server-v1.21.4-linux-amd64.tar.gz
     dest: /tmp
-  with_items: ["ca.csr", "ca-key.pem", "ca.pem", "etcd.csr", "etcd-key.pem", "etcd.pem"]
-  when: 
-    - etcd_name == "etcd-01"
 
-- name: copy etcd-01 ssl to etcd-02 and ectd-03
-  become: true
-  copy:
-    src: "/tmp/k8s-master01/etc/etcd/ssl/{{ item }}"
-    dest: "/etc/etcd/ssl/{{ item }}"
-  with_items: ["ca.csr", "ca-key.pem", "ca.pem", "etcd.csr", "etcd-key.pem", "etcd.pem"]
-  when: 
-    - etcd_name == "etcd-02" or etcd_name == "etcd-03"
-
-- name: copy config to /etc/etcd/etcd.conf
-  become: true
-  template:
-    src: templates/etcd.j2
-    dest: /etc/etcd/etcd.conf
-
-- name: Copy etcd.service to /usr/lib/systemd/system/
-  become: true
-  template:
-    src: templates/etcd.service
-    dest: /usr/lib/systemd/system/
-
-- name: ensure data dir
-  become: true
-  file:
-    path: "{{ item }}"
-    state: directory
-    mode: '0755'
-  with_items:
-    - "{{ etcd_data_dir }}"
-
-- name: Enable service etcd and ensure it is not masked
-  become: true
-  ansible.builtin.systemd:
-    name: etcd
-    enabled: yes
-    masked: no
-
-- name: Just force systemd to reread configs
-  become: true
-  ansible.builtin.systemd:
-    daemon_reload: yes
-
-- name: Make sure etcd service is running
-  become: true
-  ansible.builtin.systemd:
-    name: etcd
-    state: started
+#- name: Get etcd binary files
+#  get_url:
+#    url: http://192.168.1.6:8888/etcd-v3.5.0-linux-amd64.tar.gz
+#    dest: /tmp/etcd.tar.gz
+#    mode: '0644'
+#
+#- name: Extract etcd.tar.gz into /tmp
+#  unarchive:
+#    src: /tmp/etcd.tar.gz
+#    dest: /tmp/
+#    remote_src: yes
+#
+##- name: Display /tmp/etcd
+##  debug: msg={{ lookup('fileglob', '/tmp/etcd/etcd*') }}
+#
+#- name: Copy etcd tools to /usr/local/bin
+#  become: true
+#  copy:
+#    src: "/tmp/etcd-v3.5.0-linux-amd64/{{ item }}"
+#    dest: "/usr/local/bin/"
+#    mode: ugo+x
+#    remote_src: yes
+#  with_items:
+#    - etcd
+#    - etcdctl
+#    - etcdutl
+#
+## - name: Copy etcd tools to /usr/local/bin
+##   command: "{{ item }}"
+##   with_items:
+##     - etcd --version
+##     - etcdctl version
+##     - etcdutl version
+#
+#- name: Get cfssl binary files
+#  become: true
+#  get_url:
+#    url: http://192.168.1.6:8888/{{ item.url }}
+#    dest: /usr/local/bin/{{ item.target }}
+#    mode: '0755'
+#  with_items:
+#    - { "url": "cfssl_1.6.0_linux_amd64", "target": "cfssl" }
+#    - { "url": "cfssljson_1.6.0_linux_amd64", "target": "cfssljson" }
+#    - { "url": "cfssl-certinfo_1.6.0_linux_amd64", "target": "cfssl-certinfo" }
+#    - { "url": "cfssl-newkey_1.6.0_linux_amd64", "target": "cfssl-newkey" }
+#    - { "url": "cfssl-scan_1.6.0_linux_amd64", "target": "cfssl-scan" }
+#
+#- name: ensure directory /etc/etcd/ssl exists
+#  become: true
+#  file:
+#    path: /etc/etcd/ssl
+#    state: directory
+#    owner: root
+#    group: root
+#    mode: '0755'
+#
+#- name: Copy ca-csr.json to /etc/etcd/ssl
+#  become: true
+#  template:
+#    src: "templates/{{ item }}"
+#    dest: /etc/etcd/ssl/
+#  with_items:
+#    - ca-csr.json
+#    - ca-config.json
+#    - etcd-csr.json
+#  when:
+#    - etcd_name == "etcd-01"
+#
+## cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+#- name: generate ca-key.pem, ca.csr, ca.pem
+#  become: true
+#  shell: "cfssl gencert -initca ca-csr.json | cfssljson -bare ca"
+#  args:
+#    chdir: /etc/etcd/ssl
+#    creates: /etc/etcd/ssl/*.pem
+#  when:
+#    - etcd_name == "etcd-01"
+#
+## cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=k8s-etcd etcd-csr.json | cfssljson -bare etcd
+#- name: generate etcd.pem, etcd-key.pem etcd.csr
+#  become: true
+#  shell: "cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=k8s-etcd etcd-csr.json | cfssljson -bare etcd"
+#  args:
+#    chdir: /etc/etcd/ssl
+#    creates: /etc/etcd/ssl/etcd.pem
+#  when:
+#    - etcd_name == "etcd-01"
+#
+#- name: fetch etcd-01 to local tmp
+#  become: true
+#  fetch:
+#    src: "/etc/etcd/ssl/{{ item }}"
+#    dest: /tmp
+#  with_items: ["ca.csr", "ca-key.pem", "ca.pem", "etcd.csr", "etcd-key.pem", "etcd.pem"]
+#  when:
+#    - etcd_name == "etcd-01"
+#
+#- name: copy etcd-01 ssl to etcd-02 and ectd-03
+#  become: true
+#  copy:
+#    src: "/tmp/k8s-master01/etc/etcd/ssl/{{ item }}"
+#    dest: "/etc/etcd/ssl/{{ item }}"
+#  with_items: ["ca.csr", "ca-key.pem", "ca.pem", "etcd.csr", "etcd-key.pem", "etcd.pem"]
+#  when:
+#    - etcd_name == "etcd-02" or etcd_name == "etcd-03"
+#
+#- name: copy config to /etc/etcd/etcd.conf
+#  become: true
+#  template:
+#    src: templates/etcd.j2
+#    dest: /etc/etcd/etcd.conf
+#
+#- name: Copy etcd.service to /usr/lib/systemd/system/
+#  become: true
+#  template:
+#    src: templates/etcd.service
+#    dest: /usr/lib/systemd/system/
+#
+#- name: ensure data dir
+#  become: true
+#  file:
+#    path: "{{ item }}"
+#    state: directory
+#    mode: '0755'
+#  with_items:
+#    - "{{ etcd_data_dir }}"
+#
+#- name: Enable service etcd and ensure it is not masked
+#  become: true
+#  ansible.builtin.systemd:
+#    name: etcd
+#    enabled: yes
+#    masked: no
+#
+#- name: Just force systemd to reread configs
+#  become: true
+#  ansible.builtin.systemd:
+#    daemon_reload: yes
+#
+#- name: Make sure etcd service is running
+#  become: true
+#  ansible.builtin.systemd:
+#    name: etcd
+#    state: started
