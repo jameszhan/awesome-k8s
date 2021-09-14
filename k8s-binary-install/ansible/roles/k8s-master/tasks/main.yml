@@ -30,6 +30,44 @@
     mode: '755'
   loop: "{{ executable_files.files }}"
 
+- name: ensure directory /tmp/kubernetes/ssl exists
+  file:
+    path: /tmp/kubernetes/ssl
+    state: directory
+  delegate_to: localhost
+
+- name: Copy json files to /etc/kubernetes/ssl
+  template:
+    src: "templates/{{ item }}"
+    dest: /tmp/kubernetes/ssl
+  with_items:
+    - ca-config.json
+    - kube-apiserver-csr.json
+    - admin-csr.json
+    - kube-controller-manager-csr.json
+    - kube-scheduler-csr.json
+  delegate_to: localhost
+
+- name: Copy ca-key.pem,ca-config.json to /etc/kubernetes/ssl
+  copy:
+    src: "/tmp/etcd/ssl/{{ item }}"
+    dest: "/tmp/kubernetes/ssl"
+  with_items:
+    - ca.pem
+    - ca-key.pem
+  delegate_to: localhost
+
+- name: generate kube-apiserver.csr, kube-apiserver.pem, kube-apiserver-key.pem, admin.csr, admin.pem, admin-key.pem etc
+  shell: |
+    cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-apiserver-csr.json | cfssljson -bare kube-apiserver
+    cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes admin-csr.json | cfssljson -bare admin
+    cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager
+    cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-scheduler-csr.json | cfssljson -bare kube-scheduler
+  args:
+    chdir: /tmp/kubernetes/ssl
+    creates: /tmp/kubernetes/ssl/kube-apiserver.pem
+  delegate_to: localhost
+
 - name: ensure directory /etc/kubernetes/ssl exists
   become: true
   file:
@@ -39,96 +77,56 @@
     group: root
     mode: '0755'
 
-- name: Copy kube-apiserver-csr.json to /etc/kubernetes/ssl
-  become: true
-  template:
-    src: "templates/{{ item }}"
-    dest: /etc/kubernetes/ssl
-  with_items:
-    - ca-config.json
-    - kube-apiserver-csr.json
-    - admin-csr.json
-    - kube-controller-manager-csr.json
-    - kube-scheduler-csr.json
-  when: 
-    - etcd_name == "etcd-01"
-
-- name: Copy ca-key.pem,ca-config.json to /etc/kubernetes/ssl
+- name: copy ssl to k8s-master01, k8s-master02 and k8s-master03
   become: true
   copy:
-    src: "/etc/etcd/ssl/{{ item }}"
-    dest: "/etc/kubernetes/ssl"
-    remote_src: yes
+    src: "/tmp/kubernetes/ssl/{{ item }}"
+    dest: /etc/kubernetes/ssl/
+    owner: root
+    group: root
+    mode: ugo+r,go-w
   with_items:
-    - ca.pem
+    - admin.csr
+    - admin-key.pem
+    - admin.pem
     - ca-key.pem
-  when: 
-    - etcd_name == "etcd-01"
-
-- name: generate kube-apiserver.pem, kube-apiserver-key.pem kube-apiserver.csr
-  become: true
-  shell: "cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-apiserver-csr.json | cfssljson -bare kube-apiserver"
-  args:
-    chdir: /etc/kubernetes/ssl
-    creates: /etc/kubernetes/ssl/kube-apiserver.pem
-  when: 
-    - etcd_name == "etcd-01"
+    - ca.pem
+    - kube-apiserver.csr
+    - kube-apiserver-key.pem
+    - kube-apiserver.pem
+    - kube-controller-manager.csr
+    - kube-controller-manager-key.pem
+    - kube-controller-manager.pem
+    - kube-scheduler.csr
+    - kube-scheduler-key.pem
+    - kube-scheduler.pem
 
 - name: get token_random
   shell: "head -c 16 /dev/urandom | od -An -t x | tr -d ' '"
   args:
-    creates: /etc/kubernetes/token.csv
+    creates: /tmp/kubernetes/token.csv
   register: token_random
-  when: 
-    - etcd_name == "etcd-01"
+  delegate_to: localhost
 
 - debug: msg="{{token_random}}"
-  when: 
-    - etcd_name == "etcd-01"
+  delegate_to: localhost
 
 - name: /etc/kubernetes/ssl/token.csv
-  become: true
   ansible.builtin.copy:
-    dest: "/etc/kubernetes/token.csv"
+    dest: "/tmp/kubernetes/token.csv"
     force: false
     content: |
       {{ token_random.stdout_lines[0] }},kubelet-bootstrap,10001,"system:kubelet-bootstrap"
-  when: 
-    - etcd_name == "etcd-01"
+  delegate_to: localhost
 
-- name: fetch etcd-01 ssl to local tmp
-  become: true
-  fetch:
-    src: "/etc/kubernetes/ssl/{{ item }}"
-    dest: /tmp
-  with_items: ["kube-apiserver.csr", "ca-key.pem", "ca.pem", "kube-apiserver-key.pem", "kube-apiserver.pem"]
-  when: 
-    - etcd_name == "etcd-01"
-
-- name: copy etcd-01 ssl to etcd-02 and ectd-03
+- name: copy token.csv to k8s-master01, k8s-master02 and k8s-master03
   become: true
   copy:
-    src: "/tmp/k8s-master01/etc/kubernetes/ssl/{{ item }}"
-    dest: "/etc/kubernetes/ssl/{{ item }}"
-  with_items: ["kube-apiserver.csr", "ca-key.pem", "ca.pem", "kube-apiserver-key.pem", "kube-apiserver.pem"]
-  when: 
-    - etcd_name == "etcd-02" or etcd_name == "etcd-03"
-
-- name: fetch etcd-01 token.csv to local tmp
-  become: true
-  fetch:
-    src: "/etc/kubernetes/token.csv"
-    dest: /tmp
-  when: 
-    - etcd_name == "etcd-01"
-
-- name: copy etcd-01 token.csv to etcd-02 and ectd-03
-  become: true
-  copy:
-    src: "/tmp/k8s-master01/etc/kubernetes/token.csv"
+    src: "/tmp/kubernetes/token.csv"
     dest: "/etc/kubernetes/token.csv"
-  when: 
-    - etcd_name == "etcd-02" or etcd_name == "etcd-03"
+    owner: root
+    group: root
+    mode: ugo+r,go-w
 
 - name: Copy kube-apiserver.conf config to /etc/kubernetes
   become: true
@@ -159,33 +157,6 @@
   ansible.builtin.systemd:
     name: kube-apiserver
     state: started
-
-- name: generate admin.pem, admin-key.pem etcd.csr
-  become: true
-  shell: "cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes admin-csr.json | cfssljson -bare admin"
-  args:
-    chdir: /etc/kubernetes/ssl
-    creates: /etc/kubernetes/ssl/admin.pem
-  when: 
-    - etcd_name == "etcd-01"
-
-- name: fetch etcd-01 admin.* to local tmp
-  become: true
-  fetch:
-    src: "/etc/kubernetes/ssl/{{ item }}"
-    dest: /tmp
-  with_items: ["admin.csr", "admin-key.pem", "admin.pem"]
-  when: 
-    - etcd_name == "etcd-01"
-
-- name: copy etcd-01 admin.* to etcd-02 and ectd-03
-  become: true
-  copy:
-    src: "/tmp/k8s-master01/etc/kubernetes/ssl/{{ item }}"
-    dest: "/etc/kubernetes/ssl/{{ item }}"
-  with_items: ["admin.csr", "admin-key.pem", "admin.pem"]
-  when: 
-    - etcd_name == "etcd-02" or etcd_name == "etcd-03"
 
 - name: generate /etc/kubernetes/ssl/kube.config
   become: true
@@ -224,44 +195,6 @@
 #   register: stdout
 
 # - debug: msg="{{ stdout.stdout_lines }}"
-
-- name: generate kube-controller-manager.pem, kube-controller-manager-key.pem kube-controller-manager.csr
-  become: true
-  shell: |
-    cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager
-  args:
-    chdir: /etc/kubernetes/ssl
-    creates: /etc/kubernetes/ssl/kube-controller-manager.pem
-  when: 
-    - etcd_name == "etcd-01"
-
-- name: generate kube-scheduler.pem, kube-scheduler-key.pem kube-scheduler.csr
-  become: true
-  shell: |
-    cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-scheduler-csr.json | cfssljson -bare kube-scheduler
-  args:
-    chdir: /etc/kubernetes/ssl
-    creates: /etc/kubernetes/ssl/kube-scheduler.pem
-  when: 
-    - etcd_name == "etcd-01"
-
-- name: fetch etcd-01 kube-controller-manager.*,kube-scheduler.* to local tmp
-  become: true
-  fetch:
-    src: "/etc/kubernetes/ssl/{{ item }}"
-    dest: /tmp
-  with_items: ["kube-controller-manager.csr", "kube-controller-manager-key.pem", "kube-controller-manager.pem", "kube-scheduler.csr", "kube-scheduler-key.pem", "kube-scheduler.pem"]
-  when: 
-    - etcd_name == "etcd-01"
-
-- name: copy etcd-01 kube-controller-manager.*,kube-scheduler.* to etcd-02 and ectd-03
-  become: true
-  copy:
-    src: "/tmp/k8s-master01/etc/kubernetes/ssl/{{ item }}"
-    dest: "/etc/kubernetes/ssl/{{ item }}"
-  with_items: ["kube-controller-manager.csr", "kube-controller-manager-key.pem", "kube-controller-manager.pem", "kube-scheduler.csr", "kube-scheduler-key.pem", "kube-scheduler.pem"]
-  when: 
-    - etcd_name == "etcd-02" or etcd_name == "etcd-03"
 
 - name: generate /etc/kubernetes/kube-controller-manager.kubeconfig
   become: true

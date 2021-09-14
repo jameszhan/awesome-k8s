@@ -57,19 +57,25 @@ $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/
 $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 endpoint health
 ```
 
+#### Install k8s Master Cluster
+
+```bash
+$ ansible-playbook -i hosts k8s-master.yml -u deploy -v
+```
 
 ```bash
 $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/kubernetes/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 endpoint health
 
-
-```
-
-
-
-
 $ curl --insecure https://192.168.1.61:6443/
 $ curl --insecure https://192.168.1.62:6443/
 $ curl --insecure https://192.168.1.63:6443/
+
+$ kubectl cluster-info
+$ kubectl get componentstatuses
+$ kubectl get all --all-namespaces
+```
+
+##### 重启服务
 
 ```bash
 $ sudo systemctl restart kube-scheduler
@@ -81,8 +87,4 @@ $ systemctl status etcd
 $ systemctl status kube-apiserver
 $ systemctl status kube-controller-manager
 $ systemctl status kube-scheduler
-
-$ kubectl cluster-info
-$ kubectl get componentstatuses
-$ kubectl get all --all-namespaces
 ```
