@@ -25,6 +25,15 @@ $ kubectl delete node k8s-node022
 
 ```bash
 $ sudo kubeadm reset
-$ sudo systemctl stop docker.socket
-$ sudo systemctl stop docker.service
+
+$ sudo apt purge docker-ce docker-ce-cli containerd.io
+$ sudo rm -rf /var/lib/docker
+$ sudo rm -rf /var/lib/containerd
+
+$ sudo apt -y purge kubeadm kubelet kubectl
+$ sudo rm -fr /opt/containerd/
+$ sudo rm /etc/apt/sources.list.d/kubernetes.list
+$ sudo rm /usr/share/keyrings/kubernetes-archive-keyring.gpg
+
+$ sudo apt -y autoremove
 ```

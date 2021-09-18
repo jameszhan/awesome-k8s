@@ -158,6 +158,22 @@
     name: kube-apiserver
     state: started
 
+# 生成 kubernetes admin 证书，给 kubernetes 管理员使用
+# 为 kubectl 客户端工具(k8s 管理员) 生成 kubeconfig 文件
+#   kubectl 使用 kubeconfig 文件访问 apiserver，该文件包含了 kube-apiserver 的地址
+#   和认证信息（CA 证书和客户端证书）
+#
+# kubectl config 参数解释
+#   kubectl config set-cluster        设置一个集群项（设置集群参数）
+#       --certificate-authority       验证 kube-apiserver 证书的根证书
+#       --embed-cert=true             将 CA 证书和客户端证书其纳入到生成的 kubeconfig 文件中
+#           否则，写入的是证书文件路径，后续拷贝 kubeconfig 到其它机器时，还需要单独拷贝整数，不方便
+#       --server                      指定 kube-apiserver 的地址.
+#   kubectl config set-credentials    设置一个用户项（设置客户端认证参数）
+#       --client-certificate          生成的客户端证书
+#       --client-key                  生成的客户端证书的私钥
+#   kubectl config set-context        设置一个环境项（设置上下文参数）
+#   kubectl config use-context        使用某个环境当做默认环境（设置默认上下文）
 - name: generate /etc/kubernetes/ssl/kube.config
   become: true
   shell: |
@@ -196,6 +212,11 @@
 
 # - debug: msg="{{ stdout.stdout_lines }}"
 
+
+# 生成 controller-manager 证书
+# 生成 controller-manager 的 kubeconfig 文件
+#   kube-controller-manager 使用 kubeconfig 文件访问 apiserver，该文件提供了 apiserver
+#   地址、嵌入式 CA 证书和 kube-controller-manager 证书等信息
 - name: generate /etc/kubernetes/kube-controller-manager.kubeconfig
   become: true
   shell: |
@@ -207,6 +228,10 @@
     chdir: /etc/kubernetes
     creates: /etc/kubernetes/kube-controller-manager.kubeconfig
 
+# 生成 scheduler 证书
+# 生成 scheduler 的 kubeconfig 文件
+#   kube-scheduler 使用 kubeconfig 文件访问 apiserver，该文件提供了 apiserver 地址、
+#   嵌入式的 CA 证书和 kube-scheduler 证书
 - name: generate /etc/kubernetes/kube-scheduler.kubeconfig
   become: true
   shell: |
@@ -251,3 +276,30 @@
     name: "{{ item }}"
     state: started
   with_items: ["kube-controller-manager.service", "kube-scheduler.service"]
+
+- name: get bootstrap_token
+  shell: "awk -F "," '{print $1}' /etc/kubernetes/token.csv"
+  args:
+    creates: /etc/kubernetes/bootstrap-kubelet.kubeconfig
+  register: bootstrap_token
+
+- debug: msg="{{ bootstrap_token }}"
+
+#
+## 生成 bootstrap-kubelet.kubeconfig 文件
+## 1.TLS Bootstrap 用于自动给 kubelet 颁发证书，生成 /etc/kubelet.kubeconfig 文件
+## 2.node 节点启动，如果没有 /etc/kubelet.kubeconfig 文件，则会用 /etc/bootstrap-kubelet.kubeconfig
+##   申请一个 /etc/kubelet.kubeconfig 文件，然后才启动 kubelet 进程
+##   最后 kubelet 用 /etc/kubelet.kubeconfig 文件和 kube-apiserver 进行通信
+## token-id 和 token-secret 在 bootstrap/bootstrap.secret.yaml 中
+#- name: generate /etc/kubernetes/kube-scheduler.kubeconfig
+#  become: true
+#  shell: |
+#    kubectl config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ node_host }}:6443 --kubeconfig=bootstrap-kubelet.kubeconfig
+#    kubectl config set-credentials kubelet-bootstrap --token={{ token }} --kubeconfig=bootstrap-kubelet.kubeconfig
+#    kubectl config set-context default --cluster=kubernetes --user=kubelet-bootstrap --kubeconfig=bootstrap-kubelet.kubeconfig
+#    kubectl config use-context default --kubeconfig=bootstrap-kubelet.kubeconfig
+#  args:
+#    chdir: /etc/kubernetes
+#    creates: /etc/kubernetes/bootstrap-kubelet.kubeconfig
+
