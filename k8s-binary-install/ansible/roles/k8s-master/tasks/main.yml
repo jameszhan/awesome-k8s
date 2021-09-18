@@ -292,7 +292,7 @@
 #   申请一个 /etc/kubelet.kubeconfig 文件，然后才启动 kubelet 进程
 #   最后 kubelet 用 /etc/kubelet.kubeconfig 文件和 kube-apiserver 进行通信
 # token-id 和 token-secret 在 bootstrap/bootstrap.secret.yaml 中
-- name: generate /etc/kubernetes/kube-scheduler.kubeconfig
+- name: generate /etc/kubernetes/bootstrap-kubelet.kubeconfig
   become: true
   shell: |
     kubectl config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ node_host }}:6443 --kubeconfig=bootstrap-kubelet.kubeconfig
