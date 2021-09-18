@@ -278,7 +278,8 @@
   with_items: ["kube-controller-manager.service", "kube-scheduler.service"]
 
 - name: get bootstrap_token
-  shell: "awk -F "," '{print $1}' /etc/kubernetes/token.csv"
+  shell: |
+    awk -F "," '{print $1}' /etc/kubernetes/token.csv
   args:
     creates: /etc/kubernetes/bootstrap-kubelet.kubeconfig
   register: bootstrap_token
