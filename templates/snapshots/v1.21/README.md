@@ -31,6 +31,61 @@ $ systemctl list-units --type=service --state=running
 #### 检查K8S资源
 
 ```bash
+$ pstree -p
+systemd─┬─accounts-daemon───2*[{accounts-daemon}]
+        ├─containerd───9*[{containerd}]
+        ├─3*[containerd-shim─┬─pause]
+        │                    └─10*[{containerd-shim}]]
+        ├─4*[containerd-shim─┬─pause]
+        │                    └─11*[{containerd-shim}]]
+        ├─containerd-shim─┬─kube-controller───6*[{kube-controller}]
+        │                 └─11*[{containerd-shim}]
+        ├─containerd-shim─┬─etcd───12*[{etcd}]
+        │                 └─11*[{containerd-shim}]
+        ├─containerd-shim─┬─kube-apiserver───10*[{kube-apiserver}]
+        │                 └─11*[{containerd-shim}]
+        ├─containerd-shim─┬─kube-scheduler───9*[{kube-scheduler}]
+        │                 └─11*[{containerd-shim}]
+        ├─containerd-shim─┬─kube-proxy───7*[{kube-proxy}]
+        │                 └─11*[{containerd-shim}]
+        ├─containerd-shim─┬─flanneld───8*[{flanneld}]
+        │                 └─10*[{containerd-shim}]
+        ├─containerd-shim─┬─promtail───21*[{promtail}]
+        │                 └─11*[{containerd-shim}]
+        ├─dockerd───33*[{dockerd}]
+        └─kubelet───14*[{kubelet}]
+        
+$ ps -fp 3323 | grep ''
+```
+
+```bash
+$ ps aux | grep kube
+```
+
+```bash
+$ /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+$ /usr/bin/kubelet --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf --kubeconfig=/etc/kubernetes/kubelet.conf --config=/var/lib/kubelet/config.yaml --network-plugin=cni --pod-infra-container-image=k8s.gcr.io/pause:3.4.1
+
+$ /usr/bin/containerd-shim-runc-v2 -namespace moby -id 050c93aab7b5eebf1c016709a90fa7b245573db22c48ff387368e60a2a384ddc -address /run/containerd/containerd.sock
+$ etcd --advertise-client-urls=https://192.168.1.161:2379 --cert-file=/etc/kubernetes/pki/etcd/server.crt --client-cert-auth=true --data-dir=/var/lib/etcd --initial-advertise-peer-urls=https://192.168.1.161:2380 --initial-cluster=k8s-node001=https://192.168.1.161:2380 --key-file=/etc/kubernetes/pki/etcd/server.key --listen-client-urls=https://127.0.0.1:2379,https://192.168.1.161:2379 --listen-metrics-urls=http://127.0.0.1:2381 --listen-peer-urls=https://192.168.1.161:2380 --name=k8s-node001 --peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt --peer-client-cert-auth=true --peer-key-file=/etc/kubernetes/pki/etcd/peer.key --peer-trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt --snapshot-count=10000 --trusted-ca-file=/etc/kubernetes/pki/etcd/ca.crt
+
+$ /usr/bin/containerd-shim-runc-v2 -namespace moby -id 14684285361ba7f399d89b0c422d720002269b84ba136e929c187407e51efd8d -address /run/containerd/containerd.sock
+$ kube-apiserver --advertise-address=192.168.1.161 --allow-privileged=true --authorization-mode=Node,RBAC --client-ca-file=/etc/kubernetes/pki/ca.crt --enable-admission-plugins=NodeRestriction --enable-bootstrap-token-auth=true --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt --etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt --etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key --etcd-servers=https://127.0.0.1:2379 --insecure-port=0 --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt --proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client.key --requestheader-allowed-names=front-proxy-client --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt --requestheader-extra-headers-prefix=X-Remote-Extra- --requestheader-group-headers=X-Remote-Group --requestheader-username-headers=X-Remote-User --secure-port=6443 --service-account-issuer=https://kubernetes.default.svc.cluster.local --service-account-key-file=/etc/kubernetes/pki/sa.pub --service-account-signing-key-file=/etc/kubernetes/pki/sa.key --service-cluster-ip-range=10.96.0.0/12 --tls-cert-file=/etc/kubernetes/pki/apiserver.crt --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
+
+$ /usr/bin/containerd-shim-runc-v2 -namespace moby -id 180f3b2635ef9823ce2f832519dbd7c3d53c4e93a7acafd71d02cb8e1537f726 -address /run/containerd/containerd.sock
+$ kube-controller-manager --allocate-node-cidrs=true --authentication-kubeconfig=/etc/kubernetes/controller-manager.conf --authorization-kubeconfig=/etc/kubernetes/controller-manager.conf --bind-address=127.0.0.1 --client-ca-file=/etc/kubernetes/pki/ca.crt --cluster-cidr=10.244.0.0/16 --cluster-name=kubernetes --cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt --cluster-signing-key-file=/etc/kubernetes/pki/ca.key --controllers=*,bootstrapsigner,tokencleaner --kubeconfig=/etc/kubernetes/controller-manager.conf --leader-elect=true --port=0 --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt --root-ca-file=/etc/kubernetes/pki/ca.crt --service-account-private-key-file=/etc/kubernetes/pki/sa.key --service-cluster-ip-range=10.96.0.0/12 --use-service-account-credentials=true
+
+$ /usr/bin/containerd-shim-runc-v2 -namespace moby -id c4e3265fd290629ba87d01b5c547368fd590adcd81119416fe227d053f84e4c7 -address /run/containerd/containerd.sock
+$ kube-scheduler --authentication-kubeconfig=/etc/kubernetes/scheduler.conf --authorization-kubeconfig=/etc/kubernetes/scheduler.conf --bind-address=127.0.0.1 --kubeconfig=/etc/kubernetes/scheduler.conf --leader-elect=true --port=0
+
+$ /usr/bin/containerd-shim-runc-v2 -namespace moby -id b5748726a6bf4295525fc8048410644dd7243b3e53e3f1b2fe4269182ef2bf56 -address /run/containerd/containerd.sock
+$ /usr/local/bin/kube-proxy --config=/var/lib/kube-proxy/config.conf --hostname-override=k8s-node001
+
+$ /usr/bin/containerd-shim-runc-v2 -namespace moby -id e7d677fc7a68508c5634daf9c34f23339076076cf6bd37da3c6b5a3383e596de -address /run/containerd/containerd.sock
+$ /opt/bin/flanneld --ip-masq --kube-subnet-mgr
+```
+
+```bash
 $ kubectl get all
 NAME                 TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 service/kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   138d

@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    deprecated.daemonset.template.generation: "1"
+  creationTimestamp: "2021-05-03T19:36:25Z"
+  generation: 1
+  labels:
+    k8s-app: kube-proxy
+  name: kube-proxy
+  namespace: kube-system
+  resourceVersion: "28366082"
+  uid: 0a2ae52e-e134-4d72-bd33-de94c18d1214
+spec:
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: kube-proxy
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        k8s-app: kube-proxy
+    spec:
+      containers:
+        - command:
+            - /usr/local/bin/kube-proxy
+            - --config=/var/lib/kube-proxy/config.conf
+            - --hostname-override=$(NODE_NAME)
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          image: k8s.gcr.io/kube-proxy:v1.21.0
+          imagePullPolicy: IfNotPresent
+          name: kube-proxy
+          resources: {}
+          securityContext:
+            privileged: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /var/lib/kube-proxy
+              name: kube-proxy
+            - mountPath: /run/xtables.lock
+              name: xtables-lock
+            - mountPath: /lib/modules
+              name: lib-modules
+              readOnly: true
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      priorityClassName: system-node-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: kube-proxy
+      serviceAccountName: kube-proxy
+      terminationGracePeriodSeconds: 30
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - operator: Exists
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: kube-proxy
+          name: kube-proxy
+        - hostPath:
+            path: /run/xtables.lock
+            type: FileOrCreate
+          name: xtables-lock
+        - hostPath:
+            path: /lib/modules
+            type: ""
+          name: lib-modules
+  updateStrategy:
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+    type: RollingUpdate
+status:
+  currentNumberScheduled: 11
+  desiredNumberScheduled: 11
+  numberAvailable: 10
+  numberMisscheduled: 0
+  numberReady: 10
+  numberUnavailable: 1
+  observedGeneration: 1
+  updatedNumberScheduled: 11

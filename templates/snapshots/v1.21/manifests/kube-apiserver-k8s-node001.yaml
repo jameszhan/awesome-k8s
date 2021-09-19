@@ -1,0 +1,189 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kubeadm.kubernetes.io/kube-apiserver.advertise-address.endpoint: 192.168.1.161:6443
+    kubernetes.io/config.hash: ca00a10ff5c44cffbea85369ea19ff21
+    kubernetes.io/config.mirror: ca00a10ff5c44cffbea85369ea19ff21
+    kubernetes.io/config.seen: "2021-05-04T03:35:20.536298274+08:00"
+    kubernetes.io/config.source: file
+  creationTimestamp: "2021-05-03T19:36:23Z"
+  labels:
+    component: kube-apiserver
+    tier: control-plane
+  name: kube-apiserver-k8s-node001
+  namespace: kube-system
+  ownerReferences:
+    - apiVersion: v1
+      controller: true
+      kind: Node
+      name: k8s-node001
+      uid: 2844247b-8277-4e75-98b8-7eac13ee2538
+  resourceVersion: "28593080"
+  uid: 636395cb-3e8a-480c-9b17-0b79026530ac
+spec:
+  containers:
+    - command:
+        - kube-apiserver
+        - --advertise-address=192.168.1.161
+        - --allow-privileged=true
+        - --authorization-mode=Node,RBAC
+        - --client-ca-file=/etc/kubernetes/pki/ca.crt
+        - --enable-admission-plugins=NodeRestriction
+        - --enable-bootstrap-token-auth=true
+        - --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt
+        - --etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt
+        - --etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key
+        - --etcd-servers=https://127.0.0.1:2379
+        - --insecure-port=0
+        - --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt
+        - --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key
+        - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+        - --proxy-client-cert-file=/etc/kubernetes/pki/front-proxy-client.crt
+        - --proxy-client-key-file=/etc/kubernetes/pki/front-proxy-client.key
+        - --requestheader-allowed-names=front-proxy-client
+        - --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt
+        - --requestheader-extra-headers-prefix=X-Remote-Extra-
+        - --requestheader-group-headers=X-Remote-Group
+        - --requestheader-username-headers=X-Remote-User
+        - --secure-port=6443
+        - --service-account-issuer=https://kubernetes.default.svc.cluster.local
+        - --service-account-key-file=/etc/kubernetes/pki/sa.pub
+        - --service-account-signing-key-file=/etc/kubernetes/pki/sa.key
+        - --service-cluster-ip-range=10.96.0.0/12
+        - --tls-cert-file=/etc/kubernetes/pki/apiserver.crt
+        - --tls-private-key-file=/etc/kubernetes/pki/apiserver.key
+      image: k8s.gcr.io/kube-apiserver:v1.21.0
+      imagePullPolicy: IfNotPresent
+      livenessProbe:
+        failureThreshold: 8
+        httpGet:
+          host: 192.168.1.161
+          path: /livez
+          port: 6443
+          scheme: HTTPS
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 15
+      name: kube-apiserver
+      readinessProbe:
+        failureThreshold: 3
+        httpGet:
+          host: 192.168.1.161
+          path: /readyz
+          port: 6443
+          scheme: HTTPS
+        periodSeconds: 1
+        successThreshold: 1
+        timeoutSeconds: 15
+      resources:
+        requests:
+          cpu: 250m
+      startupProbe:
+        failureThreshold: 24
+        httpGet:
+          host: 192.168.1.161
+          path: /livez
+          port: 6443
+          scheme: HTTPS
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 15
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+        - mountPath: /etc/ssl/certs
+          name: ca-certs
+          readOnly: true
+        - mountPath: /etc/ca-certificates
+          name: etc-ca-certificates
+          readOnly: true
+        - mountPath: /etc/kubernetes/pki
+          name: k8s-certs
+          readOnly: true
+        - mountPath: /usr/local/share/ca-certificates
+          name: usr-local-share-ca-certificates
+          readOnly: true
+        - mountPath: /usr/share/ca-certificates
+          name: usr-share-ca-certificates
+          readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  hostNetwork: true
+  nodeName: k8s-node001
+  preemptionPolicy: PreemptLowerPriority
+  priority: 2000001000
+  priorityClassName: system-node-critical
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  terminationGracePeriodSeconds: 30
+  tolerations:
+    - effect: NoExecute
+      operator: Exists
+  volumes:
+    - hostPath:
+        path: /etc/ssl/certs
+        type: DirectoryOrCreate
+      name: ca-certs
+    - hostPath:
+        path: /etc/ca-certificates
+        type: DirectoryOrCreate
+      name: etc-ca-certificates
+    - hostPath:
+        path: /etc/kubernetes/pki
+        type: DirectoryOrCreate
+      name: k8s-certs
+    - hostPath:
+        path: /usr/local/share/ca-certificates
+        type: DirectoryOrCreate
+      name: usr-local-share-ca-certificates
+    - hostPath:
+        path: /usr/share/ca-certificates
+        type: DirectoryOrCreate
+      name: usr-share-ca-certificates
+status:
+  conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2021-09-03T01:52:16Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2021-09-19T18:05:55Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2021-09-19T18:05:55Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2021-09-03T01:52:16Z"
+      status: "True"
+      type: PodScheduled
+  containerStatuses:
+    - containerID: docker://14684285361ba7f399d89b0c422d720002269b84ba136e929c187407e51efd8d
+      image: k8s.gcr.io/kube-apiserver:v1.21.0
+      imageID: docker-pullable://registry.cn-hangzhou.aliyuncs.com/google_containers/kube-apiserver@sha256:828fefd9598ed865d45364d1be859c87aabfa445b03b350e3440d143bd21bca9
+      lastState:
+        terminated:
+          containerID: docker://6bfb13bf875db468aba3910c35e529234c82af3464fe1d5e174ff7a0ffeabf6d
+          exitCode: 255
+          finishedAt: "2021-09-10T18:04:05Z"
+          reason: Error
+          startedAt: "2021-09-04T14:57:31Z"
+      name: kube-apiserver
+      ready: true
+      restartCount: 18
+      started: true
+      state:
+        running:
+          startedAt: "2021-09-10T18:07:43Z"
+  hostIP: 192.168.1.161
+  phase: Running
+  podIP: 192.168.1.161
+  podIPs:
+    - ip: 192.168.1.161
+  qosClass: Burstable
+  startTime: "2021-09-03T01:52:16Z"
