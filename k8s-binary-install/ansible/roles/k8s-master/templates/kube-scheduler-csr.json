@@ -2,9 +2,9 @@
     "CN": "system:kube-scheduler",
     "hosts": [
         "127.0.0.1",
-        "192.168.1.61",
-        "192.168.1.62",
-        "192.168.1.63"
+        "{{ k8s_master01_host }}",
+        "{{ k8s_master02_host }}",
+        "{{ k8s_master03_host }}"
     ],
     "key": {
         "algo": "rsa",
