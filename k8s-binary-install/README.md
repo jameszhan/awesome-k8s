@@ -12,7 +12,6 @@ $ ansible-playbook -i hosts -c paramiko --ask-pass --ask-become-pass user-deploy
 - [Ubuntu环境下新增新用户](manual-sop/01.add-deploy-user.md)
 
 
-
 ```bash
 $ ansible -i hosts all -m shell -a "rm -fr /etc/etcd/ssl" -u deploy -v --become
 $ ansible -i hosts all -m shell -a "rm -fr /usr/local/bin/kubernetes" -u deploy -v --become
