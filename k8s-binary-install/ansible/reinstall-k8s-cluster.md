@@ -92,7 +92,5 @@ $ systemctl status kube-scheduler
 #### Install k8s Node Cluster
 
 ```bash
-$ ansible-playbook -i hosts -c paramiko --ask-pass --ask-become-pass user-deploy.yml -v
-
 $ ansible-playbook -i hosts k8s-node.yml -u deploy -v
 ```

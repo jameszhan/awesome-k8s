@@ -1,4 +1,6 @@
 - name: User Deploy
-  hosts: k8s_masters
+  hosts:
+    - k8s_masters
+    - k8s_nodes
   roles:
     - users
