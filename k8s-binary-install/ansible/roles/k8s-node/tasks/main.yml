@@ -30,7 +30,7 @@
 - name: copy config files to k8s-nodes
   become: true
   copy:
-    src: "/tmp/kubernetes/{{ item }}"
+    src: "/etc/kubernetes/{{ item }}"
     dest: "/etc/kubernetes/{{ item }}"
     owner: root
     group: root
