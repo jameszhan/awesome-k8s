@@ -276,30 +276,4 @@
     state: started
   with_items: ["kube-controller-manager.service", "kube-scheduler.service"]
 
-- name: get bootstrap_token
-  shell: |
-    awk -F "," '{print $1}' /etc/kubernetes/token.csv
-  args:
-    creates: /etc/kubernetes/bootstrap-kubelet.kubeconfig
-  register: bootstrap_token
-
-- debug: msg="{{ bootstrap_token.stdout_lines[0] }}"
-
-
-# 生成 bootstrap-kubelet.kubeconfig 文件
-# 1.TLS Bootstrap 用于自动给 kubelet 颁发证书，生成 /etc/kubelet.kubeconfig 文件
-# 2.node 节点启动，如果没有 /etc/kubelet.kubeconfig 文件，则会用 /etc/bootstrap-kubelet.kubeconfig
-#   申请一个 /etc/kubelet.kubeconfig 文件，然后才启动 kubelet 进程
-#   最后 kubelet 用 /etc/kubelet.kubeconfig 文件和 kube-apiserver 进行通信
-# token-id 和 token-secret 在 bootstrap/bootstrap.secret.yaml 中
-- name: generate /etc/kubernetes/bootstrap-kubelet.kubeconfig
-  become: true
-  shell: |
-    kubectl config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ node_host }}:6443 --kubeconfig=bootstrap-kubelet.kubeconfig
-    kubectl config set-credentials kubelet-bootstrap --token={{ bootstrap_token.stdout_lines[0] }} --kubeconfig=bootstrap-kubelet.kubeconfig
-    kubectl config set-context default --cluster=kubernetes --user=kubelet-bootstrap --kubeconfig=bootstrap-kubelet.kubeconfig
-    kubectl config use-context default --kubeconfig=bootstrap-kubelet.kubeconfig
-  args:
-    chdir: /etc/kubernetes
-    creates: /etc/kubernetes/bootstrap-kubelet.kubeconfig
 

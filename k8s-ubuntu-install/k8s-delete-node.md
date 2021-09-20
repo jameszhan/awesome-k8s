@@ -37,3 +37,20 @@ $ sudo rm /usr/share/keyrings/kubernetes-archive-keyring.gpg
 
 $ sudo apt -y autoremove
 ```
+
+#### 移除网桥
+
+```bash
+$ sudo apt -y install net-tools bridge-utils
+
+$ sudo ifconfig docker0 down
+$ sudo brctl delbr docker0
+
+$ sudo ifconfig cni0 down
+$ sudo brctl delbr cni0
+
+$ sudo ifconfig flannel.1 down
+$ sudo ip link del flannel.1
+
+$ ifconfig -a
+```

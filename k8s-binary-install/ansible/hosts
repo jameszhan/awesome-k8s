@@ -2,3 +2,7 @@
 k8s-master01 ansible_host=192.168.1.61 node_host=192.168.1.61 etcd_name=etcd-01
 k8s-master02 ansible_host=192.168.1.62 node_host=192.168.1.62 etcd_name=etcd-02
 k8s-master03 ansible_host=192.168.1.63 node_host=192.168.1.63 etcd_name=etcd-03
+
+[k8s_nodes]
+k8s-node021 ansible_host=192.168.1.171 node_host=192.168.1.171
+k8s-node022 ansible_host=192.168.1.172 node_host=192.168.1.172
