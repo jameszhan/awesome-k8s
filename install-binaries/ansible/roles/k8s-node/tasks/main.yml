@@ -47,11 +47,16 @@
   run_once: true
   delegate_to: k8s-master01
 
-- name: Change /etc/kubernetes/kubelet-bootstrap.kubeconfig permissions
+- name: generate /etc/kubernetes/kube-proxy.kubeconfig
   become: true
-  ansible.builtin.file:
-    path: /etc/kubernetes/kubelet-bootstrap.kubeconfig
-    mode: go+r
+  shell: |
+    kubectl config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ k8s_master01_host }}:6443 --kubeconfig=kube-proxy.kubeconfig
+    kubectl config set-credentials kube-proxy --client-certificate=kube-proxy.pem --client-key=kube-proxy-key.pem --embed-certs=true --kubeconfig=kube-proxy.kubeconfig
+    kubectl config set-context default --cluster=kubernetes --user=kube-proxy --kubeconfig=kube-proxy.kubeconfig
+    kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig
+  args:
+    chdir: /etc/kubernetes
+    creates: /etc/kubernetes/kube-proxy.kubeconfig
   run_once: true
   delegate_to: k8s-master01
 
@@ -60,38 +65,35 @@
   shell: |
     kubectl delete clusterrolebinding kubelet-bootstrap
     kubectl create clusterrolebinding kubelet-bootstrap --clusterrole=system:node-bootstrapper --user=kubelet-bootstrap
+    kubectl create clusterrolebinding kubernetes-admin  --clusterrole=cluster-admin --user=kubernetes
   args:
     chdir: /etc/kubernetes
     creates: /etc/kubernetes/manifests
   run_once: true
   delegate_to: k8s-master01
 
-- name: Ensure /etc/kubernetes/manifests directory
+- name: Ensure config directories
   become: true
   ansible.builtin.file:
-    path: /etc/kubernetes/manifests
+    path: "{{ item }}"
     state: directory
     owner: deploy
     group: deploy
     mode: go+rx
+  with_items:
+    - /etc/kubernetes/ssl
+    - /etc/kubernetes/manifests
 
-- name: Ensure /etc/kubernetes/ssl directory
+- name: change config files permissions
   become: true
   ansible.builtin.file:
-    path: /etc/kubernetes/ssl
-    state: directory
-    owner: deploy
-    group: deploy
-    mode: go+rx
-
-- name: Ensure /var/lib/kubelet directory
-  become: true
-  ansible.builtin.file:
-    path: /var/lib/kubelet
-    state: directory
-    owner: root
-    group: root
-    mode: go+rx
+    path: "{{ item }}"
+    mode: go+r
+  run_once: true
+  delegate_to: k8s-master01
+  with_items:
+    - /etc/kubernetes/kubelet-bootstrap.kubeconfig
+    - /etc/kubernetes/kube-proxy.kubeconfig
 
 - name: copy config files to k8s-nodes
   synchronize:
@@ -104,17 +106,38 @@
   with_items:
     - /etc/kubernetes/ssl/ca.pem
     - /etc/kubernetes/kubelet-bootstrap.kubeconfig
+    - /etc/kubernetes/kube-proxy.kubeconfig
 
-- name: Copy kubelet.yaml to /etc/kubernetes/
+- name: Copy kubelet.yaml and kube-proxy.yaml to /etc/kubernetes/
   template:
-    src: templates/kubelet.yaml
+    src: "templates/{{ item }}"
     dest: /etc/kubernetes/
+  with_items:
+    - kubelet.yaml
+    - kube-proxy.yaml
+
+- name: Ensure config directories
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: go+rx
+  with_items:
+    - /var/lib/kubelet
+    - /var/lib/kube-proxy
+    - /etc/kubernetes/ssl
+    - /etc/kubernetes/manifests
 
 - name: Copy kubelet.service to /lib/systemd/system
   become: true
   template:
-    src: templates/kubelet.service
+    src: "templates/{{ item }}"
     dest: /lib/systemd/system
+  with_items:
+    - kubelet.service
+    - kube-proxy.service
 
 - name: Just force systemd to reread configs
   become: true
@@ -124,12 +147,18 @@
 - name: Enable kubelet.service it is not masked
   become: true
   ansible.builtin.systemd:
-    name: kubelet.service
+    name: "{{ item }}"
     enabled: yes
     masked: no
+  with_items:
+    - kubelet.service
+    - kube-proxy.service
 
 - name: Make sure kubelet.service is running
   become: true
   ansible.builtin.systemd:
-    name: kubelet.service
+    name: "{{ item }}"
     state: started
+  with_items:
+    - kubelet.service
+    - kube-proxy.service

@@ -147,4 +147,13 @@ $ ansible-playbook -i hosts k8s-node.yml -u deploy -v
 
 ```bash
 $ kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate approve
+
+$ kubectl get nodes
+```
+
+#### 测试安装
+
+```bash
+$ kubectl create clusterrolebinding kubernetes-admin  --clusterrole=cluster-admin --user=kubernetes
+$ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
 ```

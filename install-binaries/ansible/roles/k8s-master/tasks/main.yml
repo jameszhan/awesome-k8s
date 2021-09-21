@@ -47,6 +47,7 @@
     - admin-csr.json
     - kube-controller-manager-csr.json
     - kube-scheduler-csr.json
+    - kube-proxy-csr.json
   run_once: true
   delegate_to: localhost
 
@@ -66,6 +67,7 @@
     cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes admin-csr.json | cfssljson -bare admin
     cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager
     cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-scheduler-csr.json | cfssljson -bare kube-scheduler
+    cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-proxy-csr.json | cfssljson -bare kube-proxy
   args:
     chdir: /tmp/kubernetes/ssl
     creates: /tmp/kubernetes/ssl/kube-apiserver.pem
@@ -104,6 +106,9 @@
     - kube-scheduler.csr
     - kube-scheduler-key.pem
     - kube-scheduler.pem
+    - kube-proxy.csr
+    - kube-proxy-key.pem
+    - kube-proxy.pem
 
 - name: get token_random
   shell: "head -c 16 /dev/urandom | od -An -t x | tr -d ' '"
