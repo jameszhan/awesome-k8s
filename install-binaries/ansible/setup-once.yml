@@ -1,0 +1,4 @@
+- name: k8s deployment
+  hosts: k8s_nodes
+  roles:
+    - setup-once

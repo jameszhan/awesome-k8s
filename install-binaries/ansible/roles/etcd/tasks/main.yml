@@ -1,6 +1,6 @@
 - name: Get etcd binary files
   unarchive:
-    src:  {{ binaries_fs }}/binaries/x86_64/etcd/etcd-v3.5.0-linux-amd64.tar.gz
+    src: "{{ binaries_fs }}/binaries/x86_64/etcd/etcd-v3.5.0-linux-amd64.tar.gz"
     dest: /tmp
     remote_src: yes
 
@@ -23,7 +23,7 @@
 - name: Get cfssl binary files
   become: true
   get_url:
-    url: {{ binaries_fs }}/binaries/x86_64/cfssl/{{ item.url }}
+    url: "{{ binaries_fs }}/binaries/x86_64/cfssl/{{ item.url }}"
     dest: /usr/local/bin/{{ item.target }}
     mode: '0755'
   with_items:
@@ -35,12 +35,14 @@
     - { "url": "cfssl-bundle_1.6.1_linux_amd64", "target": "cfssl-bundle" }
     - { "url": "mkbundle_1.6.1_linux_amd64", "target": "mkbundle" }
     - { "url": "multirootca_1.6.1_linux_amd64", "target": "multirootca" }
+  run_once: true
   delegate_to: localhost
 
 - name: ensure directory /tmp/etcd/ssl exists
   file:
     path: /tmp/etcd/ssl
     state: directory
+  run_once: true
   delegate_to: localhost
 
 - name: Copy ca-csr.json, ca-config.json, etcd-csr.json to /tmp/etcd/ssl
@@ -51,6 +53,7 @@
     - ca-csr.json
     - ca-config.json
     - etcd-csr.json
+  run_once: true
   delegate_to: localhost
 
 # cfssl gencert -initca ca-csr.json | cfssljson -bare ca
@@ -62,6 +65,7 @@
   args:
     chdir: /tmp/etcd/ssl
     creates: /tmp/etcd/ssl/*.pem
+  run_once: true
   delegate_to: localhost
 
 - name: ensure directory /etc/etcd/ssl exists

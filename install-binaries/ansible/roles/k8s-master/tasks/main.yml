@@ -6,7 +6,7 @@
 # https://storage.googleapis.com/kubernetes-release/release/v1.22.1/kubernetes-server-linux-amd64.tar.gz
 - name: Get k8s-server binary files
   ansible.builtin.unarchive:
-    src: {{ binaries_fs }}/binaries/x86_64/kubernetes/kubernetes-server-v1.21.4-linux-amd64.tar.gz
+    src: "{{ binaries_fs }}/binaries/x86_64/kubernetes/kubernetes-server-v1.21.4-linux-amd64.tar.gz"
     dest: /tmp
     remote_src: yes
 
@@ -110,9 +110,11 @@
   args:
     creates: /tmp/kubernetes/token.csv
   register: token_random
+  run_once: true
   delegate_to: localhost
 
 - debug: msg="{{token_random}}"
+  run_once: true
   delegate_to: localhost
 
 - name: /etc/kubernetes/ssl/token.csv
@@ -121,6 +123,7 @@
     force: false
     content: |
       {{ token_random.stdout_lines[0] }},kubelet-bootstrap,10001,"system:kubelet-bootstrap"
+  run_once: true
   delegate_to: localhost
 
 - name: copy token.csv to k8s-master01, k8s-master02 and k8s-master03

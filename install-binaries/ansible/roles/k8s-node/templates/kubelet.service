@@ -1,8 +1,8 @@
 [Unit]
 Description=Kubernetes Kubelet
 Documentation=https://github.com/kubernetes/kubernetes
-# After=docker.service
-# Requires=docker.service
+After=docker.service
+Requires=docker.service
 
 [Service]
 WorkingDirectory=/var/lib/kubelet

@@ -1,0 +1,6 @@
+- name: disable swap
+  become: true
+  shell: |
+    sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab
+    swapoff -a
+    

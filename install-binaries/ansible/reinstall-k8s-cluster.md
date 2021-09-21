@@ -89,9 +89,33 @@ $ systemctl status kube-controller-manager
 $ systemctl status kube-scheduler
 ```
 
+#### Remove Docker
+
+```bash
+$ ansible -i hosts k8s_nodes -m systemd -a "name=docker state=stopped enabled=no" -u deploy --become -v
+$ ansible -i hosts k8s_nodes -m systemd -a "name=docker.socket state=stopped enabled=no" -u deploy --become -v
+$ ansible -i hosts k8s_nodes -m systemd -a "name=containerd state=stopped enabled=no" -u deploy --become -v
+$ ansible -i hosts k8s_nodes -m systemd -a "daemon_reload=yes" -u deploy --become -v
+
+$ ansible -i hosts k8s_nodes -m shell -a "rm -v /usr/lib/systemd/system/docker.service" -u deploy --become -v
+$ ansible -i hosts k8s_nodes -m shell -a "rm -v /usr/lib/systemd/system/docker.socket" -u deploy --become -v
+$ ansible -i hosts k8s_nodes -m shell -a "rm -v /usr/lib/systemd/system/containerd.service" -u deploy --become -v
+
+$ ansible -i hosts k8s_nodes -m shell -a "rm -vrf /run/docker" -u deploy --become -v
+$ ansible -i hosts k8s_nodes -m shell -a "rm -vrf /run/containerd" -u deploy --become -v
+
+$ ansible -i hosts k8s_nodes -m shell -a "rm -vr /etc/docker" -u deploy --become -v
+$ ansible -i hosts k8s_nodes -m shell -a "rm -vrf /var/lib/docker" -u deploy --become -v
+$ ansible -i hosts k8s_nodes -m shell -a "rm -vrf /var/lib/containerd" -u deploy --become -v
+$ ansible -i hosts k8s_nodes -m shell -a "rm -vrf /var/lib/dockershim" -u deploy --become -v
+
+$ ansible -i hosts k8s_nodes -m reboot -u deploy --become -v
+```
+
 #### Install k8s Node Cluster
 
 ```bash
+# $ ansible -i hosts k8s_nodes -m shell -a "apt -y install apt-transport-https ca-certificates curl gnupg lsb-release" -u deploy --become -v
 $ ansible -i hosts all -m apt -a "name=rsync state=latest autoremove=yes" -u deploy --become -v
 $ ansible-playbook -i hosts k8s-node.yml -u deploy -v
 ```

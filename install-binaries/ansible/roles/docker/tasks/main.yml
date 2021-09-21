@@ -1,12 +1,27 @@
 ---
 # https://docs.docker.com/engine/install/binaries/
 - name: Get docker binary files
-  become: true
   unarchive:
-    src:  {{ binaries_fs }}/binaries/x86_64/docker/docker-20.10.8.tgz
-    dest: /usr/local/bin
+    src: "{{ binaries_fs }}/binaries/x86_64/docker/docker-20.10.8.tgz"
+    dest: /tmp
     remote_src: yes
+
+- name: get docker_binaries in remote /tmp/docker
+  ansible.builtin.find:
+    paths: "/tmp/docker"
+    recurse: false
+    file_type: file
+    patterns: '*'
+  register: docker_binaries
+
+- name: copy docker_binaries to /usr/local/bin
+  become: true
+  copy:
+    remote_src: yes
+    src: "{{ item.path }}"
+    dest: "/usr/local/bin"
     mode: ugo+x
+  loop: "{{ docker_binaries.files }}"
 
 - name: Ensure group "docker" exists
   become: true
@@ -21,6 +36,14 @@
     name: deploy
     groups: docker
     append: yes
+
+- name: Ensure /etc/docker directory exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/docker
+    state: directory
+    owner: root
+    group: root
 
 # https://kubernetes.io/zh/docs/setup/production-environment/container-runtimes/#docker
 - name: Change Cgroup Driver
@@ -50,20 +73,23 @@
     - docker.socket
     - docker.service
 
-- name: Just force systemd to reread configs
-  become: true
-  ansible.builtin.systemd:
-    daemon_reload: yes
-
 - name: Make sure docker services is running
   become: true
   ansible.builtin.systemd:
     name: "{{ item }}"
     state: started
   with_items:
-    - containerd.service
     - docker.socket
+    - containerd.service
     - docker.service
+
+- name: Reload docker service
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: yes
+    state: reloaded
+    name: docker.service
+
 
 #- name: docker run hello-world
 #  become: true

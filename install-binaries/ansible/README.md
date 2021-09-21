@@ -45,6 +45,8 @@ $ python -m http.server
 ```
 修改`group_vars/global_vars.yml`中的`binaries_fs`为`http://[YOUR-IP]:8000`。
 
+### 一次性任务
+
 #### 创建新用户`deploy`
 
 在创建新用户前，你只需要有任意一个用户可以免登到对应的服务器上即可。
@@ -53,23 +55,12 @@ $ python -m http.server
 $ ansible-playbook -i hosts -c paramiko --ask-pass --ask-become-pass user-deploy.yml -v
 
 $ ansible -i hosts all -m ping -u deploy
-
-$ ansible -i hosts all -m apt 
 ```
 
-#### 安装etcd
+#### 系统通用设置
 
 ```bash
-$ ansible -i hosts all -m shell -a "systemctl stop etcd" -u deploy -v --become
-$ ansible -i hosts all -m shell -a "systemctl disable etcd" -u deploy -v --become
-$ ansible -i hosts all -m shell -a "rm -fr /etc/etcd" -u deploy -v --become
-$ ansible -i hosts all -m shell -a "rm -fr /var/lib/etcd" -u deploy -v --become
-
-$ ansible-playbook -i hosts etcd.yml -u deploy -v
-```
-
-```bash
-$ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 endpoint health
+$ ansible-playbook -i hosts setup-once.yml -u deploy -v 
 ```
 
 #### 批量设置免登
@@ -78,5 +69,57 @@ $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/
 $ for h in k8s-master01 k8s-master02 k8s-master03; do ssh-copy-id -i ~/.ssh/id_rsa.pub james@$h; done
 ```
 
+## 安装集群
 
+### 安装etcd
 
+#### 清除安装记录
+
+```bash
+$ ansible -m script -a 'cleaner/clean-etcd.sh' -i hosts k8s_masters -u deploy --become -v
+
+$ ansible -i hosts k8s_masters -m reboot -u deploy --become -v
+```
+
+#### 全新安装
+
+```bash
+$ ansible-playbook -i hosts etcd.yml -u deploy -v
+```
+
+#### 测试安装
+
+```bash
+$ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --endpoints=http://127.0.0.1:2379 endpoint health
+$ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 endpoint health
+```
+
+### 安装k8s-master
+
+#### 清理master节点
+
+```bash
+$ ansible -m script -a 'cleaner/clean-k8s-master.sh' -i hosts k8s_masters -u deploy --become -v
+
+$ ansible -i hosts k8s_masters -m reboot -u deploy --become -v
+```
+
+#### 安装k8s master
+
+```bash
+$ ansible-playbook -i hosts k8s-master.yml -u deploy -v
+```
+
+#### 测试安装
+
+```bash
+$ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/kubernetes/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 endpoint health
+
+$ curl --insecure https://192.168.1.61:6443/
+$ curl --insecure https://192.168.1.62:6443/
+$ curl --insecure https://192.168.1.63:6443/
+
+$ kubectl cluster-info
+$ kubectl get componentstatuses
+$ kubectl get all --all-namespaces
+```
