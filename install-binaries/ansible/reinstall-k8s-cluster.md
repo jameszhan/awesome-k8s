@@ -92,5 +92,6 @@ $ systemctl status kube-scheduler
 #### Install k8s Node Cluster
 
 ```bash
+$ ansible -i hosts all -m apt -a "name=rsync state=latest autoremove=yes" -u deploy --become -v
 $ ansible-playbook -i hosts k8s-node.yml -u deploy -v
 ```

@@ -1,18 +1,16 @@
 [Unit]
 Description=Kubernetes Kubelet
 Documentation=https://github.com/kubernetes/kubernetes
-After=docker.service
-Requires=docker.service
+# After=docker.service
+# Requires=docker.service
 
 [Service]
 WorkingDirectory=/var/lib/kubelet
 ExecStart=/usr/local/bin/kubelet \
-  --bootstrap-kubeconfig=/etc/kubernetes/kubelet-bootstrap.kubeconfig \
+  --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.kubeconfig \
   --kubeconfig=/etc/kubernetes/kubelet.kubeconfig \
   --config=/etc/kubernetes/kubelet.yaml \
   --cert-dir=/etc/kubernetes/ssl \
-  --network-plugin=cni \
-  --rotate-certificates \
   --pod-infra-container-image={{ pod_infra_container_image }} \
   --alsologtostderr=true \
   --logtostderr=false \

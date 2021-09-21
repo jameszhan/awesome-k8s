@@ -34,9 +34,10 @@
   file:
     path: /tmp/kubernetes/ssl
     state: directory
+  run_once: true
   delegate_to: localhost
 
-- name: Copy json files to /etc/kubernetes/ssl
+- name: Copy json files to /tmp/kubernetes/ssl
   template:
     src: "templates/{{ item }}"
     dest: /tmp/kubernetes/ssl
@@ -46,15 +47,17 @@
     - admin-csr.json
     - kube-controller-manager-csr.json
     - kube-scheduler-csr.json
+  run_once: true
   delegate_to: localhost
 
-- name: Copy ca-key.pem,ca-config.json to /etc/kubernetes/ssl
+- name: Copy ca-key.pem,ca-config.json to /tmp/kubernetes/ssl
   copy:
     src: "/tmp/etcd/ssl/{{ item }}"
     dest: "/tmp/kubernetes/ssl"
   with_items:
     - ca.pem
     - ca-key.pem
+  run_once: true
   delegate_to: localhost
 
 - name: generate kube-apiserver.csr, kube-apiserver.pem, kube-apiserver-key.pem, admin.csr, admin.pem, admin-key.pem etc
@@ -66,6 +69,7 @@
   args:
     chdir: /tmp/kubernetes/ssl
     creates: /tmp/kubernetes/ssl/kube-apiserver.pem
+  run_once: true
   delegate_to: localhost
 
 - name: ensure directory /etc/kubernetes/ssl exists
