@@ -4,4 +4,5 @@
     - docker
     # - k8s-node
   vars_files:
+    - group_vars/global_vars.yml
     - group_vars/k8s_vars.yml
