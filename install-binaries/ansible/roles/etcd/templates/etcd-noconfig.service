@@ -22,7 +22,7 @@ ExecStart=/usr/local/bin/etcd \
   --listen-client-urls=https://{{ node_host }}:2379,http://127.0.0.1:2379 \
   --advertise-client-urls=https://{{ node_host }}:2379 \
   --initial-advertise-peer-urls=https://{{ node_host }}:2380 \
-  --initial-cluster={{ etcd_01_name }}=https://{{ etcd_01_host }}:2380,{{ etcd_02_name }}=https://{{ etcd_02_host }}:2380,{{ etcd_03_name }}=https://{{ etcd_03_host }}:2380 \
+  --initial-cluster={{ etcd01_name }}=https://{{ etcd01_host }}:2380,{{ etcd02_name }}=https://{{ etcd02_host }}:2380,{{ etcd03_name }}=https://{{ etcd03_host }}:2380 \
   --initial-cluster-token=etcd-cluster \
   --initial-cluster-state=new
 Restart=on-failure

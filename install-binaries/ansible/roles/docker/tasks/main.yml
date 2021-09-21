@@ -1,70 +1,71 @@
 ---
-# https://docs.docker.com/engine/install/ubuntu/
-
-# sudo apt-get remove docker docker-engine docker.io containerd runc
-- name: Remove old versions
+# https://docs.docker.com/engine/install/binaries/
+- name: Get docker binary files
   become: true
-  become_method: sudo
-  apt:
-    name: ['docker', 'docker-engine', 'docker.io', 'containerd', 'runc']
-    state: absent
-    purge: 'yes'
+  unarchive:
+    src:  {{ binaries_fs }}/binaries/x86_64/docker/docker-20.10.8.tgz
+    dest: /usr/local/bin
+    remote_src: yes
+    mode: ugo+x
 
-# sudo apt-get update
-# sudo apt-get install apt-transport-https ca-certificates curl gnupg lsb-release
-- name: Install dependencies
+- name: Ensure group "docker" exists
   become: true
-  become_method: sudo
-  apt:
-    name: ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'lsb-release']
-    update_cache: yes
-    state: latest
-
-# curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-- name: Check GPG key exists
-  stat:
-    path: /usr/share/keyrings/docker-archive-keyring.gpg
-  register: docker_archive_keyring
-
-- name: Add Docker’s official GPG key
-  shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-  when: 
-    - not docker_archive_keyring.stat.exists
-
-- name: Register lsb-release
-  shell: lsb_release -cs
-  register: ubuntu_code
-
-# echo \
-# "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
-#  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-- name: SET UP THE REPOSITORY
-  become: true
-  become_method: sudo
-  apt_repository:
-    repo: deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu {{ ubuntu_code['stdout'] }} stable
+  ansible.builtin.group:
+    name: docker
     state: present
-    filename: docker
-    update_cache: yes
 
-# sudo apt-get update; sudo apt-get install docker-ce docker-ce-cli containerd.io
-- name: INSTALL DOCKER ENGINE
+- name: Add the user 'deploy' to group 'docker'
   become: true
   become_method: sudo
-  apt:
-    name: ['docker-ce', 'docker-ce-cli', 'containerd.io']
-    update_cache: yes
-    state: latest
-  
+  ansible.builtin.user:
+    name: deploy
+    groups: docker
+    append: yes
+
 # https://kubernetes.io/zh/docs/setup/production-environment/container-runtimes/#docker
 - name: Change Cgroup Driver
   become: true
   template:
     src: templates/daemon.json
     dest: /etc/docker/daemon.json
-  notify: restart docker
 
-# - name: docker run hello-world
-#   become: true
-#   become_method: sudo
-#   command: docker run --rm hello-world
+- name: Copy docker services to /usr/lib/systemd/system/
+  become: true
+  template:
+    src: "templates/{{ item }}"
+    dest: /usr/lib/systemd/system/
+  with_items:
+    - containerd.service
+    - docker.socket
+    - docker.service
+  
+- name: Enable docker services and ensure it is not masked
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: yes
+    masked: no
+  with_items:
+    - containerd.service
+    - docker.socket
+    - docker.service
+
+- name: Just force systemd to reread configs
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: Make sure docker services is running
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+  with_items:
+    - containerd.service
+    - docker.socket
+    - docker.service
+
+#- name: docker run hello-world
+#  become: true
+#  become_method: sudo
+#  command: docker run --rm hello-world

@@ -1,6 +1,6 @@
 - name: Get etcd binary files
   unarchive:
-    src: http://192.168.1.6:8888/etcd-v3.5.0-linux-amd64.tar.gz
+    src:  {{ binaries_fs }}/binaries/x86_64/etcd/etcd-v3.5.0-linux-amd64.tar.gz
     dest: /tmp
     remote_src: yes
 
@@ -23,15 +23,18 @@
 - name: Get cfssl binary files
   become: true
   get_url:
-    url: http://192.168.1.6:8888/{{ item.url }}
+    url: {{ binaries_fs }}/binaries/x86_64/cfssl/{{ item.url }}
     dest: /usr/local/bin/{{ item.target }}
     mode: '0755'
   with_items:
-    - { "url": "cfssl_1.6.0_linux_amd64", "target": "cfssl" }
-    - { "url": "cfssljson_1.6.0_linux_amd64", "target": "cfssljson" }
-    - { "url": "cfssl-certinfo_1.6.0_linux_amd64", "target": "cfssl-certinfo" }
-    - { "url": "cfssl-newkey_1.6.0_linux_amd64", "target": "cfssl-newkey" }
-    - { "url": "cfssl-scan_1.6.0_linux_amd64", "target": "cfssl-scan" }
+    - { "url": "cfssl_1.6.1_linux_amd64", "target": "cfssl" }
+    - { "url": "cfssljson_1.6.1_linux_amd64", "target": "cfssljson" }
+    - { "url": "cfssl-certinfo_1.6.1_linux_amd64", "target": "cfssl-certinfo" }
+    - { "url": "cfssl-newkey_1.6.1_linux_amd64", "target": "cfssl-newkey" }
+    - { "url": "cfssl-scan_1.6.1_linux_amd64", "target": "cfssl-scan" }
+    - { "url": "cfssl-bundle_1.6.1_linux_amd64", "target": "cfssl-bundle" }
+    - { "url": "mkbundle_1.6.1_linux_amd64", "target": "mkbundle" }
+    - { "url": "multirootca_1.6.1_linux_amd64", "target": "multirootca" }
   delegate_to: localhost
 
 - name: ensure directory /tmp/etcd/ssl exists
@@ -79,7 +82,6 @@
     group: root
     mode: ugo+r,go-w
   with_items: ["ca.csr", "ca-key.pem", "ca.pem", "etcd.csr", "etcd-key.pem", "etcd.pem"]
-
 
 - name: copy config to /etc/etcd/etcd.conf
   become: true

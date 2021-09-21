@@ -4,7 +4,7 @@ ETCD_LISTEN_PEER_URLS="https://{{ node_host }}:2380"
 ETCD_LISTEN_CLIENT_URLS="https://{{ node_host }}:2379,http://127.0.0.1:2379"
 ETCD_ADVERTISE_CLIENT_URLS="https://{{ node_host }}:2379"
 ETCD_INITIAL_ADVERTISE_PEER_URLS="https://{{ node_host }}:2380"
-ETCD_INITIAL_CLUSTER="{{ etcd_01_name }}=https://{{ etcd_01_host }}:2380,{{ etcd_02_name }}=https://{{ etcd_02_host }}:2380,{{ etcd_03_name }}=https://{{ etcd_03_host }}:2380"
+ETCD_INITIAL_CLUSTER="{{ etcd01_name }}=https://{{ etcd01_host }}:2380,{{ etcd02_name }}=https://{{ etcd02_host }}:2380,{{ etcd03_name }}=https://{{ etcd03_host }}:2380"
 
 ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
 ETCD_INITIAL_CLUSTER_STATE="new"

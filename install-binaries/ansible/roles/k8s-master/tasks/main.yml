@@ -6,7 +6,7 @@
 # https://storage.googleapis.com/kubernetes-release/release/v1.22.1/kubernetes-server-linux-amd64.tar.gz
 - name: Get k8s-server binary files
   ansible.builtin.unarchive:
-    src: http://192.168.1.6:8888/kubernetes-server-v1.21.4-linux-amd64.tar.gz
+    src: {{ binaries_fs }}/binaries/x86_64/kubernetes/kubernetes-server-v1.21.4-linux-amd64.tar.gz
     dest: /tmp
     remote_src: yes
 

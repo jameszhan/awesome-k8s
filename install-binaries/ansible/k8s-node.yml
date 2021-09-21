@@ -1,6 +1,7 @@
 - name: k8s deployment
   hosts: k8s_nodes
   roles:
-    - k8s-node
+    - docker
+    # - k8s-node
   vars_files:
     - group_vars/k8s_vars.yml
