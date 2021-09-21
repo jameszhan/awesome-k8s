@@ -52,15 +52,20 @@
     src: templates/daemon.json
     dest: /etc/docker/daemon.json
 
-- name: Copy docker services to /usr/lib/systemd/system/
+- name: Copy docker services to /lib/systemd/system
   become: true
   template:
     src: "templates/{{ item }}"
-    dest: /usr/lib/systemd/system/
+    dest: /lib/systemd/system
   with_items:
     - containerd.service
     - docker.socket
     - docker.service
+
+- name: Just force systemd to reread configs
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: yes
   
 - name: Enable docker services and ensure it is not masked
   become: true
@@ -89,7 +94,6 @@
     daemon_reload: yes
     state: reloaded
     name: docker.service
-
 
 #- name: docker run hello-world
 #  become: true

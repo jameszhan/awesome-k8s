@@ -1,6 +1,6 @@
 - name: Get k8s-server binary files
   ansible.builtin.unarchive:
-    src: {{ binaries_fs }}/binaries/x86_64/kubernetes/kubernetes-server-v1.21.4-linux-amd64.tar.gz
+    src: "{{ binaries_fs }}/binaries/x86_64/kubernetes/kubernetes-server-v1.21.4-linux-amd64.tar.gz"
     dest: /tmp
     remote_src: yes
 
@@ -19,7 +19,7 @@
   shell: |
     awk -F "," '{print $1}' /etc/kubernetes/token.csv
   args:
-    creates: /etc/kubernetes/bootstrap-kubelet.kubeconfig
+    creates: /etc/kubernetes/kubelet-bootstrap.kubeconfig
   register: bootstrap_token
   run_once: true
   delegate_to: k8s-master01
@@ -28,41 +28,43 @@
   run_once: true
   delegate_to: k8s-master01
 
-# 生成 bootstrap-kubelet.kubeconfig 文件
+# 生成 kubelet-bootstrap.kubeconfig 文件
 # 1.TLS Bootstrap 用于自动给 kubelet 颁发证书，生成 /etc/kubernetes/kubelet.kubeconfig 文件
-# 2.node 节点启动，如果没有 /etc/kubernetes/kubelet.kubeconfig 文件，则会用 /etc/kubernetes/bootstrap-kubelet.kubeconfig
+# 2.node 节点启动，如果没有 /etc/kubernetes/kubelet.kubeconfig 文件，则会用 /etc/kubernetes/kubelet-bootstrap.kubeconfig
 #   申请一个 /etc/kubernetes/kubelet.kubeconfig 文件，然后才启动 kubelet 进程
 #   最后 kubelet 用 /etc/kubernetes/kubelet.kubeconfig 文件和 kube-apiserver 进行通信
 # token-id 和 token-secret 在 bootstrap/bootstrap.secret.yaml 中
-- name: generate /etc/kubernetes/bootstrap-kubelet.kubeconfig
+- name: generate /etc/kubernetes/kubelet-bootstrap.kubeconfig
   become: true
   shell: |
-    kubectl config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ k8s_master01_host }}:6443 --kubeconfig=bootstrap-kubelet.kubeconfig
-    kubectl config set-credentials kubelet-bootstrap --token={{ bootstrap_token.stdout_lines[0] }} --kubeconfig=bootstrap-kubelet.kubeconfig
-    kubectl config set-context kubelet-bootstrap@kubernetes --cluster=kubernetes --user=kubelet-bootstrap --kubeconfig=bootstrap-kubelet.kubeconfig
-    kubectl config use-context kubelet-bootstrap@kubernetes --kubeconfig=bootstrap-kubelet.kubeconfig
+    kubectl config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ k8s_master01_host }}:6443 --kubeconfig=kubelet-bootstrap.kubeconfig
+    kubectl config set-credentials kubelet-bootstrap --token={{ bootstrap_token.stdout_lines[0] }} --kubeconfig=kubelet-bootstrap.kubeconfig
+    kubectl config set-context default --cluster=kubernetes --user=kubelet-bootstrap --kubeconfig=kubelet-bootstrap.kubeconfig
+    kubectl config use-context default --kubeconfig=kubelet-bootstrap.kubeconfig
   args:
     chdir: /etc/kubernetes
-    creates: /etc/kubernetes/bootstrap-kubelet.kubeconfig
+    creates: /etc/kubernetes/kubelet-bootstrap.kubeconfig
   run_once: true
   delegate_to: k8s-master01
 
-- name: Change /etc/kubernetes/bootstrap-kubelet.kubeconfig permissions
+- name: Change /etc/kubernetes/kubelet-bootstrap.kubeconfig permissions
   become: true
   ansible.builtin.file:
-    path: /etc/kubernetes/bootstrap-kubelet.kubeconfig
+    path: /etc/kubernetes/kubelet-bootstrap.kubeconfig
     mode: go+r
   run_once: true
   delegate_to: k8s-master01
 
-- name: Ensure /etc/kubernetes/ssl directory
-  become: true
-  ansible.builtin.file:
-    path: /etc/kubernetes/ssl
-    state: directory
-    owner: deploy
-    group: deploy
-    mode: go+r
+# 8bf35d888b038c78d3657fb72c52d986,kubelet-bootstrap,10001,"system:kubelet-bootstrap"
+- name: create clusterrolebinding kubelet-bootstrap
+  shell: |
+    kubectl delete clusterrolebinding kubelet-bootstrap
+    kubectl create clusterrolebinding kubelet-bootstrap --clusterrole=system:node-bootstrapper --user=kubelet-bootstrap
+  args:
+    chdir: /etc/kubernetes
+    creates: /etc/kubernetes/manifests
+  run_once: true
+  delegate_to: k8s-master01
 
 - name: Ensure /etc/kubernetes/manifests directory
   become: true
@@ -71,7 +73,25 @@
     state: directory
     owner: deploy
     group: deploy
-    mode: go+r
+    mode: go+rx
+
+- name: Ensure /etc/kubernetes/ssl directory
+  become: true
+  ansible.builtin.file:
+    path: /etc/kubernetes/ssl
+    state: directory
+    owner: deploy
+    group: deploy
+    mode: go+rx
+
+- name: Ensure /var/lib/kubelet directory
+  become: true
+  ansible.builtin.file:
+    path: /var/lib/kubelet
+    state: directory
+    owner: root
+    group: root
+    mode: go+rx
 
 - name: copy config files to k8s-nodes
   synchronize:
@@ -83,18 +103,23 @@
   delegate_to: k8s-master01
   with_items:
     - /etc/kubernetes/ssl/ca.pem
-    - /etc/kubernetes/bootstrap-kubelet.kubeconfig
+    - /etc/kubernetes/kubelet-bootstrap.kubeconfig
 
 - name: Copy kubelet.yaml to /etc/kubernetes/
   template:
     src: templates/kubelet.yaml
     dest: /etc/kubernetes/
 
-- name: Copy kubelet.service to /usr/lib/systemd/system/
+- name: Copy kubelet.service to /lib/systemd/system
   become: true
   template:
     src: templates/kubelet.service
-    dest: /usr/lib/systemd/system/
+    dest: /lib/systemd/system
+
+- name: Just force systemd to reread configs
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: yes
 
 - name: Enable kubelet.service it is not masked
   become: true
@@ -102,11 +127,6 @@
     name: kubelet.service
     enabled: yes
     masked: no
-
-- name: Just force systemd to reread configs
-  become: true
-  ansible.builtin.systemd:
-    daemon_reload: yes
 
 - name: Make sure kubelet.service is running
   become: true

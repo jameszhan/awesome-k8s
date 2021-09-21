@@ -119,7 +119,32 @@ $ curl --insecure https://192.168.1.61:6443/
 $ curl --insecure https://192.168.1.62:6443/
 $ curl --insecure https://192.168.1.63:6443/
 
+$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.61:6443
+$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.61:6443/api/v1/nodes
+
 $ kubectl cluster-info
 $ kubectl get componentstatuses
 $ kubectl get all --all-namespaces
+```
+
+### 安装k8s工作节点
+
+#### 清除之间的安装
+
+```bash
+$ ansible -m script -a 'cleaner/clean-kubelet.sh' -i hosts k8s_nodes -u deploy --become -v
+$ ansible -m script -a 'cleaner/clean-docker.sh' -i hosts k8s_nodes -u deploy --become -v
+$ ansible -i hosts k8s_nodes -m reboot -u deploy --become -v
+```
+
+#### 安装docker和kubelet
+
+```bash
+$ ansible-playbook -i hosts k8s-node.yml -u deploy -v
+```
+
+>  确认`kubelet`服务启动成功后，接着到`master`上`Approve`一下`bootstrap`请求。
+
+```bash
+$ kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate approve
 ```
