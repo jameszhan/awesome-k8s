@@ -1,0 +1,26 @@
+- debug: msg="{{ansible_pkg_mgr}}"
+
+- name: Install haproxy keepalived (Debian based)
+  become: true
+  become_method: sudo
+  apt:
+    name: [ 'haproxy' ]
+    update_cache: yes
+    state: present
+  when: ansible_pkg_mgr == 'apt'
+
+- name: Install haproxy keepalived (Redhat based)
+  become: true
+  become_method: sudo
+  yum:
+    name: [ 'haproxy' ]
+    update_cache: yes
+    state: present
+  when: ansible_pkg_mgr == 'yum'
+
+- name: Copy haproxy.cfg to /etc/haproxy/haproxy.cfg
+  become: true
+  template:
+    src: templates/haproxy.cfg
+    dest: /etc/haproxy/
+  notify: restart-haproxy

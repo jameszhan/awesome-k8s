@@ -1,0 +1,8 @@
+- name: keepalived and haproxy
+  hosts: k8s_masters
+  roles:
+    - haproxy
+    - keepalived
+  vars_files:
+    - group_vars/global_vars.yml
+    - group_vars/keepalived_vars.yml

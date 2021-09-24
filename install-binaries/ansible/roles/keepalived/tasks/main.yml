@@ -1,0 +1,35 @@
+- debug: msg="{{ansible_pkg_mgr}}"
+
+- name: Install haproxy keepalived (Debian based)
+  become: true
+  become_method: sudo
+  apt:
+    name: [ 'keepalived' ]
+    update_cache: yes
+    state: present
+  when: ansible_pkg_mgr == 'apt'
+
+- name: Install haproxy keepalived (Redhat based)
+  become: true
+  become_method: sudo
+  yum:
+    name: [ 'keepalived' ]
+    update_cache: yes
+    state: present
+  when: ansible_pkg_mgr == 'yum'
+
+- name: Copy keepalived config files to /etc/keepalived
+  become: true
+  template:
+    src: "templates/{{ item }}"
+    dest: /etc/keepalived
+  with_items:
+    - check_apiserver.sh
+    - keepalived.conf
+
+- name: make check_apiserver.sh executable
+  become: true
+  ansible.builtin.file:
+    path: /etc/keepalived/check_apiserver.sh
+    mode: ugo+x
+  notify: restart-keepalived

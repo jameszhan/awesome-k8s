@@ -1,8 +1,14 @@
 binaries_fs: http://192.168.1.6:8888
 
+ha_proxy_port: 8443
+
 etcd01_host: 192.168.1.61
 etcd02_host: 192.168.1.62
 etcd03_host: 192.168.1.63
+
+k8s_master01_name: k8s-master01
+k8s_master02_name: k8s-master02
+k8s_master03_name: k8s-master03
 
 k8s_master01_host: 192.168.1.61
 k8s_master02_host: 192.168.1.62
