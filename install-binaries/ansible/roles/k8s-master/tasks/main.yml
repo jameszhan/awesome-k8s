@@ -189,7 +189,7 @@
 - name: generate /etc/kubernetes/ssl/kube.config
   become: true
   shell: |
-    kubectl config set-cluster kubernetes --certificate-authority=ca.pem --embed-certs=true --server=https://{{ node_host }}:6443 --kubeconfig=kube.config
+    kubectl config set-cluster kubernetes --certificate-authority=ca.pem --embed-certs=true --server=https://{{ ha_proxy_ip }}:{{ ha_proxy_port }} --kubeconfig=kube.config
     kubectl config set-credentials admin --client-certificate=admin.pem --client-key=admin-key.pem --embed-certs=true --kubeconfig=kube.config
     kubectl config set-context kubernetes --cluster=kubernetes --user=admin --kubeconfig=kube.config
     kubectl config use-context kubernetes --kubeconfig=kube.config

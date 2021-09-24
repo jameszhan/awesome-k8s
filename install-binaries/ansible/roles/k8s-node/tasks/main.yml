@@ -37,7 +37,7 @@
 - name: generate /etc/kubernetes/kubelet-bootstrap.kubeconfig
   become: true
   shell: |
-    kubectl config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ k8s_master01_host }}:6443 --kubeconfig=kubelet-bootstrap.kubeconfig
+    kubectl config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ ha_proxy_ip }}:{{ ha_proxy_port }} --kubeconfig=kubelet-bootstrap.kubeconfig
     kubectl config set-credentials kubelet-bootstrap --token={{ bootstrap_token.stdout_lines[0] }} --kubeconfig=kubelet-bootstrap.kubeconfig
     kubectl config set-context default --cluster=kubernetes --user=kubelet-bootstrap --kubeconfig=kubelet-bootstrap.kubeconfig
     kubectl config use-context default --kubeconfig=kubelet-bootstrap.kubeconfig
@@ -50,7 +50,7 @@
 - name: generate /etc/kubernetes/kube-proxy.kubeconfig
   become: true
   shell: |
-    kubectl config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ k8s_master01_host }}:6443 --kubeconfig=kube-proxy.kubeconfig
+    kubectl config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ ha_proxy_ip }}:{{ ha_proxy_port }} --kubeconfig=kube-proxy.kubeconfig
     kubectl config set-credentials kube-proxy --client-certificate=kube-proxy.pem --client-key=kube-proxy-key.pem --embed-certs=true --kubeconfig=kube-proxy.kubeconfig
     kubectl config set-context default --cluster=kubernetes --user=kube-proxy --kubeconfig=kube-proxy.kubeconfig
     kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig

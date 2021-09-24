@@ -71,50 +71,50 @@ $ for h in k8s-master01 k8s-master02 k8s-master03; do ssh-copy-id -i ~/.ssh/id_r
 
 ## 安装集群
 
-### 安装etcd
+### 安装前准备
 
-#### 清除安装记录
+如果需要重新安装，可以使用如下命令来清理历史安装记录。
+
+#### 清理node节点
 
 ```bash
-$ ansible -m script -a 'cleaner/clean-etcd.sh' -i hosts k8s_masters -u deploy --become -v
+$ ansible -m script -a 'cleaner/clean-kubelet.sh' -i hosts k8s_nodes -u deploy --become -v
+$ ansible -m script -a 'cleaner/clean-docker.sh' -i hosts k8s_nodes -u deploy --become -v
+$ ansible -i hosts k8s_nodes -m reboot -u deploy --become -v
+```
 
+#### 清理master节点
+
+```bash
+$ ansible -m script -a 'cleaner/clean-ha.sh' -i hosts k8s_masters -u deploy --become -v
+$ ansible -m script -a 'cleaner/clean-k8s-master.sh' -i hosts k8s_masters -u deploy --become -v
+$ ansible -m script -a 'cleaner/clean-etcd.sh' -i hosts k8s_masters -u deploy --become -v
 $ ansible -i hosts k8s_masters -m reboot -u deploy --become -v
 ```
 
-#### 全新安装
+### 全新安装
+
+#### 安装etcd
+
 
 ```bash
 $ ansible-playbook -i hosts etcd.yml -u deploy -v
 ```
 
-#### 测试安装
+测试安装
 
 ```bash
 $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --endpoints=http://127.0.0.1:2379 endpoint health
 $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 endpoint health
 ```
 
-```bash
-$ ansible-playbook -i hosts keepalived-haproxy.yml -u deploy -v
-```
-
-### 安装k8s-master
-
-#### 清理master节点
-
-```bash
-$ ansible -m script -a 'cleaner/clean-k8s-master.sh' -i hosts k8s_masters -u deploy --become -v
-
-$ ansible -i hosts k8s_masters -m reboot -u deploy --become -v
-```
-
-#### 安装k8s master
+#### 安装k8s服务组件
 
 ```bash
 $ ansible-playbook -i hosts k8s-master.yml -u deploy -v
 ```
 
-#### 测试安装
+测试安装
 
 ```bash
 $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/kubernetes/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 endpoint health
@@ -124,21 +124,26 @@ $ curl --insecure https://192.168.1.62:6443/
 $ curl --insecure https://192.168.1.63:6443/
 
 $ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.61:6443
-$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.61:6443/api/v1/nodes
+$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.61:6443/version
+```
+
+#### 安装高可用组件
+
+```bash
+$ ansible-playbook -i hosts k8s-ha.yml -u deploy -v
+```
+
+测试安装
+
+```bash
+$ cat ~/.kube/config
+
+$ curl --insecure https://192.168.1.200:8443/
+$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.200:8443/version
 
 $ kubectl cluster-info
 $ kubectl get componentstatuses
 $ kubectl get all --all-namespaces
-```
-
-### 安装k8s工作节点
-
-#### 清除之间的安装
-
-```bash
-$ ansible -m script -a 'cleaner/clean-kubelet.sh' -i hosts k8s_nodes -u deploy --become -v
-$ ansible -m script -a 'cleaner/clean-docker.sh' -i hosts k8s_nodes -u deploy --become -v
-$ ansible -i hosts k8s_nodes -m reboot -u deploy --become -v
 ```
 
 #### 安装docker和kubelet
@@ -155,7 +160,7 @@ $ kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate 
 $ kubectl get nodes
 ```
 
-#### 测试安装
+测试安装
 
 ```bash
 $ kubectl create clusterrolebinding kubernetes-admin  --clusterrole=cluster-admin --user=kubernetes

@@ -1,5 +1,6 @@
 binaries_fs: http://192.168.1.6:8888
 
+ha_proxy_ip: 192.168.1.200
 ha_proxy_port: 8443
 
 etcd01_host: 192.168.1.61
