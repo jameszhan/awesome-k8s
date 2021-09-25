@@ -1,4 +1,4 @@
-- debug: msg="{{ansible_pkg_mgr}}"
+- debug: msg="{{ ansible_pkg_mgr }}"
 
 - name: Install haproxy keepalived (Debian based)
   become: true

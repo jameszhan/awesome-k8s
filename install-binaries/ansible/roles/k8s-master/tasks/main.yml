@@ -118,7 +118,7 @@
   run_once: true
   delegate_to: localhost
 
-- debug: msg="{{token_random}}"
+- debug: msg="{{ token_random }}"
   run_once: true
   delegate_to: localhost
 

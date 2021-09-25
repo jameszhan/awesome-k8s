@@ -65,7 +65,7 @@
   shell: |
     kubectl delete clusterrolebinding kubelet-bootstrap
     kubectl create clusterrolebinding kubelet-bootstrap --clusterrole=system:node-bootstrapper --user=kubelet-bootstrap
-    kubectl create clusterrolebinding kubernetes-admin  --clusterrole=cluster-admin --user=kubernetes
+    kubectl create clusterrolebinding kubernetes-admin --clusterrole=cluster-admin --user=kubernetes
   args:
     chdir: /etc/kubernetes
     creates: /etc/kubernetes/manifests

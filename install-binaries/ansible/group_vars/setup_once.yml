@@ -1,0 +1,2 @@
+apt -o Dpkg::Options::="--force-confold" upgrade -q -y
+apt -o Dpkg::Options::="--force-confold" dist-upgrade -q -y

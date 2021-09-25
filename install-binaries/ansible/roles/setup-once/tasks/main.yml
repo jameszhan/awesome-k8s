@@ -1,6 +1,10 @@
-- name: disable swap
-  become: true
-  shell: |
-    sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab
-    swapoff -a
+- debug: msg="{{ ansible_pkg_mgr }}"
+- debug: msg="{{ ansible_distribution }}"
+- debug: msg="{{ ansible_distribution_major_version }}"
+
+#- name: disable swap
+#  become: true
+#  shell: |
+#    sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab
+#    swapoff -a
     
