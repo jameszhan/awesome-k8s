@@ -19,7 +19,7 @@
     excludes: '*.docker_tag,*.tar,kubelet,kube-proxy,kube-proxy'
   register: executable_files
 
-- debug: msg="{{executable_files}}"
+- debug: msg="{{ executable_files }}"
 
 - name: copy executable-files to /usr/local/bin
   become: true
@@ -189,7 +189,7 @@
 - name: generate /etc/kubernetes/ssl/kube.config
   become: true
   shell: |
-    kubectl config set-cluster kubernetes --certificate-authority=ca.pem --embed-certs=true --server=https://{{ node_host }}:6443 --kubeconfig=kube.config
+    kubectl config set-cluster kubernetes --certificate-authority=ca.pem --embed-certs=true --server=https://{{ ha_proxy_ip }}:{{ ha_proxy_port }} --kubeconfig=kube.config
     kubectl config set-credentials admin --client-certificate=admin.pem --client-key=admin-key.pem --embed-certs=true --kubeconfig=kube.config
     kubectl config set-context kubernetes --cluster=kubernetes --user=admin --kubeconfig=kube.config
     kubectl config use-context kubernetes --kubeconfig=kube.config
@@ -259,14 +259,14 @@
   template:
     src: "templates/{{ item }}"
     dest: /etc/kubernetes/
-  with_items: ["kube-controller-manager.conf", "kube-scheduler.conf"]
+  with_items: [ "kube-controller-manager.conf", "kube-scheduler.conf" ]
 
 - name: Copy kube-controller-manager.service and kube-scheduler.service to /usr/lib/systemd/system/
   become: true
   template:
     src: "templates/{{ item }}"
     dest: /usr/lib/systemd/system/
-  with_items: ["kube-controller-manager.service", "kube-scheduler.service"]
+  with_items: [ "kube-controller-manager.service", "kube-scheduler.service" ]
 
 - name: Enable kube-controller-manager.service and kube-scheduler.service and ensure it is not masked
   become: true
@@ -274,7 +274,7 @@
     name: "{{ item }}"
     enabled: yes
     masked: no
-  with_items: ["kube-controller-manager.service", "kube-scheduler.service"]
+  with_items: [ "kube-controller-manager.service", "kube-scheduler.service" ]
 
 - name: Just force systemd to reread configs
   become: true
@@ -286,6 +286,6 @@
   ansible.builtin.systemd:
     name: "{{ item }}"
     state: started
-  with_items: ["kube-controller-manager.service", "kube-scheduler.service"]
+  with_items: [ "kube-controller-manager.service", "kube-scheduler.service" ]
 
 

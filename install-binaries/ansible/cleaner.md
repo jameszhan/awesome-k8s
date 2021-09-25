@@ -7,6 +7,12 @@ $ ansible -m script -a 'cleaner/clean-docker.sh' -i hosts k8s_nodes -u deploy --
 $ ansible -i hosts k8s_nodes -m reboot -u deploy --become -v
 ```
 
+#### 清理ha配置
+
+```bash
+$ ansible -m script -a 'cleaner/clean-ha.sh' -i hosts k8s_masters -u deploy --become -v
+```
+
 #### 清理master节点
 
 ```bash
