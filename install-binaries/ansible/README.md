@@ -2,7 +2,7 @@
 
 #### 安装`Ansible`
 
-以下命令都是基于[ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html)来执行，如果你本地安装了python，可以使用命令`python -m pip install ansible`来安装。
+以下命令都是基于 [ansible](https://docs.ansible.com/ansible/latest/installation_guide/index.html) 来执行，如果你本地安装了python，可以使用命令`python -m pip install ansible`来安装。
 
 #### 准备安装文件
 
