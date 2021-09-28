@@ -1,0 +1,8 @@
+[k8s_masters]
+k8s-master01 ansible_host=192.168.1.61 node_host=192.168.1.61 etcd_name=etcd-01 keepalived_priority=200 keepalived_state=MASTER peer_01=192.168.1.62 peer_02=192.168.1.63
+k8s-master02 ansible_host=192.168.1.62 node_host=192.168.1.62 etcd_name=etcd-02 keepalived_priority=150 keepalived_state=BACKUP peer_01=192.168.1.61 peer_02=192.168.1.63
+k8s-master03 ansible_host=192.168.1.63 node_host=192.168.1.63 etcd_name=etcd-03 keepalived_priority=100 keepalived_state=BACKUP peer_01=192.168.1.61 peer_02=192.168.1.62
+
+[k8s_nodes]
+k8s-node021 ansible_host=192.168.1.101 node_host=192.168.1.101
+k8s-node022 ansible_host=192.168.1.102 node_host=192.168.1.102
