@@ -1,10 +1,118 @@
-- debug: msg="{{ ansible_pkg_mgr }}"
-- debug: msg="{{ ansible_distribution }}"
-- debug: msg="{{ ansible_distribution_major_version }}"
+# - debug: msg="{{ ansible_pkg_mgr }}"
+# - debug: msg="{{ ansible_distribution }}"
+# - debug: msg="{{ ansible_distribution_major_version }}"
+# - debug: msg="{{ ansible_hostname }}"
+# - debug: msg="{{ ansible_interfaces }}"
 
-#- name: disable swap
-#  become: true
-#  shell: |
-#    sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab
-#    swapoff -a
-    
+- name: load lsb_release -sc
+  shell: lsb_release -sc
+  register: lsb_release_sc_data
+
+- name: load lsb_release -si
+  shell: lsb_release -si
+  register: lsb_release_si_data
+
+- name: set facts
+  set_fact:
+    lsb_release_sc: "{{ lsb_release_sc_data.stdout_lines[0] }}"
+    lsb_release_si: "{{ lsb_release_si_data.stdout_lines[0] }}"
+
+- name: Copy ubuntu_apt_sources.list to /etc/apt/
+  become: true
+  shell: cp sources.list sources.list_bak
+  args:
+    chdir: /etc/apt/
+    creates: /etc/apt/sources.list_bak
+  when:
+    - lsb_release_si == 'Ubuntu' or lsb_release_si == 'Debian'
+
+- name: Copy ubuntu_apt_sources.list to /etc/apt/
+  become: true
+  template:
+    src: templates/ubuntu_apt_sources.list
+    dest: /etc/apt/sources.list
+  when:
+    - lsb_release_si == 'Ubuntu'
+    - mirrors_url is defined
+  notify: reload-apt
+
+- name: Copy debian_apt_sources.list to /etc/apt/
+  become: true
+  template:
+    src: templates/debian_apt_sources.list
+    dest: /etc/apt/sources.list
+  when:
+    - lsb_release_si == 'Debian' 
+    - mirrors_url is defined
+  notify: reload-apt
+
+- name: Install coreutils procps net-tools sysstat
+  become: true
+  become_method: sudo
+  apt:
+    name: [ 'coreutils', 'procps', 'net-tools', 'sysstat', 'bash-completion' ]
+    update_cache: yes
+    state: present
+  when: lsb_release_si == 'Ubuntu' or lsb_release_si == 'Debian'
+
+- name: Enable IPVS
+  become: true
+  become_method: sudo
+  apt:
+    name: [ 'ipvsadm', 'ipset', 'conntrack', 'libseccomp2' ]
+    update_cache: yes
+    state: present
+  when: lsb_release_si == 'Ubuntu' or lsb_release_si == 'Debian'
+
+- name: Copy /etc/modules-load.d/ipvs.conf
+  become: true
+  shell: |
+    cat <<- \EOF > /etc/modules-load.d/ipvs.conf
+    module=(
+      overlay
+      ip_vs
+      ip_vs_rr
+      ip_vs_wrr
+      ip_vs_lc
+      ip_vs_wlc
+      ip_vs_lblc
+      ip_vs_lblcr
+      ip_vs_sh
+      ip_vs_dh
+      ip_vs_fo
+      ip_vs_nq
+      ip_vs_sed
+      ip_vs_ftp
+      br_netfilter
+      bridge
+      nf_conntrack
+      nf_conntrack_ipv4
+      nf_conntrack_ipv6
+      ip_tables
+      ip_set
+      xt_set
+      ipt_set
+      ipt_rpfilter
+      ipt_REJECT
+      ipip
+    )
+    EOF
+
+- name: Enable systemd-modules-load started
+  become: true
+  ansible.builtin.systemd:
+    name: systemd-modules-load.service
+    enabled: yes
+    started: yes
+    masked: no
+
+
+
+
+
+# - name: disable swap
+#   become: true
+#   shell: |
+#     sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab
+#     swapoff -a && sysctl -w vm.swappiness=0
+

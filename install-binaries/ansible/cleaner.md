@@ -1,3 +1,9 @@
+#### 恢复原始配置
+
+```bash
+$ ansible -i hosts all -m shell -a "mv /etc/apt/sources.list_bak /etc/apt/sources.list" -u deploy --become -v
+```
+
 
 #### 清理node节点
 

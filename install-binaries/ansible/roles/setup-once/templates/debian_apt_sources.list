@@ -1,0 +1,11 @@
+# mirrors_url="https://mirrors.tuna.tsinghua.edu.cn"
+# mirrors_url="https://mirrors.ustc.edu.cn"
+
+deb {{ mirrors_url }}/debian {{ lsb_release_sc }} main
+deb-src {{ mirrors_url }}/debian {{ lsb_release_sc }} main
+
+deb {{ mirrors_url }}/debian-security {{ lsb_release_sc }}-security main contrib
+deb-src {{ mirrors_url }}/debian-security {{ lsb_release_sc }}-security main contrib
+
+deb {{ mirrors_url }}/debian {{ lsb_release_sc }}-updates main contrib
+deb-src {{ mirrors_url }}/debian {{ lsb_release_sc }}-updates main contrib

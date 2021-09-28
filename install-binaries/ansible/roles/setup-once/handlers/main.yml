@@ -1,0 +1,9 @@
+- name: reload-apt
+  become: true
+  shell: |
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -y
+    apt-get -o Dpkg::Options::="--force-confold" upgrade -q -y
+    apt-get -o Dpkg::Options::="--force-confold" dist-upgrade -q -y
+    apt-get autoremove -y
+    apt-get autoclean -y

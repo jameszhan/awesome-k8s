@@ -1,4 +1,8 @@
 - name: k8s deployment
-  hosts: k8s_nodes
+  hosts: 
+    - k8s_masters
+    - k8s_nodes
   roles:
     - setup-once
+  vars_files:
+    - group_vars/setup_once.yml
