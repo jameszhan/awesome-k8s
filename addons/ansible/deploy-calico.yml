@@ -1,0 +1,6 @@
+- name: keepalived and haproxy
+  hosts: k8s_master01
+  roles:
+    - calico
+  vars_files:
+    - group_vars/calico_vars.yml

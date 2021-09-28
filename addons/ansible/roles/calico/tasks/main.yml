@@ -1,0 +1,22 @@
+- name: cat /etc/etcd/ssl/ca.pem | base64 | tr -d '\n'
+  shell: "cat {{ etcd_ca_path }} | base64 | tr -d '\n'"
+  register: etcd_ca_base64_data
+
+- name: cat /etc/etcd/ssl/etcd-key.pem | base64 | tr -d '\n'
+  shell: "cat {{ etcd_key_path }} | base64 | tr -d '\n'"
+  register: etcd_key_base64_data
+
+- name: cat /etc/etcd/ssl/etcd.pem | base64 | tr -d '\n'
+  shell: "cat {{ etcd_cert_path }} | base64 | tr -d '\n'"
+  register: etcd_cert_path_data
+
+- name: set etcd facts
+  set_fact:
+    etcd_ca_base64: "{{ etcd_ca_base64_data.stdout_lines[0] }}"
+    etcd_key_base64: "{{ etcd_key_base64_data.stdout_lines[0] }}"
+    etcd_cert_path: "{{ etcd_cert_path_data.stdout_lines[0] }}"
+
+- name: Copy calico-etcd.yaml files to /tmp
+  template:
+    src: calico-etcd.yaml
+    dest: /tmp
