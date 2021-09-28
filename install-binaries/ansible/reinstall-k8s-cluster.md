@@ -117,6 +117,10 @@ $ ansible -i hosts k8s_nodes -m reboot -u deploy --become -v
 ```bash
 # $ ansible -i hosts k8s_nodes -m shell -a "apt -y install apt-transport-https ca-certificates curl gnupg lsb-release" -u deploy --become -v
 $ ansible -i hosts all -m apt -a "name=rsync state=latest autoremove=yes" -u deploy --become -v
+# Fix reboot shutdown missing
+$ ansible -i hosts all -m apt -a "name=systemd-sysv state=latest autoremove=yes" -u deploy --become -v
+
+
 $ ansible-playbook -i hosts k8s-node.yml -u deploy -v
 ```
 

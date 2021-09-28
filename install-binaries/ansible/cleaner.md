@@ -1,7 +1,8 @@
 #### 恢复原始配置
 
 ```bash
-$ ansible -i hosts all -m shell -a "mv /etc/apt/sources.list_bak /etc/apt/sources.list" -u deploy --become -v
+$ ansible -m script -a 'cleaner/clean-setup-once.sh' -i hosts all -u deploy --become -v
+$ ansible -i hosts all -m reboot -u deploy --become -v
 ```
 
 
