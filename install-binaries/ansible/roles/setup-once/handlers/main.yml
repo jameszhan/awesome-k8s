@@ -7,3 +7,51 @@
     apt-get -o Dpkg::Options::="--force-confold" dist-upgrade -q -y
     apt-get autoremove -y
     apt-get autoclean -y
+
+- name: restart-chrony
+  become: true
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: chrony
+
+- name: chronyc-makestep
+  become: true
+  become_method: sudo
+  shell: chronyc makestep
+
+- name: sysctl-system
+  become: true
+  become_method: sudo
+  shell: |
+    sysctl --system
+    modprobe br_netfilter
+
+- name: sysctl-k8s
+  become: true
+  sysctl: 
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_file: /etc/sysctl.d/k8s.conf
+    sysctl_set: yes
+  with_items:
+    - name: net.bridge.bridge-nf-call-iptables
+      value: 1
+    - name: net.bridge.bridge-nf-call-ip6tables
+      value: 1
+    - name: net.ipv4.ip_forward
+      value: 1
+    - name: net.ipv4.tcp_keepalive_time
+      value: 600
+    - name: net.ipv4.tcp_keepalive_intvl
+      value: 30
+    - name: net.ipv4.tcp_keepalive_probes
+      value: 10
+
+- name: swapoff-a
+  become: true
+  shell: swapoff -a
+
+- name: ulimit-shn-65535
+  become: true
+  shell: ulimit -SHn 65535

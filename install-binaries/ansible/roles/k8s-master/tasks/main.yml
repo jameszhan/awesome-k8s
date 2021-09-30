@@ -19,7 +19,7 @@
     excludes: '*.docker_tag,*.tar,kubelet,kube-proxy,kube-proxy'
   register: executable_files
 
-- debug: msg="{{ executable_files }}"
+# - debug: msg="{{ executable_files }}"
 
 - name: copy executable-files to /usr/local/bin
   become: true
