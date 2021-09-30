@@ -55,32 +55,6 @@
     - mirrors_url is defined
   notify: reload-apt
 
-- name: run once setup
-  become: true
-  shell: |
-    swapoff -a
-    timedatectl set-timezone "{{ timezone }}"
-    timedatectl set-ntp true
-
-# sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab
-# sysctl -w vm.swappiness=0
-- name: disable swap
-  become: true
-  lineinfile:
-    path: /etc/fstab
-    regexp: 'swap'
-    state: absent
-  
-# ulimit -SHn 65535
-- name: config unlimit
-  become: true
-  lineinfile:
-    path: /etc/security/limits.conf
-    regexp: '{{ item.regexp }}'
-    line: "{{ item.line }}"
-    state: present
-  loop: "{{ ulimit_conf }}"
-
 - name: Install coreutils procps net-tools sysstat etc
   become: true
   become_method: sudo
@@ -89,6 +63,73 @@
     update_cache: yes
     state: present
   when: lsb_release_si == 'Ubuntu' or lsb_release_si == 'Debian'
+
+- name: Remove ntpd via apt
+  become: true
+  become_method: sudo
+  apt:
+    name: [ 'ntpd' ]
+    update_cache: yes
+    state: absent
+  when: ansible_pkg_mgr == 'apt'
+
+- name: Remove ntpd via yum
+  become: true
+  become_method: sudo
+  yum:
+    name: [ 'ntpd' ]
+    update_cache: yes
+    state: absent
+  when: ansible_pkg_mgr == 'yum'
+
+- name: Install chrony via apt
+  become: true
+  become_method: sudo
+  apt:
+    name: [ 'chrony' ]
+    update_cache: yes
+    state: present
+  when: ansible_pkg_mgr == 'apt'
+
+- name: Install chrony via yum
+  become: true
+  become_method: sudo
+  yum:
+    name: [ 'chrony' ]
+    update_cache: yes
+    state: present
+  when: ansible_pkg_mgr == 'yum'
+
+- name: get chrony version
+  become: true
+  shell: chronyd --version | grep -o -E 'version\s*[0-9.]+' | awk '{print $2}'
+  register: chronyd_version_data
+ 
+- name: set facts for chrony version
+  set_fact:
+    chrony_version: "{{ chronyd_version_data.stdout_lines[0] }}"
+
+- name: Setup timezone and ntp
+  become: true
+  shell: |
+    timedatectl set-timezone "{{ timezone }}"
+    timedatectl set-ntp true
+
+- name: backup /etc/chrony/chrony.conf
+  become: true
+  shell: cp chrony.conf chrony.conf.bak
+  args:
+    chdir: /etc/chrony
+    creates: /etc/chrony/chrony.conf.bak
+
+- name: copy to /etc/chrony/chrony.conf
+  become: true
+  template:
+    src: templates/chrony.conf
+    dest: /etc/chrony
+  notify: 
+    - restart-chrony
+    - chronyc-makestep
 
 - name: Enable IPVS
   become: true
@@ -104,36 +145,16 @@
   ansible.builtin.copy:
     dest: /etc/modules-load.d/k8s.conf
     content: |
-      module=(
-        overlay
-        ip_vs
-        ip_vs_rr
-        ip_vs_wrr
-        ip_vs_lc
-        ip_vs_wlc
-        ip_vs_sh
-        ip_vs_dh
-        br_netfilter
-        nf_conntrack
-      )
-
-- name: modprobe br_netfilter
-  become: true
-  shell: modprobe br_netfilter
-
-- name: Enable systemd-modules-load started
-  become: true
-  ansible.builtin.systemd:
-    name: systemd-modules-load.service
-    enabled: yes
-    masked: no
-
-- name: Start systemd-modules-load started
-  become: true
-  ansible.builtin.systemd:
-    name: systemd-modules-load.service
-    daemon_reload: yes
-    state: started
+      overlay
+      ip_vs
+      ip_vs_rr
+      ip_vs_wrr
+      ip_vs_lc
+      ip_vs_wlc
+      ip_vs_sh
+      ip_vs_dh
+      br_netfilter
+      nf_conntrack
 
 # 修改linux的内核参数，添加网桥过滤和地址转发功能
 - name: Setup sysctl for k8s.conf
@@ -147,24 +168,48 @@
       net.ipv4.tcp_keepalive_time = 600
       net.ipv4.tcp_keepalive_intvl = 30
       net.ipv4.tcp_keepalive_probes = 10
+  notify:
+    - sysctl-system
+    - sysctl-k8s
 
-- name: sysctl k8s.conf
+# - name: modprobe br_netfilter
+#   become: true
+#   shell: modprobe br_netfilter
+
+# - name: Enable systemd-modules-load started
+#   become: true
+#   ansible.builtin.systemd:
+#     name: systemd-modules-load.service
+#     enabled: yes
+#     masked: no
+
+# - name: Start systemd-modules-load started
+#   become: true
+#   ansible.builtin.systemd:
+#     name: systemd-modules-load.service
+#     daemon_reload: yes
+#     state: started
+
+# sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab
+# sysctl -w vm.swappiness=0
+- name: disable swap
   become: true
-  sysctl: 
-    name: "{{ item.name }}"
-    value: "{{ item.value }}"
-    sysctl_file: /etc/sysctl.d/k8s.conf
-    sysctl_set: yes
-  with_items:
-    - name: net.bridge.bridge-nf-call-iptables
-      value: 1
-    - name: net.bridge.bridge-nf-call-ip6tables
-      value: 1
-    - name: net.ipv4.ip_forward
-      value: 1
-    - name: net.ipv4.tcp_keepalive_time
-      value: 600
-    - name: net.ipv4.tcp_keepalive_intvl
-      value: 30
-    - name: net.ipv4.tcp_keepalive_probes
-      value: 10
+  lineinfile:
+    path: /etc/fstab
+    regexp: 'swap'
+    state: absent
+  notify: swapoff-a
+  when: role == 'worker'
+
+# ulimit -SHn 65535
+- name: config unlimit
+  become: true
+  lineinfile:
+    path: /etc/security/limits.conf
+    regexp: '{{ item.regexp }}'
+    line: "{{ item.line }}"
+    state: present
+  loop: "{{ ulimit_conf }}"
+  notify: ulimit-shn-65535
+
+

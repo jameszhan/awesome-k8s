@@ -60,7 +60,7 @@ $ kubectl get componentstatuses
 $ kubectl get all --all-namespaces
 
 # 接受新加入节点申请
-$ kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate approv
+$ kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate approve
 
 $ kubectl get nodes
 

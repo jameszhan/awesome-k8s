@@ -1,3 +1,5 @@
+etcd_endpoints: https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379
 etcd_key_path: /etc/etcd/ssl/etcd-key.pem
 etcd_cert_path: /etc/etcd/ssl/etcd.pem
 etcd_ca_path: /etc/etcd/ssl/ca.pem
+calico_ipv4_cidr: 10.244.0.0/16

@@ -1,5 +1,5 @@
 - name: keepalived and haproxy
-  hosts: k8s_master01
+  hosts: k8s_masters
   roles:
     - calico
   vars_files:
