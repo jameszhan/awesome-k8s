@@ -80,7 +80,7 @@
   template:
     src: templates/daemon.json
     dest: /etc/docker/daemon.json
-  notify: restart-docker
+  notify: restart-docker-service
 
 # - name: docker run hello-world
 #   become: true
