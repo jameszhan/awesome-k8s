@@ -9,7 +9,7 @@ $ ansible-playbook -i hosts -c paramiko --ask-pass --ask-become-pass user-deploy
 ```
 
 详细脚本过程参考：
-- [Ubuntu环境下新增新用户](manual-sop/01.add-deploy-user.md)
+- [Ubuntu环境下新增新用户](01.add-deploy-user.md)
 
 
 ```bash
