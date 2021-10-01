@@ -5,7 +5,7 @@
 - mussh的全称是MUltihost SSH Wrapper，它其实是一个SSH封装器，由一个shell脚本实现。通过mussh可以实现批量管理多台远程主机的功能。
 - dmidecode: 查询系统硬件信息
 
-- ![iptables常用主选项](../../appendix/linux-commands/images/iptables-options.jpg)
+- ![iptables常用主选项](images/iptables-options.jpg)
 
 分布式块设备复制（Distributed Replicated Block Device，DRBD），是一种基于软件的、基于网络的块复制存储解决方案，主要用于对服务器之间的磁盘、分区、逻辑卷等进行数据镜像。当用户将数据写入本地磁盘时，还会将数据发送到网络中另一台主机的磁盘上，这样本地主机（主节点）与远程主机（备节点）的数据就可以保证实时同步，当本地主机出现问题，远程主机上还保留着一份相同的数据，可以继续使用，保证了数据的安全。
 
