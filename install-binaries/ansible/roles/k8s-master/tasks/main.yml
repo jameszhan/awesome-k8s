@@ -12,7 +12,7 @@
 
 - name: get executable-files in remote /tmp/kubernetes/server/bin
   ansible.builtin.find:
-    paths: "/tmp/kubernetes/server/bin"
+    paths: /tmp/kubernetes/server/bin
     recurse: false
     file_type: file
     patterns: '*'
@@ -26,7 +26,7 @@
   copy:
     remote_src: yes
     src: "{{ item.path }}"
-    dest: "/usr/local/bin"
+    dest: /usr/local/bin
     mode: '755'
   loop: "{{ executable_files.files }}"
 
@@ -54,7 +54,7 @@
 - name: Copy ca-key.pem,ca-config.json to /tmp/kubernetes/ssl
   copy:
     src: "/tmp/etcd/ssl/{{ item }}"
-    dest: "/tmp/kubernetes/ssl"
+    dest: /tmp/kubernetes/ssl
   with_items:
     - ca.pem
     - ca-key.pem
@@ -124,7 +124,7 @@
 
 - name: /etc/kubernetes/ssl/token.csv
   ansible.builtin.copy:
-    dest: "/tmp/kubernetes/token.csv"
+    dest: /tmp/kubernetes/token.csv
     force: false
     content: |
       {{ token_random.stdout_lines[0] }},kubelet-bootstrap,10001,"system:kubelet-bootstrap"
@@ -134,8 +134,8 @@
 - name: copy token.csv to k8s-master01, k8s-master02 and k8s-master03
   become: true
   copy:
-    src: "/tmp/kubernetes/token.csv"
-    dest: "/etc/kubernetes/token.csv"
+    src: /tmp/kubernetes/token.csv
+    dest: /etc/kubernetes/token.csv
     owner: root
     group: root
     mode: ugo+r,go-w
@@ -143,7 +143,7 @@
 - name: Copy kube-apiserver.conf config to /etc/kubernetes
   become: true
   template:
-    src: "templates/kube-apiserver.conf"
+    src: templates/kube-apiserver.conf
     dest: /etc/kubernetes/
 
 - name: Copy kube-apiserver.service to /usr/lib/systemd/system/
@@ -210,8 +210,8 @@
   become: true
   copy:
     remote_src: yes
-    src: "/etc/kubernetes/ssl/kube.config"
-    dest: "/home/deploy/.kube/config"
+    src: /etc/kubernetes/ssl/kube.config
+    dest: /home/deploy/.kube/config
     owner: deploy
     group: deploy
     mode: u+rw,g-rwx,o-rwx

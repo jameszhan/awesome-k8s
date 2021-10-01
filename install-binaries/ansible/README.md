@@ -7,6 +7,7 @@
 #### 准备安装文件
 
 > 为了加快安装速度，建议提前把一下文件下载到本地。
+
 ```conf
 binaries
 └── x86_64
@@ -40,9 +41,11 @@ binaries
 - [kubernetes](https://storage.googleapis.com/kubernetes-release)
 
 按以上目录结构组织文件，按以下方式启动本地文件服务
+
 ```bash
 $ python -m http.server
 ```
+
 修改`group_vars/global_vars.yml`中的`binaries_fs`为`http://[YOUR-IP]:8000`。
 
 ### 一次性任务
@@ -152,7 +155,7 @@ $ kubectl get all --all-namespaces
 $ ansible-playbook -i hosts k8s-node.yml -u deploy -v
 ```
 
->  确认`kubelet`服务启动成功后，接着到`master`上`Approve`一下`bootstrap`请求。
+> 确认`kubelet`服务启动成功后，接着到`master`上`Approve`一下`bootstrap`请求。
 
 ```bash
 $ kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate approve

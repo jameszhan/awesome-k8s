@@ -1,0 +1,88 @@
+# https://docs.docker.com/engine/install/ubuntu/
+
+# sudo apt-get remove docker docker-engine docker.io containerd runc
+- name: Remove old versions
+  become: true
+  become_method: sudo
+  apt:
+    name: [ 'docker', 'docker-engine', 'docker.io', 'containerd', 'runc' ]
+    state: absent
+    purge: 'yes'
+
+# sudo apt-get update
+# sudo apt-get install apt-transport-https ca-certificates curl gnupg lsb-release
+- name: Install dependencies
+  become: true
+  become_method: sudo
+  apt:
+    name: [ 'apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'lsb-release' ]
+    update_cache: yes
+    state: latest
+
+#- name: Check GPG key exists
+#  stat:
+#    path: /usr/share/keyrings/docker-archive-keyring.gpg
+#  register: docker_archive_keyring
+
+#- name: Register lsb-release
+#  shell: lsb_release -cs
+#  register: ubuntu_code
+
+- name: load lsb_release -sc
+  shell: lsb_release -sc
+  register: lsb_release_sc_data
+
+- name: load lsb_release -si
+  shell: lsb_release -si | tr 'A-Z' 'a-z'
+  register: lsb_release_si_data
+
+- name: set facts
+  set_fact:
+    lsb_release_sc: "{{ lsb_release_sc_data.stdout_lines[0] }}"
+    lsb_release_si: "{{ lsb_release_si_data.stdout_lines[0] }}"
+
+# curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+# curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+- name: Add Docker’s official GPG key
+  shell: |
+    curl -fsSL https://download.docker.com/linux/{{ lsb_release_si }}/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+  args:
+    chdir: /usr/share/keyrings
+    creates: /usr/share/keyrings/docker-archive-keyring.gpg
+
+# echo \
+#  "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+#  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+# echo \
+# "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+#  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+- name: Set up the repository
+  become: true
+  become_method: sudo
+  apt_repository:
+    repo: deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/{{ lsb_release_si }} {{ lsb_release_sc }} stable
+    state: present
+    filename: docker
+    update_cache: yes
+
+# sudo apt-get update; sudo apt-get install docker-ce docker-ce-cli containerd.io
+- name: Install Docker Engine
+  become: true
+  become_method: sudo
+  apt:
+    name: [ 'docker-ce', 'docker-ce-cli', 'containerd.io' ]
+    update_cache: yes
+    state: latest
+
+# https://kubernetes.io/zh/docs/setup/production-environment/container-runtimes/#docker
+- name: Change Cgroup Driver
+  become: true
+  template:
+    src: templates/daemon.json
+    dest: /etc/docker/daemon.json
+  notify: restart-docker
+
+# - name: docker run hello-world
+#   become: true
+#   become_method: sudo
+#   command: docker run --rm hello-world
