@@ -1,0 +1,24 @@
+- name: daemon-reload
+  become: true
+  ansible.builtin.systemd:
+    daemon_reload: yes
+  
+- name: enable-kubelet-proxy-service
+  become: true
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: yes
+    masked: no
+  with_items:
+    - kubelet.service
+    - kube-proxy.service
+
+- name: restart-kubelet-proxy-service
+  become: true
+  ansible.builtin.systemd:
+    state: restarted
+    daemon_reload: yes
+    name: "{{ item }}"
+  with_items:
+    - kubelet.service
+    - kube-proxy.service

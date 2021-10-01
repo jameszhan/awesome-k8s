@@ -138,27 +138,8 @@
   with_items:
     - kubelet.service
     - kube-proxy.service
-
-- name: Just force systemd to reread configs
-  become: true
-  ansible.builtin.systemd:
-    daemon_reload: yes
-
-- name: Enable kubelet.service it is not masked
-  become: true
-  ansible.builtin.systemd:
-    name: "{{ item }}"
-    enabled: yes
-    masked: no
-  with_items:
-    - kubelet.service
-    - kube-proxy.service
-
-- name: Make sure kubelet.service is running
-  become: true
-  ansible.builtin.systemd:
-    name: "{{ item }}"
-    state: started
-  with_items:
-    - kubelet.service
-    - kube-proxy.service
+  notify:
+    - daemon-reload
+    - enable-kubelet-proxy-service
+    - restart-kubelet-proxy-service
+    

@@ -93,12 +93,6 @@
     src: templates/etcd.j2
     dest: /etc/etcd/etcd.conf
 
-- name: Copy etcd.service to /usr/lib/systemd/system/
-  become: true
-  template:
-    src: templates/etcd.service
-    dest: /usr/lib/systemd/system/
-
 - name: ensure data dir
   become: true
   file:
@@ -106,20 +100,12 @@
     state: directory
     mode: '0755'
 
-- name: Enable service etcd and ensure it is not masked
+- name: Copy etcd.service to /usr/lib/systemd/system/
   become: true
-  ansible.builtin.systemd:
-    name: etcd
-    enabled: yes
-    masked: no
-
-- name: Just force systemd to reread configs
-  become: true
-  ansible.builtin.systemd:
-    daemon_reload: yes
-
-- name: Make sure etcd service is running
-  become: true
-  ansible.builtin.systemd:
-    name: etcd
-    state: started
+  template:
+    src: templates/etcd.service
+    dest: /usr/lib/systemd/system/
+  notify:
+    - daemon-reload
+    - enable-etcd-service
+    - restart-etcd-service
