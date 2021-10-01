@@ -1,0 +1,4 @@
+- name: install docker for k8s workers
+  hosts: k8s_nodes
+  roles:
+    - docker
