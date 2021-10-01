@@ -72,7 +72,7 @@
   apt:
     name: [ 'docker-ce', 'docker-ce-cli', 'containerd.io' ]
     update_cache: yes
-    state: latest
+    state: present
 
 # https://kubernetes.io/zh/docs/setup/production-environment/container-runtimes/#docker
 - name: Change Cgroup Driver
