@@ -99,8 +99,11 @@ $ kubectl get all --all-namespaces
 >  确认`kubelet`服务启动成功后，需要到`master`节点上`Approve`一下`bootstrap`请求
 
 ```bash
-# 安装docker
+# 二进制安装docker
 $ ansible-playbook -i hosts docker.yml -u deploy -v
+
+# 或者Debian系也可以使用apt安装
+cd ../../debian-based/ansible && ansible-playbook -i hosts docker.yml -u deploy -v && cd ../../install-binaries/ansible
 
 # 安装kube-proxy,kubelet
 $ ansible-playbook -i hosts k8s-node.yml -u deploy -v
