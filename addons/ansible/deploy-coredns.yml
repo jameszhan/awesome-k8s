@@ -1,0 +1,6 @@
+- name: deploy coredns
+  hosts: k8s_masters
+  roles:
+    - coredns
+  vars_files:
+    - group_vars/coredns_vars.yml

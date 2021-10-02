@@ -11,4 +11,5 @@ ETCD_KEY=$(cat /etc/etcd/ssl/etcd-key.pem | base64 | tr -d '\n')
 
 ```bash
 $ ansible-playbook -i hosts deploy-calico.yml -u deploy -v
+$ ansible-playbook -i hosts deploy-coredns.yml -u deploy -v
 ```
