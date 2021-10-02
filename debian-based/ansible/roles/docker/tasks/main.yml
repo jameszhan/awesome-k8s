@@ -83,6 +83,14 @@
     dest: /etc/docker/daemon.json
   notify: restart-docker-service
 
+- name: Add the user 'deploy' to group 'docker'
+  become: true
+  become_method: sudo
+  ansible.builtin.user:
+    name: deploy
+    groups: docker
+    append: yes
+
 # - name: docker run hello-world
 #   become: true
 #   become_method: sudo
