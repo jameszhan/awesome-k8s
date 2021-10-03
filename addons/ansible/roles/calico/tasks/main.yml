@@ -31,6 +31,21 @@
   run_once: true
   delegate_to: k8s-master01
 
+- name: kubectl apply kubernetes-services-endpoint
+  shell: |
+    cat <<EOF | kubectl apply -f -
+    kind: ConfigMap
+    apiVersion: v1
+    metadata:
+      name: kubernetes-services-endpoint
+      namespace: kube-system
+    data:
+      KUBERNETES_SERVICE_HOST: "{{ kubernetes_service_host }}"
+      KUBERNETES_SERVICE_PORT: "{{ kubernetes_service_port }}"
+    EOF
+  run_once: true
+  delegate_to: k8s-master01
+
 - name: kubectl apply -f /tmp/calico-etcd.yaml
   shell: kubectl apply -f /tmp/calico-etcd.yaml
   run_once: true
