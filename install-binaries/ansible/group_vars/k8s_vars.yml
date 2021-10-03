@@ -9,5 +9,5 @@ resolv_conf: /run/systemd/resolve/resolv.conf
 static_pod_path: /etc/kubernetes/manifests
 pod_infra_container_image: registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.4.1
 
-# kube_proxy_mode: "ipvs"     # kube-proxy mode, like: iptables ipvs, default ipvs
-kube_proxy_mode: "iptables"
+# kube_proxy_mode: "iptables"     # kube-proxy mode, like: iptables ipvs, default ipvs
+kube_proxy_mode: "ipvs"
