@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"k8s-app":"calico-kube-controllers"},"name":"calico-kube-controllers","namespace":"kube-system"},"spec":{"replicas":1,"selector":{"matchLabels":{"k8s-app":"calico-kube-controllers"}},"strategy":{"type":"Recreate"},"template":{"metadata":{"labels":{"k8s-app":"calico-kube-controllers"},"name":"calico-kube-controllers","namespace":"kube-system"},"spec":{"containers":[{"env":[{"name":"ETCD_ENDPOINTS","valueFrom":{"configMapKeyRef":{"key":"etcd_endpoints","name":"calico-config"}}},{"name":"ETCD_CA_CERT_FILE","valueFrom":{"configMapKeyRef":{"key":"etcd_ca","name":"calico-config"}}},{"name":"ETCD_KEY_FILE","valueFrom":{"configMapKeyRef":{"key":"etcd_key","name":"calico-config"}}},{"name":"ETCD_CERT_FILE","valueFrom":{"configMapKeyRef":{"key":"etcd_cert","name":"calico-config"}}},{"name":"ENABLED_CONTROLLERS","value":"policy,namespace,serviceaccount,workloadendpoint,node"}],"image":"docker.io/calico/kube-controllers:v3.20.0","livenessProbe":{"exec":{"command":["/usr/bin/check-status","-l"]},"failureThreshold":6,"initialDelaySeconds":10,"periodSeconds":10,"timeoutSeconds":10},"name":"calico-kube-controllers","readinessProbe":{"exec":{"command":["/usr/bin/check-status","-r"]},"periodSeconds":10},"volumeMounts":[{"mountPath":"/calico-secrets","name":"etcd-certs"}]}],"hostNetwork":true,"nodeSelector":{"kubernetes.io/os":"linux"},"priorityClassName":"system-cluster-critical","serviceAccountName":"calico-kube-controllers","tolerations":[{"key":"CriticalAddonsOnly","operator":"Exists"},{"effect":"NoSchedule","key":"node-role.kubernetes.io/master"}],"volumes":[{"name":"etcd-certs","secret":{"defaultMode":288,"secretName":"calico-etcd-secrets"}}]}}}}
+  generation: 1
+  labels:
+    k8s-app: calico-kube-controllers
+  name: calico-kube-controllers
+  namespace: kube-system
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: calico-kube-controllers
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        k8s-app: calico-kube-controllers
+      name: calico-kube-controllers
+      namespace: kube-system
+    spec:
+      containers:
+        - env:
+            - name: ETCD_ENDPOINTS
+              valueFrom:
+                configMapKeyRef:
+                  key: etcd_endpoints
+                  name: calico-config
+            - name: ETCD_CA_CERT_FILE
+              valueFrom:
+                configMapKeyRef:
+                  key: etcd_ca
+                  name: calico-config
+            - name: ETCD_KEY_FILE
+              valueFrom:
+                configMapKeyRef:
+                  key: etcd_key
+                  name: calico-config
+            - name: ETCD_CERT_FILE
+              valueFrom:
+                configMapKeyRef:
+                  key: etcd_cert
+                  name: calico-config
+            - name: ENABLED_CONTROLLERS
+              value: policy,namespace,serviceaccount,workloadendpoint,node
+          image: docker.io/calico/kube-controllers:v3.20.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - /usr/bin/check-status
+                - -l
+            failureThreshold: 6
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          name: calico-kube-controllers
+          readinessProbe:
+            exec:
+              command:
+                - /usr/bin/check-status
+                - -r
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /calico-secrets
+              name: etcd-certs
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/os: linux
+      priorityClassName: system-cluster-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: calico-kube-controllers
+      serviceAccountName: calico-kube-controllers
+      terminationGracePeriodSeconds: 30
+      tolerations:
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/master
+      volumes:
+        - name: etcd-certs
+          secret:
+            defaultMode: 288
+            secretName: calico-etcd-secrets
+status:
+  availableReplicas: 1
+  conditions:
+    - lastTransitionTime: "2021-08-17T02:52:58Z"
+      lastUpdateTime: "2021-08-17T02:53:08Z"
+      message: ReplicaSet "calico-kube-controllers-59db5cf8fd" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    - lastTransitionTime: "2021-10-03T17:25:58Z"
+      lastUpdateTime: "2021-10-03T17:25:58Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

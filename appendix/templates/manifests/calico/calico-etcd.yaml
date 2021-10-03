@@ -9,15 +9,14 @@ metadata:
   name: calico-etcd-secrets
   namespace: kube-system
 data:
-# Populate the following with etcd TLS configuration if desired, but leave blank if
-# not using TLS for etcd.
-# The keys below should be uncommented and the values populated with the base64
-# encoded contents of each file that would be associated with the TLS data.
-# Example command for encoding a file contents: cat <file> | base64 -w 0
-  etcd-ca: {{ etcd_ca_base64 }}
-  etcd-cert: {{ etcd_cert_base64 }}
-  etcd-key: {{ etcd_key_base64 }}
-
+  # Populate the following with etcd TLS configuration if desired, but leave blank if
+  # not using TLS for etcd.
+  # The keys below should be uncommented and the values populated with the base64
+  # encoded contents of each file that would be associated with the TLS data.
+  # Example command for encoding a file contents: cat <file> | base64 -w 0
+  # etcd-key: null
+  # etcd-cert: null
+  # etcd-ca: null
 ---
 # Source: calico/templates/calico-config.yaml
 # This ConfigMap is used to configure a self-hosted Calico installation.
@@ -28,13 +27,12 @@ metadata:
   namespace: kube-system
 data:
   # Configure this with the location of your etcd cluster.
-  etcd_endpoints: "{{ etcd_endpoints }}"
+  etcd_endpoints: "http://<ETCD_IP>:<ETCD_PORT>"
   # If you're using TLS enabled etcd uncomment the following.
   # You must also populate the Secret below with these files.
-  etcd_ca: /calico-secrets/etcd-ca
-  etcd_cert: /calico-secrets/etcd-cert
-  etcd_key: /calico-secrets/etcd-key
-
+  etcd_ca: ""   # "/calico-secrets/etcd-ca"
+  etcd_cert: "" # "/calico-secrets/etcd-cert"
+  etcd_key: ""  # "/calico-secrets/etcd-key"
   # Typha is disabled.
   typha_service_name: "none"
   # Configure the backend to use.
@@ -123,9 +121,10 @@ roleRef:
   kind: ClusterRole
   name: calico-kube-controllers
 subjects:
-  - kind: ServiceAccount
-    name: calico-kube-controllers
-    namespace: kube-system
+- kind: ServiceAccount
+  name: calico-kube-controllers
+  namespace: kube-system
+---
 
 ---
 # Source: calico/templates/calico-node-rbac.yaml
@@ -150,7 +149,7 @@ rules:
     resources:
       - endpointslices
     verbs:
-      - watch
+      - watch 
       - list
   - apiGroups: [""]
     resources:
@@ -183,9 +182,9 @@ roleRef:
   kind: ClusterRole
   name: calico-node
 subjects:
-  - kind: ServiceAccount
-    name: calico-node
-    namespace: kube-system
+- kind: ServiceAccount
+  name: calico-node
+  namespace: kube-system
 
 ---
 # Source: calico/templates/calico-node.yaml
@@ -236,10 +235,10 @@ spec:
           image: docker.io/calico/cni:v3.20.1
           command: ["/opt/cni/bin/install"]
           envFrom:
-            - configMapRef:
-                # Allow KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to be overridden for eBPF mode.
-                name: kubernetes-services-endpoint
-                optional: true
+          - configMapRef:
+              # Allow KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to be overridden for eBPF mode.
+              name: kubernetes-services-endpoint
+              optional: true
           env:
             # Name of the CNI config file to create.
             - name: CNI_CONF_NAME
@@ -279,8 +278,8 @@ spec:
         - name: flexvol-driver
           image: docker.io/calico/pod2daemon-flexvol:v3.20.1
           volumeMounts:
-            - name: flexvol-driver-host
-              mountPath: /host/driver
+          - name: flexvol-driver-host
+            mountPath: /host/driver
           securityContext:
             privileged: true
       containers:
@@ -290,10 +289,10 @@ spec:
         - name: calico-node
           image: docker.io/calico/node:v3.20.1
           envFrom:
-            - configMapRef:
-                # Allow KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to be overridden for eBPF mode.
-                name: kubernetes-services-endpoint
-                optional: true
+          - configMapRef:
+              # Allow KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT to be overridden for eBPF mode.
+              name: kubernetes-services-endpoint
+              optional: true
           env:
             # The location of the etcd cluster.
             - name: ETCD_ENDPOINTS
@@ -363,8 +362,8 @@ spec:
             # The default IPv4 pool to create on startup if none exists. Pod IPs will be
             # chosen from this range. Changing this value after installation will have
             # no effect. This should fall within `--cluster-cidr`.
-            - name: CALICO_IPV4POOL_CIDR
-              value: "{{ calico_ipv4_cidr }}"
+            # - name: CALICO_IPV4POOL_CIDR
+            #   value: "192.168.0.0/16"
             # Disable file logging so `kubectl logs` works.
             - name: CALICO_DISABLE_FILE_LOGGING
               value: "true"
@@ -384,9 +383,9 @@ spec:
           livenessProbe:
             exec:
               command:
-                - /bin/calico-node
-                - -felix-live
-                - -bird-live
+              - /bin/calico-node
+              - -felix-live
+              - -bird-live
             periodSeconds: 10
             initialDelaySeconds: 10
             failureThreshold: 6
@@ -394,9 +393,9 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /bin/calico-node
-                - -felix-ready
-                - -bird-ready
+              - /bin/calico-node
+              - -felix-ready
+              - -bird-ready
             periodSeconds: 10
             timeoutSeconds: 10
           volumeMounts:
@@ -465,7 +464,7 @@ spec:
         - name: etcd-certs
           secret:
             secretName: calico-etcd-secrets
-            defaultMode: 0440
+            defaultMode: 0400
         # Used to create per-pod Unix Domain Sockets
         - name: policysync
           hostPath:
@@ -560,8 +559,8 @@ spec:
           livenessProbe:
             exec:
               command:
-                - /usr/bin/check-status
-                - -l
+              - /usr/bin/check-status
+              - -l
             periodSeconds: 10
             initialDelaySeconds: 10
             failureThreshold: 6
@@ -569,8 +568,8 @@ spec:
           readinessProbe:
             exec:
               command:
-                - /usr/bin/check-status
-                - -r
+              - /usr/bin/check-status
+              - -r
             periodSeconds: 10
       volumes:
         # Mount in the etcd TLS secrets with mode 400.
@@ -613,3 +612,5 @@ spec:
 
 ---
 # Source: calico/templates/kdd-crds.yaml
+
+
