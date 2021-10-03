@@ -126,7 +126,7 @@ spec:
         - args:
             - -conf
             - /etc/coredns/Corefile
-          image: registry.cn-shanghai.aliyuncs.com/hybfkuf/coredns:v1.8.0
+          image: {{ coredns_image }}
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 5

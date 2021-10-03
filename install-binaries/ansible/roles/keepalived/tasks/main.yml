@@ -26,10 +26,10 @@
   with_items:
     - check_apiserver.sh
     - keepalived.conf
+  notify: restart-keepalived
 
 - name: make check_apiserver.sh executable
   become: true
   ansible.builtin.file:
     path: /etc/keepalived/check_apiserver.sh
     mode: ugo+x
-  notify: restart-keepalived

@@ -92,6 +92,8 @@ $ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.p
 $ kubectl cluster-info
 $ kubectl get componentstatuses
 $ kubectl get all --all-namespaces
+
+$ nc -v 192.168.1.200 8443
 ```
 
 #### 安装 `k8s-worker` 集群
@@ -103,7 +105,7 @@ $ kubectl get all --all-namespaces
 $ ansible-playbook -i hosts docker.yml -u deploy -v
 
 # 或者Debian系也可以使用apt安装
-cd ../../debian-based/ansible && ansible-playbook -i hosts docker.yml -u deploy -v && cd ../../install-binaries/ansible
+$ cd ../../debian-based/ansible && ansible-playbook -i hosts docker.yml -u deploy -v && cd ../../install-binaries/ansible
 
 # 安装kube-proxy,kubelet
 $ ansible-playbook -i hosts k8s-node.yml -u deploy -v
