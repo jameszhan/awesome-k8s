@@ -11,8 +11,12 @@ $ ansible -m shell -a 'bash /opt/bin/update-system.sh' -i hosts all -u deploy --
 #### 清理node节点
 
 ```bash
-$ ansible -m script -a 'cleaner/clean-kubelet.sh' -i hosts k8s_nodes -u deploy --become -v
+$ ansible -m script -a 'cleaner/clean-k8s-node.sh' -i hosts k8s_nodes -u deploy --become -v
 $ ansible -m script -a 'cleaner/clean-docker.sh' -i hosts k8s_nodes -u deploy --become -v
+
+# 或者
+$ cd ../../debian-based/ansible && ansible -m script -a 'cleaner/clean-docker.sh' -i hosts k8s_nodes -u deploy --become -v && cd ../../install-binaries/ansible
+
 $ ansible -i hosts k8s_nodes -m reboot -u deploy --become -v
 ```
 
