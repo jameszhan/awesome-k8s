@@ -1,6 +1,7 @@
 #### 准备工作(可选)
 
 ```bash
+$ ansible -i hosts all -m reboot -u deploy --become -v
 $ ansible -m script -a 'scripts/kubernetes-service.sh' -i hosts all -u deploy --become -v
 ```
 
