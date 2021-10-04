@@ -1,3 +1,4 @@
-srv_network_dns_ip: 192.168.1.130
+# srv_network_dns_ip: 192.168.1.130
+srv_network_dns_ip: 10.96.0.2
 # k8s.gcr.io/coredns/coredns:v1.8.0
 coredns_image: registry.cn-shenzhen.aliyuncs.com/jameszhan/coredns:v1.8.0

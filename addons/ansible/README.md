@@ -3,6 +3,8 @@
 ```bash
 $ ansible -i hosts all -m reboot -u deploy --become -v
 $ ansible -m script -a 'scripts/kubernetes-service.sh' -i hosts all -u deploy --become -v
+
+$ ansible -i hosts all -m shell -a "ipvsadm -Ln" -u deploy --become -v
 ```
 
 ```bash

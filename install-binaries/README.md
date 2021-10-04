@@ -25,5 +25,13 @@ $ ansible-playbook -i hosts k8s-deploy.yml -u deploy -v
 $ for h in k8s-master01 k8s-master02 k8s-master03; do ssh-copy-id -i ~/.ssh/id_rsa.pub james@$h; done
 ```
 
+## 子网划分
+
+网段信息 | 配置
+-------|------
+Host网段 | 192.168.1.1/24
+Pod网段	| 10.244.0.0/16
+Service网段	| 10.96.0.0/16
+
 
 
