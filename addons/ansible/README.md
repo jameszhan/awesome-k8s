@@ -1,3 +1,15 @@
+#### 准备工作(可选)
+
+```bash
+$ ansible -m script -a 'scripts/kubernetes-service.sh' -i hosts all -u deploy --become -v
+```
+
+```bash
+$ sudo ipvsadm -Ln
+
+$ nc -vz 192.168.1.129 443
+$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.129/version
+```
 
 #### Calico
 
@@ -16,5 +28,6 @@ $ ansible -i hosts k8s_nodes -m shell -a 'rm -vrf /var/lib/cni/calico' -u deploy
 $ ansible -i hosts k8s_nodes -m shell -a 'systemctl restart kubelet' -u deploy --become -v
 
 $ ansible-playbook -i hosts deploy-calico.yml -u deploy -v
+
 $ ansible-playbook -i hosts deploy-coredns.yml -u deploy -v
 ```

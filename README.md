@@ -93,7 +93,7 @@ $ kubectl cluster-info
 $ kubectl get componentstatuses
 $ kubectl get all --all-namespaces
 
-$ nc -v 192.168.1.200 8443
+$ nc -vz 192.168.1.200 8443
 ```
 
 #### 安装 `k8s-worker` 集群
