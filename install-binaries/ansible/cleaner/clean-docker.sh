@@ -13,3 +13,5 @@ rm -vrf /tmp/docker
 rm -vrf /usr/local/bin/{containerd,containerd-shim,containerd-shim-runc-v2,ctr,docker,docker-init,docker-proxy,dockerd,runc}
 rm -vf /etc/systemd/system/multi-user.target.wants/docker.service
 rm -vf /etc/systemd/system/sockets.target.wants/docker.socket
+
+gpasswd --delete deploy docker

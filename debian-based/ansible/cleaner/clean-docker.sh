@@ -21,3 +21,5 @@ fi
 if [ -f /etc/docker/daemon.json ]; then
     sudo rm -v /etc/docker/daemon.json
 fi
+
+sudo gpasswd --delete deploy docker

@@ -52,5 +52,10 @@ $ ansible -m shell -a "ls /etc/chrony/" -i hosts all -u deploy --become -v
 
 ```bash
 $ ansible -m script -a 'cleaner/clean-setup-once.sh' -i hosts all -u deploy --become -v
+
+$ ansible -m shell -a "iptables -L" -i hosts all -u deploy --become -v
+$ ansible -m shell -a "iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X" -i hosts all -u deploy --become -v
+$ ansible -m shell -a "iptables -L" -i hosts all -u deploy --become -v
+
 $ ansible -i hosts all -m reboot -u deploy --become -v
 ```
