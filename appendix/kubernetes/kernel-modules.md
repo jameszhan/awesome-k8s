@@ -16,7 +16,6 @@ ipip || `net/ipv4/ipip.ko`
 
 > `linux kernel 4.19`版本已经将`nf_conntrack_ipv4`更新为`nf_conntrack`。
 
-
 ```bash
 cat /lib/modules/$(uname -r)/modules.dep
 
@@ -27,8 +26,6 @@ net.bridge.bridge-nf-call-iptables = 1
 net.ipv4.ip_forward = 1
 EOF
 ```
-
-
 
 序号 | 标识 | 详细说明 | 模式 | 内核模块
 ----|------|--------|------|--------
