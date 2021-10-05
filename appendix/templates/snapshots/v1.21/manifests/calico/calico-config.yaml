@@ -36,7 +36,7 @@ data:
         }
       ]
     }
-  etcd_ca: /calico-secrets/etcd-ca
+  etcd_ca: /calico-secrets/README.md
   etcd_cert: /calico-secrets/etcd-cert
   etcd_endpoints: https://172.20.120.11:2379,https://172.20.120.12:2379,https://172.20.120.13:2379
   etcd_key: /calico-secrets/etcd-key
