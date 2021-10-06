@@ -1,3 +1,6 @@
+```bash
+$ ansible-playbook -i hosts gathering-facts.yml -u deploy -v 
+```
 
 ```bash
 $ ansible -m shell -a 'mkdir -p /opt/bin' -i hosts all -u deploy --become -v

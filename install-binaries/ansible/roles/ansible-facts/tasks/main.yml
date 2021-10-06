@@ -1,0 +1,11 @@
+- debug: msg="{{ groups }}"
+
+- debug: msg="{{ group_names }}"
+
+- debug: msg="{{ inventory_hostname }}"
+
+- debug: msg="{{ ansible_hostname }}"
+
+- debug: msg="{{ ansible_nodename }}"
+
+

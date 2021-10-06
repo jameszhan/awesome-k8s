@@ -7,6 +7,7 @@ Requires=docker.service
 [Service]
 WorkingDirectory=/var/lib/kubelet
 ExecStart=/usr/local/bin/kubelet \
+  --hostname-override={{ inventory_hostname }}
   --bootstrap-kubeconfig=/etc/kubernetes/kubelet-bootstrap.kubeconfig \
   --kubeconfig=/etc/kubernetes/kubelet.kubeconfig \
   --config=/etc/kubernetes/kubelet.yaml \

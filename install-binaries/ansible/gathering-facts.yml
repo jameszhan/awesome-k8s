@@ -1,0 +1,6 @@
+- name: Debug Ansible Variables
+  hosts:
+    - k8s_masters
+    - k8s_nodes
+  roles:
+    - ansible-facts
