@@ -4,6 +4,8 @@
 $ ansible -i hosts all -m reboot -u deploy --become -v
 $ ansible -m script -a 'scripts/kubernetes-service.sh' -i hosts all -u deploy --become -v
 
+$ ansible -m script -a 'scripts/iptables-reset.sh' -i hosts all -u deploy --become -v
+
 $ ansible -i hosts all -m shell -a "ipvsadm -Ln" -u deploy --become -v
 ```
 
@@ -26,4 +28,11 @@ $ curl https://docs.projectcalico.org/manifests/calico-etcd.yaml -o calico-etcd.
 $ ansible-playbook -i hosts deploy-calico.yml -u deploy -v
 
 $ ansible-playbook -i hosts deploy-coredns.yml -u deploy -v
+```
+
+
+```bash
+$ kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=can-reach=www.baidu.com
+# eth0,enp1s0,ens33
+$ kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface="(eth0|enp1s0|ens33)"
 ```

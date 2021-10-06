@@ -1,11 +1,12 @@
 k8s_master_host: 192.168.1.61
 
 # service_cluster_ip_range: 192.168.1.128/25
-service_cluster_ip_range: 192.168.0.0/16
-cluster_cidr: 10.244.0.0/16
+service_cluster_ip_range: 10.0.0.0/24
+# cluster_cidr: 10.244.0.0/16
+cluster_cidr: 10.1.0.0/16
 
 # core_dns_ip: 192.168.1.130
-core_dns_ip: 192.168.0.2
+core_dns_ip: 10.0.0.10
 
 resolv_conf: /run/systemd/resolve/resolv.conf
 static_pod_path: /etc/kubernetes/manifests
