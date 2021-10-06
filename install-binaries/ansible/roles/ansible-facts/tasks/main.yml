@@ -1,11 +1,17 @@
-- debug: msg="{{ groups }}"
+- debug: msg="{{ item }}"
+  with_items:
+    - group_names
+    - groups
+    - inventory_hostname
+    - ansible_hostname
+    - ansible_nodename
 
-- debug: msg="{{ group_names }}"
-
-- debug: msg="{{ inventory_hostname }}"
-
-- debug: msg="{{ ansible_hostname }}"
-
-- debug: msg="{{ ansible_nodename }}"
+#- debug: msg="{{ group_names }}"
+#
+#- debug: msg="{{ inventory_hostname }}"
+#
+#- debug: msg="{{ ansible_hostname }}"
+#
+#- debug: msg="{{ ansible_nodename }}"
 
 
