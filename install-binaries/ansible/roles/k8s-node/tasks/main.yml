@@ -47,11 +47,19 @@
   run_once: true
   delegate_to: k8s-master01
 
+# Cluster "kubernetes" set.
+# kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server=https://192.168.1.200:8443 --kubeconfig=kube-proxy.kubeconfig
+# User "kube-proxy" set.
+# kubectl config set-credentials kube-proxy --client-certificate=/opt/kubernetes/ssl/kube-proxy.pem --client-key=/opt/kubernetes/ssl/kube-proxy-key.pem --embed-certs=true --kubeconfig=kube-proxy.kubeconfig
+# Context "default" created.
+# kubectl config set-context default --cluster=kubernetes --user=kube-proxy --kubeconfig=kube-proxy.kubeconfig
+# Switched to context "default".
+# kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig
 - name: generate /etc/kubernetes/kube-proxy.kubeconfig
   become: true
   shell: |
     kubectl config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://{{ ha_proxy_ip }}:{{ ha_proxy_port }} --kubeconfig=kube-proxy.kubeconfig
-    kubectl config set-credentials system:kube-proxy --client-certificate=kube-proxy.pem --client-key=kube-proxy-key.pem --embed-certs=true --kubeconfig=kube-proxy.kubeconfig
+    kubectl config set-credentials system:kube-proxy --client-certificate=/etc/kubernetes/ssl/kube-proxy.pem --client-key=/etc/kubernetes/ssl/kube-proxy-key.pem --embed-certs=true --kubeconfig=kube-proxy.kubeconfig
     kubectl config set-context default --cluster=kubernetes --user=system:kube-proxy --kubeconfig=kube-proxy.kubeconfig
     kubectl config use-context default --kubeconfig=kube-proxy.kubeconfig
   args:

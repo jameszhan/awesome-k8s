@@ -23,7 +23,7 @@ $ ansible -i hosts k8s_nodes -m shell -a 'rm -vrf /etc/cni/net.d/*' -u deploy --
 $ ansible -i hosts k8s_nodes -m shell -a 'rm -vrf /var/lib/cni/calico' -u deploy --become -v
 $ ansible -i hosts k8s_nodes -m shell -a 'systemctl restart kubelet' -u deploy --become -v
 
-$ curl https://docs.projectcalico.org/manifests/calico-etcd.yaml -o calico-etcd.yaml
+$ curl https://docs.projectcalico.org/manifests/calico.yaml -o calico.yaml
 
 $ ansible-playbook -i hosts deploy-calico.yml -u deploy -v
 

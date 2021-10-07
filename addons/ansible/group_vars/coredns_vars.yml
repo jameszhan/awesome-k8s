@@ -1,5 +1,5 @@
 # dns_cluster_ip: 192.168.1.130
-dns_cluster_ip: 10.0.0.10
+dns_cluster_ip: 10.96.0.10
 
 # k8s.gcr.io/coredns/coredns:v1.8.0
 coredns_image: registry.cn-shenzhen.aliyuncs.com/jameszhan/coredns:v1.8.0
