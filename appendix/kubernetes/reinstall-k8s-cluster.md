@@ -123,5 +123,3 @@ $ ansible -i hosts all -m apt -a "name=systemd-sysv state=latest autoremove=yes"
 
 $ ansible-playbook -i hosts k8s-node.yml -u deploy -v
 ```
-
-$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/kubelet.crt --key /etc/kubernetes/ssl/kubelet.key https://192.168.1.61:6443
