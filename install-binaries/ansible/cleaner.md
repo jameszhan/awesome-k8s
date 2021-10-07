@@ -51,6 +51,8 @@ $ ansible -i hosts k8s_masters -m reboot -u deploy --become -v
 $ ansible -m shell -a "ls /etc/modules-load.d/" -i hosts all -u deploy --become -v
 $ ansible -m shell -a "ls /etc/sysctl.d/" -i hosts all -u deploy --become -v
 $ ansible -m shell -a "ls /etc/chrony/" -i hosts all -u deploy --become -v
+
+$ ansible -m shell -a "rm -vrf /var/log/journal" -i hosts all -u deploy --become -v
 ```
 
 ```bash

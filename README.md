@@ -65,6 +65,13 @@ $ ansible-playbook -i hosts etcd.yml -u deploy -v
 # 测试etcd
 $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --endpoints=http://127.0.0.1:2379 endpoint health
 $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 endpoint health
+
+$ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table \
+    --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 \
+    --cacert=/etc/etcd/ssl/ca.pem \
+    --cert=/etc/etcd/ssl/etcd.pem \
+    --key=/etc/etcd/ssl/etcd-key.pem \
+    endpoint status
 ```
 
 #### 安装 `k8s-master` 集群
