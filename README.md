@@ -180,6 +180,8 @@ spec:
     app: nginx
 EOF
 
+$ curl -i -v http://nginx-service
+
 $ kubectl delete deployment nginx-deployment
 $ kubectl delete service nginx-service
 ```
