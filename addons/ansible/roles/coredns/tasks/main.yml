@@ -1,4 +1,4 @@
-- name: Copy calico-etcd.yaml files to /tmp
+- name: Copy coredns.yaml files to /tmp
   template:
     src: coredns.yaml
     dest: /tmp

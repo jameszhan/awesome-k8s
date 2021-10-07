@@ -9,8 +9,20 @@ $ kubectl apply -f calico.yaml
 $ ansible-playbook -i hosts deploy-calico.yml -u deploy -v
 ```
 
-### CoreDNS
+#### CoreDNS
 
 ```bash
 $ ansible-playbook -i hosts deploy-coredns.yml -u deploy -v
 ```
+
+#### Metrics Server
+
+```bash
+$ ansible-playbook -i hosts deploy-metrics-server.yml -u deploy -v
+```
+
+#### 参考
+
+- [Calico](https://docs.projectcalico.org/)
+- [CoreDNS](https://coredns.io/)
+- [Kubernetes Metrics Server](https://github.com/kubernetes-sigs/metrics-server)

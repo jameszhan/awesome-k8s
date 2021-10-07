@@ -1,0 +1,2 @@
+# k8s.gcr.io/metrics-server/metrics-server:v0.5.1
+metrics_server_image: registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server:v0.5.1
