@@ -132,3 +132,54 @@ $ kubectl get nodes
 # 测试集群工作
 $ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
 ```
+
+#### 安装`Addons`
+
+```bash
+$ cd addons/ansible
+
+$ ansible-playbook -i hosts deploy-calico.yml -u deploy -v
+$ ansible-playbook -i hosts deploy-coredns.yml -u deploy -v
+```
+
+测试服务 `ssh deploy@k8s-master01`
+
+```bash
+$ cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.21
+        ports:
+        - containerPort: 80
+
+--- 
+apiVersion: v1 
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: nginx
+EOF
+
+$ kubectl delete deployment nginx-deployment
+$ kubectl delete service nginx-service
+```

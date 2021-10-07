@@ -11,6 +11,7 @@ ExecStart=/usr/local/bin/kubelet \
   --bootstrap-kubeconfig=/etc/kubernetes/kubelet-bootstrap.kubeconfig \
   --kubeconfig=/etc/kubernetes/kubelet.kubeconfig \
   --config=/etc/kubernetes/kubelet.yaml \
+  --network-plugin=cni \
   --cert-dir=/etc/kubernetes/ssl \
   --pod-infra-container-image={{ pod_infra_container_image }} \
   --alsologtostderr=true \
