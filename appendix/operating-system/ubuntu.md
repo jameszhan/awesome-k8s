@@ -37,6 +37,7 @@ Multi–cloud operations are more cost-effective with a private cloud. Private c
 #### [cloud-init](https://cloud-init.io/)
 
 Cloud images are operating system templates and every instance starts out as an identical clone of every other instance. It is the user data that gives every cloud instance its personality and cloud-init is the tool that applies user data to your instances automatically.
+
 ##### Use cloud-init to configure:
 - Setting a default locale 
 - Setting the hostname 
