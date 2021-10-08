@@ -1,12 +1,5 @@
 
-- lynx
-- Midori
-- Firefox
-- Chrome
-- Opera
-- Konqueror
-  - Safari
-- Internet Explorer
+
 
 
 - PV（访问量）即Page View，中文翻译为页面浏览，即页面浏览量或单击量，不管客户端是不是相同，也不管IP是不是相同，用户只要访问网站页面就会被计算PV，一次计一个PV。

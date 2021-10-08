@@ -1,6 +1,6 @@
 # 词条简写
 
-#### 缩写
+#### 常见词条缩写
 
 - cd: change directory
 - lsof: list open files
@@ -104,19 +104,3 @@
 - MQTT-SN: MQTT for Sensor Network协议是MQTT协议的传感器版
 - CoAP: Constrained Application Protocol
 - NIST: National Institute of Standards and Technology，美国国家标准与技术研究院
-
-
-#### 重要概念
-
-##### runlevel
-- 0: halt，关闭系统，不能作为默认运行级别
-- 1: single user mode，单用户模式，类似安全模式，用于故障维护
-- 2: Multiuser, without NFS，与3类似，但是没有联网能力
-- 3: Full multiuser mode，全功能的多用户模式
-- 4: unused，保留，没有使用
-- 5: X11，带有图形用户界面的全功能多用户模式
-- 6: reboot，重新启动，不能作为默认运行级别
-
-#### Todos
-
-- [ ] 智能Bind系统
