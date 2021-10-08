@@ -28,6 +28,14 @@
 > 全称是`Multihost SSH Wrapper`，它其实是一个`SSH`封装器，由一个`shell`脚本实现。通过`mussh`可以实现批量管理多台远程主机的功能。
 
 
+#### 自动化部署方案
+
+- `PXE`(Preboot eXecution Environment)
+- `WDS`(Windows Deployment Services)
+- `RedHat`所支持的`Cobbler`
+- `Ubuntu`官方发展的`MaaS`(Metal as a Service)项目
+
+
 ### 虚拟化
 
 #### `KVM`
@@ -109,7 +117,7 @@ cp          fdflush        ifdown       lsof       nproc       rmdir         stt
 
 #### CirrOS
 
-> `CirrOS`是设计用来进行云计算环境测试的`Linux`微型发行版，它拥有HTTP客户端工具`curl`等。
+> `CirrOS`是设计用来进行云计算环境测试的`Linux`微型发行版，它拥有HTTP客户端工具`curl`，`wget`等。
 
 ```bash
 $ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh

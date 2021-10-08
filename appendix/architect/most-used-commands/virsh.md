@@ -1,10 +1,3 @@
-
-
-```bash
-$ hostnamectl status
-$ sudo hostnamectl set-hostname k8s-node029
-```
-
 ```bash
 $ virsh autostart --disable manager-node
 $ virsh autostart --disable master-node

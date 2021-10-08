@@ -1,7 +1,3 @@
-
-- VMware
-  - VMware Workstation
-
 ###  IaaS平台
 
 私有云的解决方案主要有:
