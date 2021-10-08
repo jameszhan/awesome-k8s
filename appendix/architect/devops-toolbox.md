@@ -1,3 +1,20 @@
+#### Todos
+
+- [ ] [HTTPie](https://httpie.io/): User-friendly cURL replacement (command-line HTTP client)
+- [ ] [Packer](https://packer.io): Tool for creating identical machine images for multiple platforms
+- [ ] [Vagrant](https://www.vagrantup.com/):
+- [x] [Kubernetes](https://kubernetes.io/): 
+- [ ] [CNCF](https://www.cncf.io/):
+- [ ] [minikube](http://bit.ly/2xNk8w4)
+- [ ] [pushgateway](https://github.com/prometheus/pushgateway)
+- [ ] [Kafdrop – Kafka Web UI](https://github.com/obsidiandynamics/kafdrop)
+- [ ] https://www.telepresence.io/discussion/how-it-works
+- [ ] Try `PXE`+`Kickstart`无人值守安装系统
+- [ ] Proxmox VE
+- [x] ESXi
+- [ ] 智能Bind系统
+
+
 ### 运维工具
 
 #### `Ansible`
@@ -9,6 +26,34 @@
 
 #### `mussh`
 > 全称是`Multihost SSH Wrapper`，它其实是一个`SSH`封装器，由一个`shell`脚本实现。通过`mussh`可以实现批量管理多台远程主机的功能。
+
+
+### 虚拟化
+
+#### `KVM`
+
+`KVM`(`Kernel-based Virtual Machine`，基于内核的虚拟机)是一个开源的系统虚拟化模块，从`Linux 2.6.20`之后集成在`Linux`的各个主要发行版本中。它使用`Linux`自身的调度器进行管理，`KVM`的核心源码很少，这使它成为学术界的主流`VMM`之一。`KVM`的虚拟化与`OpenVZ`不同，它需要硬件支持(如`Intel VT`技术或者`AMD V`技术)，是基于硬件的完全虚拟化。
+
+`KVM`是`Linux`下`x86`硬件平台上的全功能虚拟化解决方案，它包含一个可加载的内核模块`kvm.ko`，提供了虚拟化核心架构和处理器规范模块。`KVM`虚拟化技术允许运行多种不同类型的虚拟机，包括`Linux`和`Windows`操作系统。完全虚拟化技术的每个虚拟机都有私有的硬件，包括网卡、磁盘以及图形适配卡等。
+
+#### `OpenVZ`
+
+`OpenVZ`是开源软件，是基于`Linux`平台的操作系统级服务器虚拟化解决方案，它是基于`Linux`内核和作业系统的操作系统级虚拟化技术。`OpenVZ`允许在单个物理服务器上创建多个隔离的虚拟专用服务器，这些虚拟专用服务器称为`VPS`(`Virtual Private Server`)或虚拟环境(`Virtual Environment`，`VE`)。`OpenVZ`虚拟化以最大效率共享硬件和管理资源。每个虚拟服务器的运行和独立服务器完全一致，
+
+`OpenVZ`提供了独立的根访问权限、用户、内存、处理器、IP地址、文件、应用服务、系统库文件和配置文件等。对于用户进程、应用程序都可以独立进行维护，同时，`OpenVZ`软件也为用户提供了协助自动化管理虚拟服务器的工具，通过基于模板的应用程序部署方式，可以在几分钟内创建新的虚拟服务器并投入使用。与硬件虚拟化的VMware和半虚拟化的`Xen`相比，`OpenVZ`虚拟化技术中的`Host OS`和`Guest OS`都必须是`Linux`，这是出于对性能的考虑。根据`OpenVZ`网站的说法，使用OpenVZ与使用独立的服务器相比，性能只会有1%～3%的损失。这个特点可以让`OpenVZ`充分利用硬件资源，最大限度地发挥服务器虚拟化技术的优势
+
+#### PVE
+
+[`Proxmox VE`(`Proxmox Virtual Environment`)](https://www.proxmox.com/)是一个虚拟化集成应用平台。
+
+`Proxmox VE`(`Proxmox Virtual Environment`)是一个虚拟化集成应用平台。它提供了一个可运行`OpenVZ`和`KVM`的开源虚拟化平台，有方便易用的`Web界面`、基于`Java`的`UI`和内核接口，用户可以很方便地登录VM进行操作。此外，`Proxmox VE`还有简单、易用的模板功能，基于模板的应用程序部署，可以在几分钟内用简单的方法创建新的虚拟服务器并投入使用，极大降低了服务器的安装和部署成本。
+
+`Proxmox VE`是一个基于`Debian Etch(x86_64)`版本的虚拟环境，因此不能把它安装到一个`i386`系统上。同时，如果要使用的是`KVM`，首先操作系统的`CPU`必须支持类似于`Intel VT`或者`AMD-V`的硬件虚拟化技术，然后还需要在主机`BIOS`里面将`VT-X`或`VT-D`选项打开才能真正使用。而如果仅仅使用`OpenVZ`，就不需要`CPU`的虚拟化支持了。
+
+#### Vagrant
+
+`Vagrant`是为了方便实现虚拟化环境而设计的，使用`Ruby`开发，基于`VirtualBox`等虚拟机管理软件的接口，提供了一个可配置、轻量级的便携式虚拟开发环境。
+使用`Vagrant`可以很便捷地建立起一个虚拟环境，而且可以模拟多台虚拟机，这样我们平时还可以开发机模拟分布式系统。
 
 ### 常用容器
 

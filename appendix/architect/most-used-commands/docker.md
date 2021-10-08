@@ -6,14 +6,6 @@ $ docker run -it --rm busybox sh
 $ docker run -it --rm cirros sh
 ```
 
-
-免`sudo`权限运行`docker`命令
-
-```bash
-$ sudo usermod -aG docker james
-```
-
-
 ##### Install Docker Compose
 
 ```bash
@@ -21,3 +13,15 @@ $ sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docke
 $ sudo chmod +x /opt/bin/docker-compose
 $ docker-compose --version
 ```
+
+#### `CRI`分析
+
+```bash
+$ systemctl status docker.service
+$ systemctl status docker.socket
+$ systemctl status containerd.service
+```
+
+- `docker.service`: `/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock`
+- `docker.socket`: `/var/run/docker.sock`
+- `containerd.service`: `/usr/bin/containerd`
