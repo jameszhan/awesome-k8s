@@ -21,20 +21,38 @@ $ ansible-playbook -i hosts deploy-coredns.yml -u deploy -v
 $ ansible-playbook -i hosts deploy-metrics-server.yml -u deploy -v
 ```
 
-#### Kuboard
+#### Kubernetes Dashboard
 
 ```bash
-$ sudo docker run -d \
-  --restart=unless-stopped \
-  --name=kuboard \
-  -p 80:80/tcp \
-  -p 10081:10081/tcp \
-  -e KUBOARD_ENDPOINT="http://192.168.1.118:80" \
-  -e KUBOARD_AGENT_SERVER_TCP_PORT="10081" \
-  -v /root/kuboard-data:/data \
-  eipwork/kuboard:v3
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.3.1/aio/deploy/recommended.yaml
 
-$ ansible-playbook -i hosts deploy-kuboard.yml -u deploy -v
+$ kubectl -n kubernetes-dashboard delete serviceaccount admin-user
+$ kubectl -n kubernetes-dashboard delete clusterrolebinding admin-user
+
+$ cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kubernetes-dashboard
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kubernetes-dashboard
+EOF
+
+# 获取登陆token
+$ kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
 ```
 
 #### 参考
@@ -42,4 +60,4 @@ $ ansible-playbook -i hosts deploy-kuboard.yml -u deploy -v
 - [Calico](https://docs.projectcalico.org/)
 - [CoreDNS](https://coredns.io/)
 - [Kubernetes Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
-- [Kuboard](https://kuboard.cn/)
+- [Kubernetes Dashboard](https://github.com/kubernetes/dashboard)

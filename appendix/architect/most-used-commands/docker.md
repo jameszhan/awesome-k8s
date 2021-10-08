@@ -4,6 +4,19 @@
 $ docker run -it --rm debian:stretch-slim bash
 $ docker run -it --rm busybox sh
 $ docker run -it --rm cirros sh
+
+
+$ docker pull google/cadvisor
+
+$ docker run \
+  --volume=/var/run:/var/run:rw \
+  --volume=/sys/fs/cgroup/:/sys/fs/cgroup:ro \
+  --volume=/var/lib/docker/:/var/lib/docker:ro \
+  --publish=8080:8080 \
+  --detach=true \
+  google/cadvisor
+
+$ curl -i http://192.168.1.95:8080
 ```
 
 ##### Install Docker Compose
