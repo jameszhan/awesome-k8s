@@ -1,0 +1,4 @@
+- name: deploy calico
+  hosts: k8s_masters
+  roles:
+    - kuboard
