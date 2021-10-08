@@ -31,7 +31,7 @@ $ echo $0
 
 
 ```bash
-$ bash shell-envs.md
+$ bash scripts/shell-envs.md
 ```
 
 #### 命令提示符

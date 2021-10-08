@@ -116,6 +116,12 @@
   - [ ] Typecho
 - [ ] 下载
   - [ ] Aria2
+- [ ] [ImageMagick](www.imagemagick.org)
+- [ ] `Groff`是`GNU Troff`的简称，是`troff`工具的`GNU`重实现版。
+- [ ] `glxgears`: 用来检测`OpenGL 3D`显卡驱动的效率小程序
+- [ ] `dmidecode`: 查询系统硬件信息
+- [ ] `overlay`: `Overlayfs`是一种堆叠文件系统，它依赖并建立在其它的文件系统之上，仅仅将原来底层文件系统中不同的目录进行合并，然后向用户呈现。关联内核模块为`fs/overlayfs/overlay.ko`
+
 
 ## 附录
 
