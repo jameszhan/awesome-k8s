@@ -56,6 +56,7 @@
 - SMB: Server Message Block
 - CIFS: Common Internet File System
 - PAM: Pluggable Authentication Modules
+- NSS: Name Service Switch，名称服务切换
 - SELinux: Security-Enhanced Linux
 - MAC: Mandatory Access Control
 - MMU: Memory Management Unit

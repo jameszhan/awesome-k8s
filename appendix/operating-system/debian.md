@@ -1,8 +1,12 @@
+#### 配置`sudo`免密
+
 ```bash
 $ apt -y install sudo
 $ usermod -a -G sudo james
 $ echo 'james ALL = (ALL) NOPASSWD: ALL' > /etc/sudoers.d/james
 ```
+
+#### 时区和`locale`配置
 
 ```bash
 # 设置当前时区
