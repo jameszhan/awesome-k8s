@@ -22,7 +22,7 @@ $ ansible-playbook -i hosts setup-once.yml -u deploy -v
 $ ansible -i hosts all -m reboot -u deploy --become -v
 ```
 
-## 二进制安装高可用 K8S 集群
+## 二进制安装高可用`k8s`集群
 
 ### 准备工作
 
