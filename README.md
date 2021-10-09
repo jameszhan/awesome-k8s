@@ -1,5 +1,9 @@
 ## 准备工作
 
+### 本地开发环境设置
+
+详细参考: `appendix/setup-dev-env.md`。
+
 ### 创建新用户`deploy`
 
 ```bash
@@ -31,6 +35,25 @@ $ ansible -i hosts all -m reboot -u deploy --become -v
 ```bash
 $ cd install-binaries/ansible
 ```
+
+#### 软件版本
+
+| 操作系统                                               | 版本                       | 用途                     |
+| ----------------------------------------------------- | ------------------------- | ------------------------ |
+| Debian                                                | 11 (bullseye)             | etcd集群和k8s master集群 |
+| Ubuntu Server                                         | 20.04.3 LTS (Focal Fossa) | k8s worker节点           |
+| kube-apiserver/kube-controller-manager/kube-scheduler | v1.21.4                   | k8s master 服务          |
+| kubelet/kube-proxy                                    | v1.21.4                   | k8s worker 服务          |
+| kubectl                                               | v1.21.4/v1.22.2           | k8s 客户端               |
+| etcd                                                  | 3.5.0                     | 集群协调监控及数据服务      |
+| haproxy                                               | 2.2.9-2+deb11u2           | 负载均衡服务               |
+| keepalived                                            | v2.1.5                    | 高可用服务                |
+| docker                                                | 20.10.9                   | CRI服务                  |
+| calico                                                | v3.20.1                   | CNI vRouter服务          |
+| coredns                                               | v1.8.0                    | 集群DNS服务               |
+| metrics-server                                        | v0.5.1                    | 集群容器监控服务           |
+| kubernetes-dashboard                                  | v2.3.1                    | 集群Web UI               |
+
 
 #### 配置清单
 

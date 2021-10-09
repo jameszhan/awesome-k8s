@@ -1,6 +1,6 @@
 - debug: msg="{{ansible_pkg_mgr}}"
 
-- name: Install haproxy keepalived (Debian based)
+- name: Install haproxy (Debian based)
   become: true
   become_method: sudo
   apt:
@@ -9,7 +9,7 @@
     state: present
   when: ansible_pkg_mgr == 'apt'
 
-- name: Install haproxy keepalived (Redhat based)
+- name: Install haproxy (Redhat based)
   become: true
   become_method: sudo
   yum:
