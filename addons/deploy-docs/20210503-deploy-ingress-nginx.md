@@ -270,6 +270,21 @@ $ curl -v -k -X GET \
     https://192.168.1.203
 ```
 
+代理不同`NS`服务，`ingress`只能代理同`NS`服务，因此，需要在service层做一层转发。
+Kubernetes Observability
+
+```bash
+$ dig -t A kubernetes-dashboard.kubernetes-dashboard.svc.cluster.local @192.168.1.130
+$ dig -t A kubernetes-dashboard.geek-apps.svc.cluster.local @192.168.1.130
+
+$ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
+```
+> 提示：CirrOS是设计用来进行云计算环境测试的Linux微型发行版，它拥有HTTP客户端工具curl等。
+
+```bash
+$ curl -v -k https://kubernetes-dashboard.kubernetes-dashboard.svc.cluster.local
+$ curl -v -k https://kubernetes-dashboard.geek-apps.svc.cluster.local
+```
 
 ## 附录
 
