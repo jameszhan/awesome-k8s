@@ -1,0 +1,35 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: kubernetes-dashboard
+  namespace: geek-apps
+spec:
+  type: ExternalName
+  externalName: kubernetes-dashboard.kubernetes-dashboard.svc.cluster.local
+  ports:
+  - port: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dashboard-ingress
+  namespace: geek-apps
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: k8s.zizhizhan.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kubernetes-dashboard
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - k8s.zizhizhan.com
+      secretName: star.zizhizhan.com-tls

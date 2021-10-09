@@ -11,6 +11,10 @@ $ kubectl drain k8s-node008 --delete-emptydir-data --force --ignore-daemonsets
 $ kubectl drain k8s-node031 --delete-emptydir-data --force --ignore-daemonsets
 $ kubectl drain k8s-node032 --delete-emptydir-data --force --ignore-daemonsets
 $ kubectl drain k8s-node033 --delete-emptydir-data --force --ignore-daemonsets
+$ kubectl drain k8s-node005 --delete-emptydir-data --force --ignore-daemonsets
+$ kubectl drain k8s-node006 --delete-emptydir-data --force --ignore-daemonsets
+$ kubectl drain k8s-node007 --delete-emptydir-data --force --ignore-daemonsets
+
 
 $ kubectl get nodes
 NAME          STATUS                     ROLES                  AGE    VERSION
@@ -26,6 +30,9 @@ $ kubectl delete node k8s-node022
 $ kubectl delete node k8s-node031
 $ kubectl delete node k8s-node032
 $ kubectl delete node k8s-node033
+$ kubectl delete node k8s-node005
+$ kubectl delete node k8s-node006
+$ kubectl delete node k8s-node007
 $ kubectl delete node k8s-node008
 ```
 
@@ -43,7 +50,9 @@ $ sudo rm -vrf /var/lib/containerd
 $ sudo apt -y purge kubeadm kubelet kubectl
 $ sudo rm -vfr /opt/containerd/
 $ sudo rm /etc/apt/sources.list.d/kubernetes.list
+$ sudo rm /etc/apt/sources.list.d/docker.list
 $ sudo rm /usr/share/keyrings/kubernetes-archive-keyring.gpg
+$ sudo rm /usr/share/keyrings/docker-archive-keyring.gpg
 
 $ sudo apt -y autoremove
 ```

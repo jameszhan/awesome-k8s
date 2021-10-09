@@ -219,3 +219,13 @@ $ curl -i -v http://nginx-service
 $ kubectl delete deployment nginx-deployment
 $ kubectl delete service nginx-service
 ```
+
+测试访问集群内服务
+
+```bash
+$ kubectl proxy --port=8080 &
+$ curl -i http://localhost:8080/api/
+
+$ TOKEN=$(kubectl describe secret $(kubectl get secrets | grep default | cut -f1 -d ' ') | grep -E '^token' | cut -f2 -d':' | tr -d ' ')
+$ curl -k -v https://192.168.1.200:8443/api/ --header "Authorization: Bearer $TOKEN"
+```

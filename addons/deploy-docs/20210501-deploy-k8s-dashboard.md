@@ -1,7 +1,6 @@
 
-#### 快速部署`dashboard`
+#### 快速部署`Kubernetes Dashboard`
 
-[Kubernetes Dashboard](https://github.com/kubernetes/dashboard)
 
 ```bash
 $ export KUBECONFIG=/opt/etc/kube/config:$HOME/.kube/config
@@ -12,7 +11,7 @@ $ kubectl apply -f templates/kubernetes-dashboard.yml
 $ kubectl proxy
 $ open http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/
 ```
-##### 创建管理账户
+#### 创建管理账户
 
 ```bash
 $ kubectl -n kubernetes-dashboard delete serviceaccount admin-user
@@ -44,13 +43,23 @@ EOF
 $ kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
 ```
 
-### 访问集群
+#### Kubernetes Observability
 
 ```bash
-$ kubectl proxy --port=8080 &
+$ dig -t A kubernetes-dashboard.kubernetes-dashboard.svc.cluster.local @192.168.1.130
+$ dig -t A kubernetes-dashboard.geek-apps.svc.cluster.local @192.168.1.130
+$ dig -t A kubernetes-dashboard @192.168.1.130
 
-$ curl -i http://localhost:8080/api/
 
-$ TOKEN=$(kubectl describe secret $(kubectl get secrets | grep default | cut -f1 -d ' ') | grep -E '^token' | cut -f2 -d':' | tr -d ' ')
-$ curl -i https://192.168.1.161:6443/api/ --header "Authorization: Bearer $TOKEN"
+$ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
 ```
+> 提示：CirrOS是设计用来进行云计算环境测试的Linux微型发行版，它拥有HTTP客户端工具curl等。
+
+```bash
+$ curl -v -k https://kubernetes-dashboard.kubernetes-dashboard.svc.cluster.local
+$ curl -v -k kubernetes-dashboard.geek-apps.svc.cluster.local
+```
+
+#### 参考资料
+
+- [Kubernetes Dashboard](https://github.com/kubernetes/dashboard)

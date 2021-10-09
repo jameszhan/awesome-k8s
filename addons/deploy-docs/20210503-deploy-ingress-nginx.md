@@ -1,9 +1,25 @@
 
-### 配置`ingress-nginx`
+## 部署`ingress-nginx`
 
-[Ingress Nginx](https://github.com/kubernetes/ingress-nginx)
+### 准备工作
 
-#### 安装`ingress-nginx`
+#### 准备镜像
+
+```bash
+# k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.0@sha256:f3b6b39a6062328c095337b4cadcefd1612348fdd5190b1dcbcb9b9e90bd8068
+# sha256:597784742b823bfab67dc1a987fd889a30119059ecf51bf7ba9a0958bab88dc7
+$ docker pull registry.cn-shenzhen.aliyuncs.com/jameszhan/ingress-nginx_kube-webhook-certgen:v1.0
+
+# k8s.gcr.io/ingress-nginx/controller:v1.0.3@sha256:4ade87838eb8256b094fbb5272d7dda9b6c7fa8b759e6af5383c1300996a7452
+# sha256:8b1011b1f6f3be2c9180bffe2313b8ee55213f965b40d1c99a77e3688a4778ab
+$ docker pull registry.cn-shenzhen.aliyuncs.com/jameszhan/ingress-nginx-controller:v1.0.3
+
+# k8s.gcr.io/defaultbackend-amd64:1.5
+# sha256:234a69266f80d440161d89c4603a37a0e6514d5a503d0dddfaf17945a2acfc79
+$ docker pull registry.cn-shenzhen.aliyuncs.com/jameszhan/defaultbackend-amd64:1.5
+```
+
+#### 准备`Helm chart`
 
 ```bash
 $ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
@@ -11,16 +27,62 @@ $ helm repo update
 
 $ helm search repo ingress-nginx
 
-# helm pull ingress-nginx/ingress-nginx
+# 确认配置
+$ helm show values ingress-nginx/ingress-nginx
+
+# 安装前先需要替换准备好的镜像
 $ helm template -f templates/ingress-nginx-values.yml -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
+```
+
+### 安装及升级
+
+#### 安装`ingress-nginx`
+
+```bash
+# helm pull ingress-nginx/ingress-nginx
+$ helm uninstall ingress-nginx -n ingress-nginx 
+# helm install ingress-nginx ingress-nginx/ingress-nginx
 $ helm install -f templates/ingress-nginx-values.yml --create-namespace -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
+NOTES:
+The ingress-nginx controller has been installed.
+It may take a few minutes for the LoadBalancer IP to be available.
+You can watch the status by running 'kubectl --namespace ingress-nginx get services -o wide -w ingress-nginx-controller'
 
-$ kubectl --namespace ingress-nginx get services -o wide -w ingress-nginx-controller
+An example Ingress that makes use of the controller:
 
-$ kubectl apply -f templates/config/ingress-nginx/controller.yml
-$ kubectl get cm ingress-nginx-controller -n ingress-nginx -o yaml
+  apiVersion: networking.k8s.io/v1
+  kind: Ingress
+  metadata:
+    annotations:
+      kubernetes.io/ingress.class: nginx
+    name: example
+    namespace: foo
+  spec:
+    rules:
+      - host: www.example.com
+        http:
+          paths:
+            - backend:
+                serviceName: exampleService
+                servicePort: 80
+              path: /
+    # This section is only required if TLS is to be enabled for the Ingress
+    tls:
+        - hosts:
+            - www.example.com
+          secretName: example-tls
 
-$ kubectl logs -f ingress-nginx-controller-768fdb7ccd-nsdpr -n ingress-nginx
+If TLS is enabled for the Ingress, a Secret containing the certificate and key must also be provided:
+
+  apiVersion: v1
+  kind: Secret
+  metadata:
+    name: example-tls
+    namespace: foo
+  data:
+    tls.crt: <base64 encoded cert>
+    tls.key: <base64 encoded key>
+  type: kubernetes.io/tls
 ```
 
 #### 升级`ingress-nginx`
@@ -29,56 +91,87 @@ $ kubectl logs -f ingress-nginx-controller-768fdb7ccd-nsdpr -n ingress-nginx
 $ helm upgrade -f templates/ingress-nginx-values.yml --create-namespace -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
 ```
 
-### 配置证书
+## 更新`ingress`配置
+
+### 启用`IP`及`GEO`日志
 
 ```bash
-$ kubectl create namespace geek-apps
+$ kubectl get cm ingress-nginx-controller -n ingress-nginx -o yaml
+$ kubectl apply -f templates/ingress-nginx/controller-configmap.yaml
+$ kubectl get cm ingress-nginx-controller -n ingress-nginx -o yaml
+
+$ kubectl logs -f pod/ingress-nginx-controller-97d87b6ff-4r8r6 -n ingress-nginx
+$ kubectl logs -f pod/ingress-nginx-controller-97d87b6ff-cd7s5 -n ingress-nginx
+```
+
+## 证书管理
+
+```bash
 $ kubectl get secret ingress-nginx-admission -n ingress-nginx -o yaml
-$ kubectl get secret --field-selector type=kubernetes.io/tls -n geek-apps
-$ kubectl get secret zizhizhan.com-tls -n geek-apps -o yaml
+
+# 查看已有证书
+$ kubectl get secret --field-selector type=kubernetes.io/tls -A
 ```
 
-#### [DNSPod 证书](https://console.cloud.tencent.com/ssl)
+### 导入`DNSPod`证书
 
-##### `zizhizhan.com`
+从[我的证书](https://console.cloud.tencent.com/ssl)下载对应的证书并解压。
 
 ```bash
-$ kubectl get secret -A --sort-by type
+$ unzip -d zizhizhan.com zizhizhan.com.zip
+$ unzip -d www.zizhizhan.com www.zizhizhan.com.zip
+$ unzip -d blog.zizhizhan.com blog.zizhizhan.com.zip
+```
+
+#### 导入`zizhizhan.com`证书
+
+```bash
 $ kubectl delete secret zizhizhan.com-tls -n geek-apps
-
-$ cd /opt/var/certificates/zizhizhan.com/
-$ kubectl create secret tls zizhizhan.com-tls --cert=Nginx/1_zizhizhan.com_bundle.crt --key=Nginx/2_zizhizhan.com.key -n geek-apps
+$ kubectl create secret tls zizhizhan.com-tls --cert=zizhizhan.com/Nginx/1_zizhizhan.com_bundle.crt --key=zizhizhan.com/Nginx/2_zizhizhan.com.key -n geek-apps
 $ kubectl get secret zizhizhan.com-tls -n geek-apps -o yaml
 ```
 
-##### `blog.zizhizhan.com`
+#### 导入`www.zizhizhan.com`证书
 
 ```bash
-$ kubectl delete secret blog.zizhizhan.com-tls -n geek-apps
-$ cd /opt/var/certificates/blog.zizhizhan.com/
-$ kubectl create secret tls blog.zizhizhan.com-tls --cert=Nginx/1_blog.zizhizhan.com_bundle.crt --key=Nginx/2_blog.zizhizhan.com.key -n geek-apps
-$ kubectl get secret blog.zizhizhan.com-tls -n geek-apps -o yaml
-```
-
-##### `www.zizhizhan.com`
-
-```bash
-$ cd /opt/var/certificates/www.zizhizhan.com/
-$ kubectl create secret tls www.zizhizhan.com-tls --cert=Nginx/1_www.zizhizhan.com_bundle.crt --key=Nginx/2_www.zizhizhan.com.key -n geek-apps
+$ kubectl delete secret www.zizhizhan.com-tls -n geek-apps
+$ kubectl create secret tls www.zizhizhan.com-tls --cert=www.zizhizhan.com/Nginx/1_www.zizhizhan.com_bundle.crt --key=www.zizhizhan.com/Nginx/2_www.zizhizhan.com.key -n geek-apps
 $ kubectl get secret www.zizhizhan.com-tls -n geek-apps -o yaml
 ```
 
-#### [Let's Encrypt 证书](https://letsencrypt.org/)
+#### 导入`blog.zizhizhan.com`证书
+
+```bash
+$ kubectl delete secret blog.zizhizhan.com-tls -n geek-apps
+$ kubectl create secret tls blog.zizhizhan.com-tls --cert=blog.zizhizhan.com/Nginx/1_blog.zizhizhan.com_bundle.crt --key=blog.zizhizhan.com/Nginx/2_blog.zizhizhan.com.key -n geek-apps
+$ kubectl get secret blog.zizhizhan.com-tls -n geek-apps -o yaml
+```
+
+### 泛域名证书
+
+> `DNSPod`不支持免费的泛域名证书，因此我们需要借助[Let's Encrypt](https://letsencrypt.org/)和`certbot`来创建。
+
+#### 创建泛域名证书
+
+##### 安装`certbot`
+
+```bash
+$ sudo snap install --classic certbot
+
+$ certbot --version
+```
+
+##### 创建证书
 
 ```bash
 $ dig -t txt _acme-challenge.zizhizhan.com @8.8.8.8
-$ sudo certbot certonly -d *.zizhizhan.com --manual \
+$ sudo certbot certonly -d "*.zizhizhan.com" --manual \
     --preferred-challenges dns \
     --email zhiqiangzhan@gmail.com \
     --server https://acme-v02.api.letsencrypt.org/directory \
     --dry-run
 
-$ sudo certbot certonly -d *.zizhizhan.com --manual \
+$ sudo certbot certonly -d "*.zizhizhan.com" --manual \
     --preferred-challenges dns \
     --email zhiqiangzhan@gmail.com \
     --server https://acme-v02.api.letsencrypt.org/directory
@@ -87,37 +180,48 @@ $ dig -t txt _acme-challenge.zizhizhan.com @8.8.8.8
 # ;; ANSWER SECTION:
 # _acme-challenge.zizhizhan.com. 599 IN	TXT	"7woEDmk_daN8oJWrP7UCEGymQNgZAf21GMX1AM6kTak"
 
-$ sudo su - root
-$ mkdir -p /opt/var/letsencrypt
-$ cp -r /etc/letsencrypt/archive/zizhizhan.com /opt/var/letsencrypt
-$ chown -R james:sudo /opt/var/
-$ exit
+# 生成文件如下
+$ ls -lah /etc/letsencrypt/live/zizhizhan.com
+lrwxrwxrwx 1 root root   37 10月  9 19:11 cert.pem -> ../../archive/zizhizhan.com/cert1.pem
+lrwxrwxrwx 1 root root   38 10月  9 19:11 chain.pem -> ../../archive/zizhizhan.com/chain1.pem
+lrwxrwxrwx 1 root root   42 10月  9 19:11 fullchain.pem -> ../../archive/zizhizhan.com/fullchain1.pem
+lrwxrwxrwx 1 root root   40 10月  9 19:11 privkey.pem -> ../../archive/zizhizhan.com/privkey1.pem
+```
 
+##### 自动配置续期
+
+```bash
 $ sudo crontab -e
 ```
 
-> 每隔 10 天，夜里 3 点整自动执行检查续期命令一次。
+> 每隔`10`天，夜里`3`点整自动执行检查续期命令一次。
 
 ```crontab
-0 3 */10 * * /usr/bin/certbot renew --renew-hook "echo \"renew success @ $(date)\" >> /tmp/certbot-renew.txt"
+0 3 */10 * * /snap/bin/certbot renew --renew-hook "echo \"renew success @ $(date)\" >> /tmp/certbot-renew.txt"
 ```
+
+#### 导入证书
 
 ```bash
-$ scp -r k8s-node029:/opt/var/letsencrypt/zizhizhan.com /opt/var/certificates
-$ mv zizhizhan.com star.zizhizhan.com
-
-$ kubectl get secret -A --sort-by type
 $ kubectl delete secret star.zizhizhan.com-tls -n geek-apps
 
-$ cd /opt/var/certificates/star.zizhizhan.com/
-$ kubectl create secret tls star.zizhizhan.com-tls --cert=fullchain1.pem --key=privkey1.pem -n geek-apps
+$ mkdir star.zizhizhan.com
+
+# 复制备份证书
+$ sudo su
+$ cp -r /etc/letsencrypt/archive/zizhizhan.com/*.pem star.zizhizhan.com/
+$ chown -R james:sudo star.zizhizhan.com
+$ exit
+
+$ kubectl create secret tls star.zizhizhan.com-tls --cert=star.zizhizhan.com/fullchain1.pem --key=star.zizhizhan.com/privkey1.pem -n geek-apps
+$ kubectl get secret star.zizhizhan.com-tls -n geek-apps -o yaml
 ```
 
-### 配置`Nginx`
+## 配置`ingress-nginx`
 
-#### 代理已有服务
+### 代理集群外服务
 
-##### 代理`Synology DSM`
+#### 代理`Synology DSM`
 
 ```bash
 $ kubectl apply -f templates/ingress/synology-dsm.yml
@@ -126,10 +230,13 @@ $ kubectl get ep -n geek-apps -o wide
 $ kubectl get svc -n geek-apps -o wide
 $ kubectl get ingress -n geek-apps -o wide
 
+# 192.168.1.203 是 ingress-nginx-controller 服务的 CLUSTER-IP
+$ curl -v -k -H "Host: dsm.zizhizhan.com" https://192.168.1.203
+
 $ open https://dsm.zizhizhan.com:8443
 ```
 
-##### 代理小米路由器
+#### 代理小米路由器
 
 ```bash
 $ kubectl apply -f templates/ingress/xiaomi-router.yml
@@ -138,28 +245,16 @@ $ kubectl get ep -n geek-apps -o wide
 $ kubectl get svc -n geek-apps -o wide
 $ kubectl get ingress -n geek-apps -o wide
 
-$ open https://mi.zizhizhan.com
-
-$ curl -i -X GET \
+$ curl -v -k -X GET \
     -H "Host: mi.zizhizhan.com" \
-    https://mi.zizhizhan.com:8443/
+    https://192.168.1.203
+
+$ open https://mi.zizhizhan.com:8443
 ```
 
-#### Kubernetes Observability
-##### Kubernetes Dashboard
+### 代理集群内服务
 
-```bash
-$ dig -t A kubernetes-dashboard.kubernetes-dashboard.svc.cluster.local @10.96.0.10
-$ dig -t A kubernetes-dashboard.geek-apps.svc.cluster.local @10.96.0.10
-
-$ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
-```
-> 提示：CirrOS是设计用来进行云计算环境测试的Linux微型发行版，它拥有HTTP客户端工具curl等。
-
-```bash
-$ curl -i kubernetes-dashboard.kubernetes-dashboard.svc.cluster.local
-$ curl -i kubernetes-dashboard.geek-apps.svc.cluster.local
-```
+#### 代理`Kubernetes Dashboard`
 
 ```bash
 $ kubectl apply -f templates/ingress/kubernetes-dashboard.yml
@@ -169,5 +264,17 @@ $ kubectl get ingress -n geek-apps
 $ kubectl describe ingress -n geek-apps
 
 $ open https://k8s.zizhizhan.com:8443
-$ kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep admin-user | awk '{print $1}')
+
+$ curl -v -k -X GET \
+    -H "Host: k8s.zizhizhan.com" \
+    https://192.168.1.203
 ```
+
+
+## 附录
+
+#### 参考资料
+
+- [Ingress Nginx](https://github.com/kubernetes/ingress-nginx)
+- [DNSPod 我的证书](https://console.cloud.tencent.com/ssl)
+- [Let's Encrypt 证书](https://letsencrypt.org/)
