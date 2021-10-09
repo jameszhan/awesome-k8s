@@ -42,8 +42,8 @@ $ cd install-binaries/ansible
 | ----------------------------------------------------- | ------------------------- | ------------------------ |
 | Debian                                                | 11 (bullseye)             | etcd集群和k8s master集群 |
 | Ubuntu Server                                         | 20.04.3 LTS (Focal Fossa) | k8s worker节点           |
-| kube-apiserver<br />kube-controller-manager<br />kube-scheduler | v1.21.4                   | k8s master 服务          |
-| kubelet<br />kube-proxy                                    | v1.21.4                   | k8s worker 服务          |
+| kube-apiserver<br />kube-controller-manager<br />kube-scheduler | v1.21.4         | k8s master 服务          |
+| kubelet<br />kube-proxy                               | v1.21.4                   | k8s worker 服务          |
 | kubectl                                               | v1.21.4/v1.22.2           | k8s 客户端               |
 | etcd                                                  | 3.5.0                     | 集群协调监控及数据服务      |
 | haproxy                                               | 2.2.9-2+deb11u2           | 负载均衡服务               |

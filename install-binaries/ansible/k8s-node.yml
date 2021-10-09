@@ -1,5 +1,7 @@
 - name: k8s deployment
-  hosts: k8s_nodes
+  hosts: 
+    - k8s_nodes
+    - k8s_new_nodes
   roles:
     - k8s-node
   vars_files:

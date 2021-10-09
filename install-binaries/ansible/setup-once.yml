@@ -1,7 +1,6 @@
-- name: k8s deployment
+- name: k8s deployment prerequisites
   hosts: 
-    - k8s_masters
-    - k8s_nodes
+    - all
   roles:
     - setup-once
   vars_files:
