@@ -26,6 +26,12 @@ $ ansible --version
 ### 命令实操
 
 ```bash
+$ ansible-doc -s command
+$ ansible-doc -s shell
+$ ansible-doc -s script
+```
+
+```bash
 $ ansible -i hosts all -m shell -a "ipvsadm -Ln" -u deploy --become -v
 ```
 
@@ -116,4 +122,39 @@ $ ansible-playbook -i hosts k8s-master.yml -u deploy -v
 
 # Install k8s Node Cluster
 $ ansible-playbook -i hosts k8s-node.yml -u deploy -v
+```
+
+```bash
+$ ansible -vvv -m script -a '/opt/bin/update-system.sh' k8s
+
+$ ansible -m shell -a 'ip address show enp1s0' k8s
+```
+
+
+```bash
+$ ansible -m command -a 'reboot' --become k8s
+
+$ ansible -m shell -a 'virsh list --name | xargs -i virsh shutdown {}' hostos
+
+$ ansible -m script -a '/opt/bin/update-system.sh' hostos
+$ ansible -m script -a '/opt/bin/update-system.sh' k8s
+```
+
+
+
+
+
+```bash
+$ ansible k8s --list-hosts
+$ ansible k8s -m script -a '/opt/bin/update-system.sh'
+
+$ ansible proxy-server.local -m script -a '/opt/bin/update-system.sh'
+```
+
+#### Kubernetes Cluster Restart
+
+```bash
+$ ansible -m command -a 'reboot' --become k8s
+
+$ ansible -m command -a 'swapoff -a' --become k8s
 ```
