@@ -55,6 +55,8 @@ EOF
 $ kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}"
 ```
 
+- [Creating sample user](https://github.com/kubernetes/dashboard/blob/master/docs/user/access-control/creating-sample-user.md)
+
 #### 参考
 
 - [Calico](https://docs.projectcalico.org/)
