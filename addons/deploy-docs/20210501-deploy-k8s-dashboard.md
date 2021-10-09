@@ -4,7 +4,7 @@
 ```bash
 $ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.3.1/aio/deploy/recommended.yaml
 
-$ kubectl proxy
+$ kubectl proxy --address=0.0.0.0
 $ open http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/kubernetes-dashboard:/proxy
 ```
 

@@ -1,4 +1,8 @@
 
+```bash
+$ docker login --username=zizhi****@gmail.com registry.cn-shenzhen.aliyuncs.com
+$ sudo docker login --username=zizhi****@gmail.com registry.cn-shenzhen.aliyuncs.com
+```
 
 ```bash
 $ docker run -it --rm debian:stretch-slim bash

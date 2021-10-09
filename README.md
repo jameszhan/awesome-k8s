@@ -229,3 +229,32 @@ $ curl -i http://localhost:8080/api/
 $ TOKEN=$(kubectl describe secret $(kubectl get secrets | grep default | cut -f1 -d ' ') | grep -E '^token' | cut -f2 -d':' | tr -d ' ')
 $ curl -k -v https://192.168.1.200:8443/api/ --header "Authorization: Bearer $TOKEN"
 ```
+
+#### 添加新`worker`节点
+
+在 `hosts` 中增加如下记录:
+
+```ini
+[k8s_new_nodes]
+k8s-node006 ansible_host=192.168.1.116 node_host=192.168.1.116 role=worker
+k8s-node007 ansible_host=192.168.1.117 node_host=192.168.1.117 role=worker
+```
+
+执行`playbook`脚本，详情可以参考[add-worker-to-cluster](appendix/kubernetes/add-worker-to-cluster.md).
+
+```bash
+# 添加deploy用户
+$ ansible-playbook -i hosts -l k8s_new_nodes -c paramiko --ask-pass --ask-become-pass user-deploy.yml -v
+
+# 初始化必要配置
+$ ansible-playbook -i hosts -l k8s_new_nodes setup-once.yml -u deploy -v
+
+# 安装docker
+$ ansible-playbook -i hosts -l k8s_new_nodes docker.yml -u deploy -v
+
+# 安装kubelet和kube-proxy
+$ ansible-playbook -i hosts -l k8s_new_nodes k8s-node.yml -u deploy -v
+
+# 重启节点服务器
+$ ansible -i hosts k8s_new_nodes -m reboot -u deploy --become -v
+```
