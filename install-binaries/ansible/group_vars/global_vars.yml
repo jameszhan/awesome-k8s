@@ -1,4 +1,4 @@
-binaries_fs: http://192.168.1.6:8888
+binaries_fs:  https://dl.zizhizhan.com:8443
 
 ha_proxy_ip: 192.168.1.200
 ha_proxy_port: 8443

@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:  
-  name: nginx-pv
+  name: default-backend-pv
   labels:
-    pv: nginx
+    pv: default-backend-pv
 spec:  
   capacity:    
     storage: 128Gi  
@@ -16,14 +16,14 @@ spec:
     - hard
     - nfsvers=4.1
   nfs:    
-    path: /volume1/shared/www
+    path: /volume1/shared/kickstart
     server: 192.168.1.6
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: nginx-pvc
+  name: default-backend-pvc
   namespace: geek-apps
 spec:
   storageClassName: nfs
@@ -34,28 +34,28 @@ spec:
       storage: 128Gi
   selector:
     matchLabels:
-      pv: nginx
+      pv: default-backend-pv
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-pkm
+  name: nginx-default-backend
   namespace: geek-apps
   labels:
-    app: nginx-pkm
+    app: nginx-default-backend
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: nginx-pkm
+      app: nginx-default-backend
   template:
     metadata:
       labels:
-        app: nginx-pkm
+        app: nginx-default-backend
     spec:
       containers:
-      - name: nginx-pkm
+      - name: nginx-default-backend
         image: nginx
         imagePullPolicy: IfNotPresent
         ports:
@@ -63,25 +63,25 @@ spec:
           protocol: TCP
         volumeMounts:
         - mountPath: "/usr/share/nginx/html"
-          name: nginx-pkm-pvc-vol
+          name: nginx-pvc-vol
         - mountPath: "/etc/nginx/conf.d"
-          name: default-nginx-conf-vol
+          name: default-backend-conf-vol
       volumes:
-      - name: nginx-pkm-pvc-vol
+      - name: nginx-pvc-vol
         persistentVolumeClaim:
-          claimName: nginx-pvc
-      - name: default-nginx-conf-vol
+          claimName: default-backend-pvc
+      - name: default-backend-conf-vol
         configMap:
-          name: default-nginx-conf
+          name: default-backend-conf
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginx-pkm-service
+  name: default-backend-service
   namespace: geek-apps
   labels:
-    app: nginx
+    app: nginx-default-backend
 spec:
   clusterIP: None
   ports:
@@ -89,42 +89,32 @@ spec:
     port: 80
     name: httpport
   selector:
-    app: nginx-pkm
+    app: nginx-default-backend
 
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: default-ingress
+  name: dl-ingress
   namespace: geek-apps
+  annotations:
+    kubernetes.io/ingress.class: nginx
 spec:
   tls:
     - secretName: star.zizhizhan.com-tls
   defaultBackend:
-    service: 
-      name: nginx-pkm-service
+    service:
+      name: default-backend-service
       port:
         number: 80
-
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: pkm-ingress
-  namespace: geek-apps
-spec:
-  tls:
-  - hosts:
-      - pkm.zizhizhan.com
-    secretName: star.zizhizhan.com-tls
   rules:
-  - host: pkm.zizhizhan.com
+  - host: dl.zizhizhan.com
     http:
       paths:
-      - path: /
-        pathType: Prefix
+      - pathType: Prefix
+        path: "/"
         backend:
           service:
-            name: nginx-pkm-service
+            name: default-backend-service
             port:
               number: 80
