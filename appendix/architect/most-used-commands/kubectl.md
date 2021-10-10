@@ -1,3 +1,41 @@
+#### 配置自动补全
+
+```bash
+$ sudo apt -y install bash-completion
+# 启用 zsh 自动补全功能
+$ echo 'source <(kubectl completion zsh)' >> ~/.zshrc
+```
+
+#### 检查当前集群
+
+```bash
+$ kubectl cluster-info
+$ kubectl config view
+```
+
+#### 查看集群资源
+
+```bash
+$ kubectl api-resources -o wide
+
+$ kubectl api-resources --namespaced=false --sort-by=kind -o wide
+$ kubectl api-resources --namespaced=true --sort-by=kind -o wide
+```
+
+> 运行一个`proxy`到`Kubernetes API server`
+
+```bash
+$ kubectl proxy --port=8080
+
+$ curl -i http://127.0.0.1:8080/healthz
+$ curl -i http://127.0.0.1:8080/livez
+$ curl -i http://127.0.0.1:8080/readyz
+
+$ open http://localhost:8080/api/v1/namespaces/geek-apps/pods
+$ open http://localhost:8080/api/v1/namespaces/geek-apps/services
+$ open http://localhost:8080/api/v1/namespaces/geek-apps/services/default-backend-service
+```
+
 ```bash
 $ kubectl delete cm kubernetes-services-endpoint
 ```
@@ -33,4 +71,22 @@ $ kubectl run my-nginx --image=nginx --port=80
 $ kubectl port-forward --address 0.0.0.0 pod/my-nginx 8080:80
 
 $ kubectl create deployment nginx --image=nginx
+```
+
+```bash
+$ kubectl run busybox --image=busybox:latest -i --tty
+$ kubectl attach busybox -c busybox -i -t
+# nslookup kubernetes
+$ kubectl delete pod busybox
+```
+
+#### 访问指定集群 
+
+- [配置对多集群的访问](https://kubernetes.io/zh/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
+- [使用 kubeconfig 文件组织集群访问](https://kubernetes.io/zh/docs/concepts/configuration/organize-cluster-access-kubeconfig/)
+
+```bash
+$ kubectl --kubeconfig=/opt/etc/kube/config get nodes
+$ KUBECONFIG=/opt/etc/kube/config kubectl cluster-info
+$ KUBECONFIG=/opt/etc/kube/config kubectl config view
 ```

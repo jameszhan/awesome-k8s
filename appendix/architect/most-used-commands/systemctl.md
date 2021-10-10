@@ -1,3 +1,24 @@
+#### 命令示例
+
+```bash
+# 显示系统状态
+$ systemctl status
+
+# 显示单个 Unit 的状态
+$ systemctl status rsync.service
+$ systemctl status cron.service
+$ systemctl status ssh.service
+$ systemctl status dbus.service
+$ systemctl status systemd-networkd.service
+
+# 显示某个 Unit 的所有底层参数
+$ systemctl show dbus.service
+$ systemctl show ssh.service
+
+#  查询缺失的服务
+$ systemctl --state=not-found --all
+```
+
 #### 典型的`systemctl`命令片段列表
 
 | 操作                                         | 命令片段                                        |
@@ -51,3 +72,6 @@
 | 跟踪 cgroups 的启动过程             | `systemd-cgls`                          |
 | 跟踪 cgroups 的启动过程             | `ps xawf -eo pid,user,cgroup,args`      |
 | 跟踪 cgroups 的启动过程             | 读取`/sys/fs/cgroup/systemd/`下的`sysfs`  |
+
+`systemctl status`命令用于查看系统状态和单个`Unit`的状态。
+

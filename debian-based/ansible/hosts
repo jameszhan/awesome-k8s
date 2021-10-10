@@ -7,8 +7,9 @@ k8s-master03 ansible_host=192.168.1.63 node_host=192.168.1.63 role=master etcd_n
 k8s-node021 ansible_host=192.168.1.101 node_host=192.168.1.101 role=worker 
 k8s-node022 ansible_host=192.168.1.102 node_host=192.168.1.102 role=worker
 k8s-node029 ansible_host=192.168.1.109 node_host=192.168.1.109 role=worker
+k8s-node006 ansible_host=192.168.1.116 node_host=192.168.1.116 role=worker
+k8s-node007 ansible_host=192.168.1.117 node_host=192.168.1.117 role=worker
 k8s-node008 ansible_host=192.168.1.118 node_host=192.168.1.118 role=worker
 
 [k8s_new_nodes]
-k8s-node006 ansible_host=192.168.1.116 node_host=192.168.1.116 role=worker
-k8s-node007 ansible_host=192.168.1.117 node_host=192.168.1.117 role=worker
+

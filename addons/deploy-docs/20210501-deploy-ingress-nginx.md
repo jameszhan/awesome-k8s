@@ -85,6 +85,16 @@ If TLS is enabled for the Ingress, a Secret containing the certificate and key m
   type: kubernetes.io/tls
 ```
 
+#### 下载到本地安装(可选)
+
+```bash
+$ helm pull ingress-nginx/ingress-nginx
+$ tar -zxvf ingress-nginx-3.12.0.tgz
+
+# 根据需要调整ingress-nginx/values.yaml中的配置
+$ helm install -f ingress-nginx/values.yaml ingress-nginx/ingress-nginx --n geek-apps --generate-name
+```
+
 #### 升级`ingress-nginx`
 
 ```bash
