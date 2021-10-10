@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: check-pma-config
+  namespace: geek-apps
+spec:
+  containers:
+    - name: show-env-values
+      image: busybox
+      command: [ "/bin/sh", "-c", "env" ]
+      envFrom:
+      - secretRef:
+          name: pma-user-pass
+      - configMapRef: 
+          name: pma-config
+
+  restartPolicy: Never

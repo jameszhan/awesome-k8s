@@ -137,3 +137,5 @@ appendix/troubleshooting/
 *.iml
 *.ipr
 *.iws
+
+secrets/
