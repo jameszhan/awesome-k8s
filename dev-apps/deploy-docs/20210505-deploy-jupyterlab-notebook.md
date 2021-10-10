@@ -1,4 +1,4 @@
-#### 群晖设置用户
+#### NAS服务器设置用户
 
 ```bash
 $ sudo adduser -G users -D -H -u 1000 -s /sbin/nologin -g 'user for jupyter-notebook' jovyan
@@ -47,13 +47,16 @@ spec:
     matchLabels:
       pv: jupyterlab
 EOF
+
+$ kubectl get pv
+$ kubectl get pvc -n geek-apps
 ```
 
 #### 配置密码
 
 ```bash
-$ kubectl create configmap jupyterlab-pass -n geek-apps --from-file=templates/config/jupyterlab/jupyter_server_config.json
-$ kubectl create configmap jupyterlab-conf -n geek-apps --from-file=templates/config/jupyterlab/jupyter_server_config.py
+$ kubectl create configmap jupyterlab-pass -n geek-apps --from-file=templates/jupyterlab/jupyter_server_config.json
+$ kubectl create configmap jupyterlab-conf -n geek-apps --from-file=templates/jupyterlab/jupyter_server_config.py
 $ kubectl get configmap jupyterlab-pass -n geek-apps -o yaml
 $ kubectl get configmap jupyterlab-conf -n geek-apps -o yaml
 ```
@@ -143,7 +146,7 @@ spec:
     app.kubernetes.io/instance: jupyterlab-notebook
 EOF
 
-$ kubectl port-forward --namespace geek-apps service/jupyterlab-notebook 8080:80
+$ kubectl port-forward -n geek-apps service/jupyterlab-notebook 8080:80 --address=0.0.0.0
 
 $ cat <<EOF | kubectl apply -f -
 apiVersion: networking.k8s.io/v1
@@ -151,6 +154,8 @@ kind: Ingress
 metadata:
   name: jupyterlab-ingress
   namespace: geek-apps
+  annotations:
+    kubernetes.io/ingress.class: nginx
 spec:
   tls:
   - hosts:
@@ -170,10 +175,14 @@ spec:
 EOF
 ```
 
+打开`https://jupyter.zizhizhan.com:8443`，访问`Jupyter Notebook`服务。
+
+### 更新密码
+
 #### 进入容器
 
 ```bash
-$ kubectl exec -it jupyterlab-notebook-84c4c67d9c-mqhgd -n geek-apps -- bash
+$ kubectl exec -it $(kubectl get pods -n geek-apps | grep jupyterlab-notebook | awk '{print $1}') -n geek-apps -- bash
 ```
 
 #### 生成密码
@@ -186,7 +195,6 @@ $ from jupyter_server.auth import passwd; passwd()
 $ jupyter lab --generate-config
 $ vi /home/jovyan/.jupyter/jupyter_lab_config.py
 ```
-
 
 ```bash
 $ jupyter lab password
