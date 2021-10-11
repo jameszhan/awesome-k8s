@@ -102,6 +102,14 @@ $ kubectl describe ClusterRoleBinding cluster-admin
 $ kubectl logs -f svc/kubernetes-dashboard  -n kubernetes-dashboard
 ```
 
+```bash
+$ kubectl create secret tls star.zizhizhan.com-tls --cert=./fullchain1.pem --key=./privkey1.pem -n geek-apps
+
+$ kubectl describe secret star.zizhizhan.com-tls -n geek-apps
+$ kubectl get secret star.zizhizhan.com-tls -n geek-apps -o yaml
+
+$ kubectl delete ingress pkm-ingress -n geek-apps
+```
 
 #### 访问指定集群 
 
