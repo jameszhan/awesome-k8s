@@ -80,6 +80,29 @@ $ kubectl attach busybox -c busybox -i -t
 $ kubectl delete pod busybox
 ```
 
+```bash
+$ kubectl get ingress -n geek-apps
+$ kubectl get secret --field-selector type=kubernetes.io/tls -n geek-apps
+```
+
+```bash
+$ kubectl get all -n kubernetes-dashboard -o wide
+
+$ kubectl get ServiceAccount -n kubernetes-dashboard -o wide
+$ kubectl describe serviceaccount kubernetes-dashboard -n kubernetes-dashboard
+$ kubectl describe secret kubernetes-dashboard -n kubernetes-dashboard
+
+$ kubectl get ClusterRoleBinding -o wide
+$ kubectl get ClusterRoleBinding kubernetes-dashboard -o wide
+$ kubectl describe ClusterRoleBinding kubernetes-dashboard
+
+$ kubectl get ClusterRoleBinding cluster-admin -o wide
+$ kubectl describe ClusterRoleBinding cluster-admin
+
+$ kubectl logs -f svc/kubernetes-dashboard  -n kubernetes-dashboard
+```
+
+
 #### 访问指定集群 
 
 - [配置对多集群的访问](https://kubernetes.io/zh/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
@@ -90,3 +113,5 @@ $ kubectl --kubeconfig=/opt/etc/kube/config get nodes
 $ KUBECONFIG=/opt/etc/kube/config kubectl cluster-info
 $ KUBECONFIG=/opt/etc/kube/config kubectl config view
 ```
+
+

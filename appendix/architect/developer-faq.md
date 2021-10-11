@@ -145,3 +145,13 @@ $ dig github.io @223.5.5.5
 
 - https://github.com.cnpmjs.org
 - https://hub.fastgit.org
+- [GitHub 下载加速](https://toolwa.com/github/)
+
+
+#### `libvirt`
+
+##### How to use virsh without sudo?
+
+```bash
+$ source /etc/profile.d/libvirt-uri.sh
+```

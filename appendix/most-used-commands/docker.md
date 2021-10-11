@@ -2,6 +2,7 @@
 ```bash
 $ docker login --username=zizhi****@gmail.com registry.cn-shenzhen.aliyuncs.com
 $ sudo docker login --username=zizhi****@gmail.com registry.cn-shenzhen.aliyuncs.com
+$ sudo docker login --username=****@gmail.com registry.cn-shenzhen.aliyuncs.com
 ```
 
 ```bash
@@ -23,6 +24,13 @@ $ docker run \
 $ curl -i http://192.168.1.95:8080
 ```
 
+#### 网络管理
+
+```bash
+$ sudo docker run -it busybox ip addr show
+$ sudo docker run --net=none -it busybox ip addr show
+```
+
 ##### Install Docker Compose
 
 ```bash
@@ -42,3 +50,33 @@ $ systemctl status containerd.service
 - `docker.service`: `/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock`
 - `docker.socket`: `/var/run/docker.sock`
 - `containerd.service`: `/usr/bin/containerd`
+
+
+#### 导出镜像
+
+```bash
+$ sudo docker pull busybox
+$ sudo docker save -o busybox.tar busybox:latest
+
+$ sudo docker pull debian:buster-slim
+$ sudo docker save -o debian.tar debian:buster-slim
+
+$ sudo docker pull ubuntu:focal
+$ sudo docker save -o ubuntu.tar ubuntu:focal
+```
+
+##### `chroot`实践
+
+```bash
+$ sudo chown -R james:sudo debian.tar
+$ mkdir debian
+$ tar xvf debian.tar -C debian
+$ cd debian
+$ mkdir rootfs
+$ tar xvf 9b972f928131fd1fbbf16b7ea906a874e6be6cb13320e791b6d250bfce44b66a/layer.tar -C rootfs
+$ sudo chroot rootfs /bin/bash -i
+```
+
+```bash
+$ cat /etc/os-release 
+```
