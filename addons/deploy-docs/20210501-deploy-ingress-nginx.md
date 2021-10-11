@@ -303,3 +303,63 @@ $ curl -v -k https://kubernetes-dashboard.geek-apps.svc.cluster.local
 - [Ingress Nginx](https://github.com/kubernetes/ingress-nginx)
 - [DNSPod 我的证书](https://console.cloud.tencent.com/ssl)
 - [Let's Encrypt 证书](https://letsencrypt.org/)
+
+
+## 安装`ingress-nginx`
+
+[Ingress Nginx Chart](https://github.com/kubernetes/ingress-nginx/tree/master/charts/ingress-nginx)
+
+```bash
+$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+$ helm repo update
+
+$ helm search repo ingress-nginx
+```
+
+把 `controller.image.repository` 从 `k8s.gcr.io/ingress-nginx/controller` 替换为 `registry.cn-shenzhen.aliyuncs.com/jameszhan/ingress-nginx-controller`。
+
+
+```bash
+$ helm install -f templates/ingress-nginx-values.yaml -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx 
+```
+
+## 配置`ingress`
+
+#### 配置 `nginx-km-service`
+
+```bash
+$ kubectl apply -f templates/default-service.ingress.yaml
+$ kubectl get ingress -n geek-apps
+$ kubectl describe ingress default-ingress -n geek-apps
+$ kubectl get ingress default-ingress -n geek-apps -o yaml
+$ curl -i http://192.168.1.65/
+```
+
+```bash
+$ kubectl apply -f templates/grafana-ingress.yaml
+$ kubectl get ingress -n geek-apps
+$ kubectl describe ingress grafana-ingress -n geek-apps
+
+$ curl -i http://grafana.zizhizhan.com/
+```
+
+```bash
+$ kubectl apply -f templates/k8s-dashboard-ingress.yaml
+$ kubectl get ingress -n geek-apps
+$ kubectl describe ingress dashboard-ingress -n geek-apps
+
+$ curl -i http://k8s.zizhizhan.com/
+```
+
+
+## 日志监控
+
+```bash
+$ kubectl logs -f ingress-nginx-controller-6d5cb7b4bb-f2l9n -n geek-apps
+```
+
+## 升级
+
+```bash
+$ helm upgrade -f templates/ingress-nginx-values.yaml -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx 
+```
