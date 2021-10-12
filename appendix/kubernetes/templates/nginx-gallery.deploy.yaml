@@ -1,4 +1,20 @@
 ---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nginx-gallery-pvc
+  namespace: geek-apps
+  annotations:
+    nfs.io/storage-path: "galleries"
+spec:
+  storageClassName: nfs-client
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 32Gi
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -25,14 +41,14 @@ spec:
           protocol: TCP
         volumeMounts:
         - mountPath: "/usr/share/nginx/html"
-          name: nginx-gallery-pvc
+          name: nginx-gallery-vol
         - mountPath: "/etc/nginx/conf.d"
-          name: nginx-config-volume
+          name: nginx-config-vol
       volumes:
-      - name: nginx-gallery-pvc
+      - name: nginx-gallery-vol
         persistentVolumeClaim:
-          claimName: gallery-pvc
-      - name: nginx-config-volume
+          claimName: nginx-gallery-pvc
+      - name: nginx-config-vol
         configMap:
           name: nginx-server-config
 
@@ -57,7 +73,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: nginx-gallery
+  name: nginx-gallery-ingress
   namespace: geek-apps
   annotations:
     kubernetes.io/ingress.class: nginx
@@ -74,7 +90,7 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: nginx-gallery
+                name: nginx-gallery-service
                 port:
                   number: 80
 

@@ -26,11 +26,13 @@ $ kubectl delete -f templates/hello-nfs-deploy.yml
 $ kubectl create configmap nginx-server-config -n geek-apps --from-file=templates/default.conf
 $ kubectl get cm nginx-server-config -n geek-apps -o yaml
 
-$ kubectl apply -f nginx-gallery.deployment.yml
+$ kubectl apply -f templates/nginx-gallery.deploy.yaml
+
+$ open https://gallery.zizhizhan.com:8443
 ```
 
 强制更新部署
 
 ```bash
-$ kubectl replace --force -f nginx-gallery.deploy.yaml
+$ kubectl replace --force -f templates/nginx-gallery.deploy.yaml
 ```
