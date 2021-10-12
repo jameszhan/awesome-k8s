@@ -1,4 +1,4 @@
-#### Deploy Loki-Stack to k8s cluster
+### Deploy Loki to your cluster
 
 ```bash
 $ helm repo add grafana https://grafana.github.io/helm-charts
@@ -10,251 +10,73 @@ $ helm template grafana/loki
 $ helm template grafana/loki-stack --namespace=loki-stack
 
 $ kubectl create ns loki-stack
-$ helm upgrade --install --namespace=loki-stack loki grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false,loki.persistence.enabled=true,loki.persistence.storageClassName=nfs-csi,loki.persistence.size=16Gi
+
+$ helm upgrade --install --namespace=loki-stack loki grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false,loki.persistence.enabled=true,loki.persistence.storageClassName=nfs-csi,loki.persistence.size=16Gi,loki.securityContext.runAsGroup=0,loki.securityContext.runAsUser=0,loki.securityContext.runAsNonRoot=false
 ```
 
-
-
-
-
-
-[Install Loki with Helm](https://grafana.com/docs/loki/latest/installation/helm/)
-
+#### 其他安装选项
 
 ```bash
-$ helm repo add grafana https://grafana.github.io/helm-charts
-$ helm repo update
+# 删除历史安装，如有必要
+$ helm uninstall loki -n loki-stack
+$ kubectl delete pvc storage-loki-0 -n loki-stack
 
-$ cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: PersistentVolume
-metadata:  
-  name: loki-pv
-  labels:
-    app: loki
-spec:  
-  capacity:    
-    storage: 16Gi  
-  accessModes:    
-    - ReadWriteOnce  
-  persistentVolumeReclaimPolicy: Retain  
-  storageClassName: nfs
-  mountOptions:
-    - hard
-    - nfsvers=4.1
-  nfs:    
-    path: /volume1/shared/k8s/appdata
-    server: 192.168.1.6
-EOF
+# Deploy with default config
+$ helm upgrade --install loki grafana/loki-stack
 
-$ kubectl get pv -o wide
-```
+# Deploy in a custom namespace
+$ helm upgrade --install loki --namespace=loki grafana/loki
 
+# Deploy with custom config
+$ helm upgrade --install loki grafana/loki --set "key1=val1,key2=val2,..."
 
+# Deploy Loki Stack (Loki, Promtail, Grafana, Prometheus)
+$ helm upgrade --install loki grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false
 
-```bash
-$ helm repo add grafana https://grafana.github.io/helm-charts
-$ helm repo update
-$ helm search repo grafana
-$ helm template grafana/loki
-$ helm template grafana/loki-stack
-
-$ helm upgrade --install --namespace=geek-apps loki grafana/loki-stack --set loki.persistence.enabled=true,loki.persistence.storageClassName=standard,loki.persistence.size=5Gi
-
-# Deploy Loki Stack (Loki, Promtail, Prometheus)
-$ helm upgrade --install --namespace=geek-apps loki grafana/loki-stack --set grafana.enabled=false,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false
-
-$ kubectl create ns loki-stack
 # Deploy Loki Stack (Loki, Promtail, Grafana, Prometheus) with persistent volume claim
-$ helm upgrade --install --namespace=loki-stack loki-stack grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false
+$ helm upgrade --install loki grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false,loki.persistence.enabled=true,loki.persistence.storageClassName=standard,loki.persistence.size=5Gi
 
-$ helm delete loki-stack -n loki-stack
-$ helm upgrade --install --namespace=loki-stack loki grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false
+# Deploy Loki Stack (Loki, Fluent Bit, Grafana, Prometheus)
+$ helm upgrade --install loki grafana/loki-stack \
+  --set fluent-bit.enabled=true,promtail.enabled=false,grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false
+```
 
-$ helm upgrade --install --namespace=loki-stack loki grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false,loki.persistence.enabled=true,loki.persistence.storageClassName=nfs,loki.persistence.size=16Gi
+### 检查安装结果
 
+```bash
+$ helm list -n loki-stack
 
-
-$ kubectl get all -n loki-stack -o wide
-$ kubectl get service -n loki-stack -o wide
-NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE     SELECTOR
-loki                            ClusterIP   10.107.60.119    <none>        3100/TCP   8m22s   app=loki,release=loki
-loki-grafana                    ClusterIP   10.111.89.36     <none>        80/TCP     8m22s   app.kubernetes.io/instance=loki,app.kubernetes.io/name=grafana
-loki-headless                   ClusterIP   None             <none>        3100/TCP   8m22s   app=loki,release=loki
-loki-kube-state-metrics         ClusterIP   10.108.143.229   <none>        8080/TCP   8m22s   app.kubernetes.io/instance=loki,app.kubernetes.io/name=kube-state-metrics
-loki-prometheus-alertmanager    ClusterIP   10.102.3.8       <none>        80/TCP     8m22s   app=prometheus,component=alertmanager,release=loki
-loki-prometheus-node-exporter   ClusterIP   None             <none>        9100/TCP   8m22s   app=prometheus,component=node-exporter,release=loki
-loki-prometheus-pushgateway     ClusterIP   10.98.45.111     <none>        9091/TCP   8m22s   app=prometheus,component=pushgateway,release=loki
-loki-prometheus-server          ClusterIP   10.100.225.13    <none>        80/TCP     8m22s   app=prometheus,component=server,release=loki
+$ kubectl get pods -n loki-stack -o wide
+$ kubectl get svc -n loki-stack -o wide
+$ kubectl get pvc -n loki-stack -o wide\
 
 $ kubectl port-forward --namespace loki-stack service/loki-grafana 8080:80
+$ open http://localhost:8080/
+# 获取登陆密码
 $ kubectl get secret loki-grafana --namespace loki-stack -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 ```
 
-#### Bind the Ingress
+### 配置外部访问
 
 ```bash
-$ kubectl apply -f templates/ingress/loki-stack.yml
+$ kubectl apply -f templates/loki-stack/loki-stack.yml
 
-$ kubectl get svc -A
-$ kubectl get ingress -A
+$ kubectl get svc -n geek-apps
+$ kubectl get ingress -n geek-apps
+
+$ open https://grafana.zizhizhan.com:8443
+# 获取admin密码
+$ kubectl get secret loki-grafana -n loki-stack -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 ```
 
+### 配置监控
 
-[Install Loki with Helm](https://grafana.com/docs/loki/latest/installation/helm/)
+#### 配置`Prometheus`
 
-#### Deploy Grafana
+- Create -> [Import](https://grafana.zizhizhan.com:8443/dashboard/import) -> 315 -> 选择`Prometheus` -> Import
+- Configuration -> [Data sources](https://grafana.zizhizhan.com:8443/datasources) -> 选择`Prometheus` -> Dashboards -> Import
 
-```bash
-$ helm install loki-grafana --namespace geek-apps grafana/grafana
-$ kubectl get secret loki-grafana --namespace geek-apps -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-$ kubectl port-forward --namespace geek-apps service/loki-grafana 3000:80
+### 参考资料
 
-$ kubectl describe ingress grafana-ingress -n geek-apps
-$ kubectl delete ingress grafana-ingress -n geek-apps
-$ cat <<EOF | kubectl apply -f -
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: grafana-ingress
-  namespace: geek-apps
-spec:
-  rules:
-  - host: grafana.zizhizhan.com
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: loki-grafana
-            port:
-              number: 80
-EOF
-
-$ curl -i https://grafana.zizhizhan.com
-```
-
-#### Deploy Loki-Stack to k8s cluster
-
-```bash
-$ helm delete -n geek-apps loki
-$ helm delete -n geek-apps loki-grafana
-
-$ kubectl get replicaset -A -o wide
-$ kubectl get daemonset -A -o wide
-$ kubectl get deployment -A -o wide
-$ kubectl get statefulset -A -o wide
-$ kubectl get service -A -o wide
-$ kubectl get configmap -A -o wide
-$ kubectl get secret -A -o wide
-
-$ kubectl delete -f templates/prometheus/prometheus.configmap.yml
-$ kubectl delete -f templates/prometheus/prometheus.rbac.yml
-$ kubectl delete -f templates/prometheus/prometheus.deployment.yml
-$ kubectl delete -f templates/prometheus/prometheus.service.yml
-
-$ kubectl delete -f templates/grafana/grafana.service.yml
-$ kubectl delete -f templates/grafana/grafana.deployment.yml
-```
-
-```bash
-$ helm repo add grafana https://grafana.github.io/helm-charts
-$ helm repo update
-$ helm search repo grafana
-$ helm template grafana/loki
-$ helm template grafana/loki-stack
-
-$ helm upgrade --install --namespace=geek-apps loki grafana/loki-stack --set oki.persistence.enabled=true,loki.persistence.storageClassName=standard,loki.persistence.size=5Gi
-# Deploy Loki Stack (Loki, Promtail, Prometheus)
-$ helm upgrade --install --namespace=geek-apps loki grafana/loki-stack --set grafana.enabled=false,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false
-
-$ helm delete -n geek-apps loki
-$ kubectl create ns loki-stack
-# Deploy Loki Stack (Loki, Promtail, Grafana, Prometheus) with persistent volume claim
-$ helm upgrade --install --namespace=loki-stack loki-stack grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false
-
-$ helm delete loki-stack -n loki-stack
-$ helm upgrade --install --namespace=loki-stack loki grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false
-
-$ helm upgrade --install --namespace=loki-stack loki grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false,loki.persistence.enabled=true,loki.persistence.storageClassName=nfs,loki.persistence.size=16Gi
-
-$ cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: PersistentVolume
-metadata:  
-  name: loki-pv
-  labels:
-    app: loki
-spec:  
-  capacity:    
-    storage: 16Gi  
-  accessModes:    
-    - ReadWriteOnce  
-  persistentVolumeReclaimPolicy: Retain  
-  storageClassName: nfs
-  mountOptions:
-    - hard
-    - nfsvers=4.1
-  nfs:    
-    path: /volume1/shared/appdata
-    server: 192.168.1.6
-EOF
-
-$ kubectl get all -n loki-stack -o wide
-$ kubectl get service -n loki-stack -o wide
-NAME                            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE     SELECTOR
-loki                            ClusterIP   10.107.60.119    <none>        3100/TCP   8m22s   app=loki,release=loki
-loki-grafana                    ClusterIP   10.111.89.36     <none>        80/TCP     8m22s   app.kubernetes.io/instance=loki,app.kubernetes.io/name=grafana
-loki-headless                   ClusterIP   None             <none>        3100/TCP   8m22s   app=loki,release=loki
-loki-kube-state-metrics         ClusterIP   10.108.143.229   <none>        8080/TCP   8m22s   app.kubernetes.io/instance=loki,app.kubernetes.io/name=kube-state-metrics
-loki-prometheus-alertmanager    ClusterIP   10.102.3.8       <none>        80/TCP     8m22s   app=prometheus,component=alertmanager,release=loki
-loki-prometheus-node-exporter   ClusterIP   None             <none>        9100/TCP   8m22s   app=prometheus,component=node-exporter,release=loki
-loki-prometheus-pushgateway     ClusterIP   10.98.45.111     <none>        9091/TCP   8m22s   app=prometheus,component=pushgateway,release=loki
-loki-prometheus-server          ClusterIP   10.100.225.13    <none>        80/TCP     8m22s   app=prometheus,component=server,release=loki
-
-$ kubectl port-forward --namespace loki-stack service/loki-grafana 8080:80
-$ kubectl get secret loki-grafana --namespace loki-stack -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
-```
-
-#### Bind the Ingress
-
-```bash
-$ cat <<EOF | kubectl apply -f -
-kind: Service
-apiVersion: v1
-metadata:
-  name: loki-grafana
-  namespace: geek-apps
-spec:
-  type: ExternalName
-  externalName: loki-grafana.loki-stack.svc.cluster.local
-  ports:
-  - port: 80
-EOF
-
-$ kubectl delete ingress grafana-ingress -n geek-apps
-$ cat <<EOF | kubectl apply -f -
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: grafana-ingress
-  namespace: geek-apps
-spec:
-  tls:
-  - hosts:
-      - grafana.zizhizhan.com
-    secretName: star.zizhizhan.com-tls
-  rules:
-  - host: grafana.zizhizhan.com
-    http:
-      paths:
-      - path: /
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: loki-grafana
-            port:
-              number: 80
-EOF
-```
+- [Install Loki with Helm](https://grafana.com/docs/loki/latest/installation/helm/)
+- [Helm Charts](https://grafana.github.io/helm-charts)

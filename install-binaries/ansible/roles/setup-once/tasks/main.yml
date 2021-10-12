@@ -59,7 +59,7 @@
   become: true
   become_method: sudo
   apt:
-    name: [ 'coreutils', 'procps', 'libseccomp2', 'net-tools', 'sysstat', 'rsync', 'bash-completion' ]
+    name: [ 'coreutils', 'procps', 'libseccomp2', 'net-tools', 'sysstat', 'rsync', 'bash-completion', 'socat' ]
     update_cache: yes
     state: present
   when: lsb_release_si == 'Ubuntu' or lsb_release_si == 'Debian'

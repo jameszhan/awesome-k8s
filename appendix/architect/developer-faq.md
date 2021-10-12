@@ -51,8 +51,13 @@ $ sudo vim /etc/kubernetes/manifests/kube-controller-manager.yaml
 $ sudo vim /etc/kubernetes/manifests/kube-scheduler.yaml
 $ sudo systemctl restart kubelet.service
 ```
-
 > 注：不处理也没有关系，这个API已经计划移除了。
+
+#####  unable to do port forwarding: socat not found
+
+```bash
+$ sudo apt -y update && sudo apt -y install socat
+```
 
 ##### Failed to set bridge addr cni0
 
