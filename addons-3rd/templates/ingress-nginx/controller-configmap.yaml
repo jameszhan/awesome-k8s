@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-nginx-controller
+  namespace: ingress-nginx
+  labels:
+    helm.sh/chart: ingress-nginx-4.0.5
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/version: "1.0.3"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: controller
+data:
+  allow-snippet-annotations: "true"
+  enable-real-ip: "true"
+  log-format-escape-json: "true"
+  log-format-upstream: '{ "time": "$time_iso8601", "remote_addr": "$proxy_protocol_addr", "x_forward_for": "$proxy_add_x_forwarded_for", "request_id": "$req_id", "remote_user": "$remote_user", "bytes_sent": $bytes_sent, "vhost": "$host", "path": "$uri", "geoip": {"country_code": "$geoip_country_code", "region": "$geoip_region_name", "city": "$geoip_city", "latitude": "$geoip_latitude", "longitude": "$geoip_longitude" }, "request": { "method": "$request_method", "uri": "$request_uri", "query": "$args", "status": $status, "length": $request_length, "user_agent": "$http_user_agent", "referrer": "$http_referer", "protocol": "$server_protocol", "remote_addr": "$remote_addr", "duration": $request_time }, "upstream": { "status": "$upstream_status", "response_length": "$upstream_response_length", "latency": "$upstream_response_time", "addr": "$upstream_addr", "proxy_name": "$proxy_upstream_name", "proxy_alternative_name": "$proxy_alternative_upstream_name" }}'
+  proxy-body-size: "10m"
