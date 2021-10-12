@@ -158,3 +158,7 @@ $ ansible -i hosts all -m apt -a "name=systemd-sysv state=latest autoremove=yes"
 
 $ ansible ubuntu-server.local -m script -a '/opt/bin/update-system.sh' -v
 ```
+
+```bash
+$ ansible -m file -a "path=/opt/data mode=777 state=directory" --become k8s
+```

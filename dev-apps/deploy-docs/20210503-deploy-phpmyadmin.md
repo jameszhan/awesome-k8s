@@ -68,3 +68,97 @@ $ kubectl logs check-pma-config -n geek-apps
 
 $ open https://pma.zizhizhan.com:8443
 ```
+
+
+
+
+
+```bash
+$ kubectl apply -f deploy/phpmyadmin.deployment.yaml
+$ kubectl describe svc nginx-pma-service -n geek-apps
+
+$ kubectl exec -it synology-phpmyadmin-5444d48c77-grxh6 -n geek-apps -- sh
+
+$ kubectl proxy --port=8080
+$ open http://localhost:8080/api/v1/proxy/namespaces/geek-apps/services/nginx-pma-service/
+```
+
+```bash
+$ cd /usr/local/mariadb10/bin
+$ cd /volume1/@appstore/MariaDB10/usr/local/mariadb10/bin
+
+$ sudo netstat -plntu
+$ sudo iptables -L
+
+$ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
+```
+
+```bash
+$ kubectl get ValidatingWebhookConfiguration
+$ kubectl delete ValidatingWebhookConfiguration ingress-nginx-1606642950-admission
+$ kubectl delete ValidatingWebhookConfiguration ingress-nginx-1608410324-admission
+$ kubectl delete ValidatingWebhookConfiguration ingress-nginx-1608446068-admission
+$ kubectl delete ValidatingWebhookConfiguration ingress-nginx-1608454632-admission
+$ kubectl delete ValidatingWebhookConfiguration ingress-nginx-1608464957-admission
+$ kubectl delete ValidatingWebhookConfiguration ingress-nginx-1608467888-admission
+
+
+
+```
+
+```bash
+$ kubectl describe rs ingress-nginx-1608467888-controller-755c9c4978 -n geek-apps
+$ kubectl get rs ingress-nginx-1608467888-controller-755c9c4978 -n geek-apps -o yaml
+
+$ kubectl describe deploy -n geek-apps ingress-nginx-1608467888-controller
+$ kubectl describe svc ingress-nginx-1608467888-controller -n geek-apps
+$ kubectl describe svc ingress-nginx-1608467888-controller-admission -n geek-apps
+
+$ kubectl get cm -n geek-apps ingress-controller-leader-nginx -o yaml
+$ kubectl get cm -n geek-apps ingress-nginx-1608467888-controller -o yaml
+```
+
+
+```sql
+REVOKE ALL ON *.* FROM 'replica'@'192.168.1.3';
+REVOKE ALL ON *.* FROM 'replica'@'192.168.1.6';
+REVOKE ALL ON *.* FROM 'replica'@'192.168.1.65';
+REVOKE ALL ON *.* FROM 'replica'@'192.168.1.68';
+REVOKE ALL ON *.* FROM 'replica'@'192.168.1.69';
+REVOKE ALL ON *.* FROM 'replica'@'192.168.1.70';
+REVOKE ALL ON *.* FROM 'replica'@'192.168.1.71';
+REVOKE ALL ON *.* FROM 'replica'@'192.168.1.81';
+REVOKE ALL ON *.* FROM 'replica'@'192.168.1.95';
+REVOKE ALL ON *.* FROM 'replica'@'192.168.1.96';
+REVOKE ALL ON *.* FROM 'replica'@'192.168.1.99';
+
+DROP USER 'replica'@'192.168.1.3';
+DROP USER 'replica'@'192.168.1.6';
+DROP USER 'replica'@'192.168.1.65';
+DROP USER 'replica'@'192.168.1.68';
+DROP USER 'replica'@'192.168.1.69';
+DROP USER 'replica'@'192.168.1.70';
+DROP USER 'replica'@'192.168.1.71';
+DROP USER 'replica'@'192.168.1.81';
+DROP USER 'replica'@'192.168.1.95';
+DROP USER 'replica'@'192.168.1.96';
+DROP USER 'replica'@'192.168.1.99';
+FLUSH PRIVILEGES;
+SELECT Host, User, Password, authentication_string, is_role, default_role FROM mysql.user;
+
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.3' IDENTIFIED BY 'RootPassword' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.6' IDENTIFIED BY 'RootPassword' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.65' IDENTIFIED BY 'RootPassword' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.68' IDENTIFIED BY 'RootPassword' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.69' IDENTIFIED BY 'RootPassword' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.70' IDENTIFIED BY 'RootPassword' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.71' IDENTIFIED BY 'RootPassword' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.81' IDENTIFIED BY 'RootPassword' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.95' IDENTIFIED BY 'RootPassword' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.96' IDENTIFIED BY 'RootPassword' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.99' IDENTIFIED BY 'RootPassword' WITH GRANT OPTION;
+
+FLUSH PRIVILEGES;
+
+SELECT Host, User, Password, authentication_string, is_role, default_role FROM mysql.user;
+```

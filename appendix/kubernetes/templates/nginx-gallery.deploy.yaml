@@ -1,0 +1,80 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-gallery
+  namespace: geek-apps
+  labels:
+    app: nginx-gallery
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-gallery
+  template:
+    metadata:
+      labels:
+        app: nginx-gallery
+    spec:
+      containers:
+      - name: nginx-gallery
+        image: nginx
+        imagePullPolicy: IfNotPresent    
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        volumeMounts:
+        - mountPath: "/usr/share/nginx/html"
+          name: nginx-gallery-pvc
+        - mountPath: "/etc/nginx/conf.d"
+          name: nginx-config-volume
+      volumes:
+      - name: nginx-gallery-pvc
+        persistentVolumeClaim:
+          claimName: gallery-pvc
+      - name: nginx-config-volume
+        configMap:
+          name: nginx-server-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-gallery-service
+  namespace: geek-apps
+  labels:
+    app: nginx
+spec:
+  clusterIP: None
+  ports:
+  - targetPort: 80
+    port: 80
+    name: http
+  selector:
+    app: nginx-gallery
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-gallery
+  namespace: geek-apps
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  tls:
+    - hosts:
+        - gallery.zizhizhan.com
+      secretName: star.zizhizhan.com-tls
+  rules:
+    - host: gallery.zizhizhan.com
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: nginx-gallery
+                port:
+                  number: 80
+

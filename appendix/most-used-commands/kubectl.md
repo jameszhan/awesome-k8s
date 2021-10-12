@@ -65,6 +65,22 @@ $ kubectl get clusterrolebinding -A -o wide
 ```
 
 ```bash
+$ kubectl get all -o wide -A
+$ kubectl get cm -o wide -A
+$ kubectl get deploy -o wide -A
+$ kubectl get svc -o wide -A
+$ kubectl get pod -o wide -A
+$ kubectl get secret -o wide -A
+
+$ kubectl get deployment -o wide -n geek-apps
+$ kubectl get service -o wide -n geek-apps
+$ kubectl get pod -o wide -n geek-apps
+
+$ kubectl get service -A
+$ kubectl get endpoints -A
+```
+
+```bash
 $ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
 
 $ kubectl run my-nginx --image=nginx --port=80
@@ -109,6 +125,22 @@ $ kubectl describe secret star.zizhizhan.com-tls -n geek-apps
 $ kubectl get secret star.zizhizhan.com-tls -n geek-apps -o yaml
 
 $ kubectl delete ingress pkm-ingress -n geek-apps
+```
+
+
+#### `k8s service`负载均衡检查
+
+```bash
+$ kubectl describe svc default-backend-service -n geek-apps
+
+$ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
+```
+
+检查`x_host`字段
+
+```bash
+$ ping default-backend-service.geek-apps.svc.cluster.local
+$ for loop in 1 2 3 4 5 6; do curl -I http://default-backend-service.geek-apps.svc.cluster.local/; done
 ```
 
 #### 访问指定集群 

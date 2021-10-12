@@ -70,6 +70,8 @@ $ sudo ip link delete cni0
 
 #### `GIT`
 
+可以利用[IPAddress.com](https://www.ipaddress.com/)查看`raw.githubusercontent.com`最新IP。
+
 ##### 如何设置全局`gitignore`?
 
 ```bash
