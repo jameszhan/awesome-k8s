@@ -15,5 +15,18 @@
     msg: "{{ ansible_msg.split('\n') }}"
   tags: debug_info
 
+- name: Defaults
+  debug:
+    msg: |
+      inventory_hostname: {{ inventory_hostname }} 
+      inventory_hostname_short: {{ inventory_hostname_short }}
+      inventory_dir: {{ inventory_dir }}"
+      inventory_file: {{ inventory_file }}
+      ansible_play_batch: {{ ansible_play_batch }}
+      ansible_play_hosts: {{ ansible_play_hosts }}
+      ansible_playbook_python: {{ ansible_playbook_python }}
+      ansible_check_mode: {{ ansible_check_mode }}
+      playbook_dir: {{ playbook_dir }}
 
-# - debug: msg="{{ hostvars }}"
+# - name: Display HostVars
+#   debug: msg="{{ hostvars }}"

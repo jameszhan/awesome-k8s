@@ -1,0 +1,41 @@
+- hosts: all
+  gather_facts: False
+  tasks:
+    - name: lsb_release
+      shell: lsb_release -cs
+      register: ubuntu_code
+    - name: Defaults
+      debug:
+        msg: |
+          inventory_hostname: {{ inventory_hostname }} 
+          inventory_hostname_short: {{ inventory_hostname_short }}
+          inventory_dir: {{ inventory_dir }}"
+          inventory_file: {{ inventory_file }}
+          ansible_play_batch: {{ ansible_play_batch }}
+          ansible_play_hosts: {{ ansible_play_hosts }}
+          ansible_playbook_python: {{ ansible_playbook_python }}
+          ansible_check_mode: {{ ansible_check_mode }}
+          playbook_dir: {{ playbook_dir }}
+    - name: Groups
+      debug:
+        msg: >-
+          {% for gn in group_names %}
+          {{ gn }}
+          {% endfor %}
+          {% for g in groups %}
+          {{ g }}
+          {% endfor %}
+    - name: Host Variables
+      debug:
+        msg: >-
+          {% for key in hostvars %}
+          {{ hostvars[inventory_hostname] }}
+          {% endfor %}
+    - name: Pipe Variables
+      debug:
+        msg: "{{ ubuntu_code['stdout'] }} on {{ date_var }}"
+  vars:
+    date_var: "{{ lookup('pipe', 'date +%Y-%m-%d') }}"
+
+
+

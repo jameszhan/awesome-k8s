@@ -1,0 +1,22 @@
+ETCD_NAME="{{ node_name }}"
+ETCD_DATA_DIR="{{ etcd_data_dir }}"
+ETCD_WAL_DIR="{{ etcd_wal_dir }}"
+ETCD_SNAPSHOT_COUNT="10000"
+ETCD_HEARTBEAT_INTERVAL="100"
+ETCD_MAX_SNAPSHOTS="5"
+ETCD_MAX_WALS="5"
+
+ETCD_LISTEN_PEER_URLS="http://{{ node_host }}:2380"
+ETCD_LISTEN_CLIENT_URLS="http://{{ node_host }}:2379,http://127.0.0.1:2379"
+ETCD_ADVERTISE_CLIENT_URLS="http://{{ node_host }}:2379"
+ETCD_INITIAL_ADVERTISE_PEER_URLS="http://{{ node_host }}:2380"
+
+ETCD_INITIAL_CLUSTER="{{ etcd_node01_name }}=http://{{ etcd_node01 }}:2380,{{ etcd_node02_name }}=http://{{ etcd_node02 }}:2380,{{ etcd_node03_name }}=http://{{ etcd_node03 }}:2380"
+ETCD_INITIAL_CLUSTER_STATE="new"
+ETCD_INITIAL_CLUSTER_TOKEN="etcd-manager-cluster"
+
+ETCD_PROXY_FAILURE_WAIT="5000"
+ETCD_PROXY_REFRESH_INTERVAL="30000"
+ETCD_PROXY_DIAL_TIMEOUT="1000"
+ETCD_PROXY_WRITE_TIMEOUT="5000"
+ETCD_PROXY_READ_TIMEOUT="0"

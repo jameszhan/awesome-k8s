@@ -1,3 +1,4 @@
+---
 - name: restart-docker-service
   become: true
   ansible.builtin.systemd:
