@@ -1,0 +1,9 @@
+- name: Install Etcd Server Cluster
+  hosts:
+    - etcd_servers
+  tags:
+    - install-etcd
+  vars_files:
+    - group_vars/etcd_vars.yml
+  roles:
+    - etcd

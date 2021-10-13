@@ -161,4 +161,10 @@ $ ansible ubuntu-server.local -m script -a '/opt/bin/update-system.sh' -v
 
 ```bash
 $ ansible -m file -a "path=/opt/data mode=777 state=directory" --become k8s
+
+$ ansible -m systemd -a "name=etcd state=stopped" -i hosts --become etcd_servers
+$ ansible -m systemd -a "name=etcd state=started" -i hosts --become etcd_servers
+
+$ ansible -m apt -a "name=nfs-common" -i hosts --become k8s_servers --verbose
+
 ```

@@ -8,20 +8,15 @@
     update_cache: yes
     state: present
 
-- name: copy config to /etc/default/etcd
-  template:
-    src: templates/etcd.j2
-    dest: /etc/default/etcd
-
-- name: remove directories
-  become: true
-  become_method: sudo
-  file:
-    path: "{{ item }}"
-    state: absent
-  with_items:
-    - "{{ etcd_data_dir }}"
-    - "{{ etcd_wal_dir }}"
+# - name: remove directories
+#   become: true
+#   become_method: sudo
+#   file:
+#     path: "{{ item }}"
+#     state: absent
+#   with_items:
+#     - "{{ etcd_data_dir }}"
+#     - "{{ etcd_wal_dir }}"
 
 - name: prepare data dir
   become: true
@@ -36,7 +31,8 @@
     - "{{ etcd_data_dir }}"
     - "{{ etcd_wal_dir }}"
 
-- name: restart etcd
-  systemd:
-    state: restarted
-    name: etcd
+- name: copy config to /etc/default/etcd
+  template:
+    src: templates/etcd.j2
+    dest: /etc/default/etcd
+  notify: restart-etcd-service

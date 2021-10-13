@@ -1,0 +1,36 @@
+mirrors_url: https://mirrors.tuna.tsinghua.edu.cn
+timezone: Asia/Shanghai
+
+etc_hosts: 
+  - ip: 192.168.1.161
+    hostname: k8s-master01
+  - ip: 192.168.1.162
+    hostname: k8s-master02
+  - ip: 192.168.1.163
+    hostname: k8s-master03
+  - ip: 192.168.1.101
+    hostname: k8s-node021
+  - ip: 192.168.1.102
+    hostname: k8s-node022
+  - ip: 192.168.1.109
+    hostname: k8s-node029
+  - ip: 192.168.1.116
+    hostname: k8s-node006
+  - ip: 192.168.1.117
+    hostname: k8s-node007
+  - ip: 192.168.1.118
+    hostname: k8s-node008
+
+ulimit_conf:
+  - regexp: /^\*(.*)soft(.*)nofile(.*)/
+    line: "* soft nofile 655360"
+  - regexp: /^\*(.*)soft(.*)nofile(.*)/
+    line: "* hard nofile 131072"
+  - regexp: /^\*(.*)soft(.*)nproc(.*)/
+    line: "* soft nproc 655350"
+  - regexp: /^\*(.*)hard(.*)nproc(.*)/
+    line: "* hard nproc 655350"
+  - regexp: /^\*(.*)soft(.*)memlock(.*)/
+    line: "* soft memlock unlimited"
+  - regexp: /^\*(.*)hard(.*)memlock(.*)/
+    line: "* hard memlock unlimited"
