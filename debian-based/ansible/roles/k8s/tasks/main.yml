@@ -58,7 +58,7 @@
 
 - name: Initial k8s Cluster
   shell: |
-    sudo kubeadm reset
+    sudo kubeadm reset --force
     sudo kubeadm init --pod-network-cidr 10.244.0.0/16
   args:
     chdir: /home/deploy
@@ -66,23 +66,16 @@
   when: 
     - role == "master"
 
-- name: Make config file
-  shell: |
-    mkdir -p $HOME/.kube
-    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-    sudo chown $(id -u):$(id -g) $HOME/.kube/config
-  args:
-    chdir: /home/deploy
-    creates: /home/deploy/.kube/config
-  when: 
-    - role == "master"
-
-# - name: Check kube config exists
-#   stat:
-#     path: $HOME/.kube/config
-#   register: kube_cfg_stat
-
-
+# - name: Make config file
+#   shell: |
+#     mkdir -p $HOME/.kube
+#     sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+#     sudo chown $(id -u):$(id -g) $HOME/.kube/config
+#   args:
+#     chdir: /home/deploy
+#     creates: /home/deploy/.kube/config
+#   when: 
+#     - role == "master"
 
 # - name: Join k8s cluster
 #   become: true
@@ -93,13 +86,6 @@
 #   when: 
 #     - k8s_role == "slave"
 
-# - name: kubeadm upgrade apply v1.21.0
-#   become: true
-#   become_method: sudo
-#   command: >
-#     kubeadm upgrade apply -y v1.21.0
-#   when: 
-#     - k8s_role == "master"
 
     
   

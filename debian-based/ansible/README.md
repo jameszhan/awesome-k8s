@@ -43,7 +43,7 @@ $ ansible -i k8s-local.cfg all -m shell -a 'df -h && free -h' -u deploy --become
 
 ### 执行安装
 
-#### 安装`etcd`集群
+#### 安装`etcd`集群(可选)
 
 ```bash
 $ ansible-playbook -i k8s-local.cfg -l etcd_servers etcd.yml -u deploy --become -v
@@ -70,7 +70,7 @@ $ ansible -i k8s-local.cfg all -m shell -a 'systemctl status docker' -u deploy -
 > `kubeadm`不能帮你安装或者管理`kubelet`或`kubectl`，所以你需要确保它们与通过`kubeadm`安装的控制平面的版本相匹配。 如果不这样做，则存在发生版本偏差的风险，可能会导致一些预料之外的错误和问题。
 
 ```bash
-$ ansible-playbook -i k8s-local.cfg k8s-init.yml -u deploy --become -v
+$ ansible-playbook -i k8s-local.cfg k8s-init.yml -u deploy --become -vv
 
 $ ansible -i k8s-local.cfg all -m shell -a 'docker images' -u deploy --become -v
 ```
@@ -84,3 +84,31 @@ $ ansible -i k8s-local.cfg all -m shell -a 'docker images' -u deploy --become -v
 - `k8s.gcr.io/pause:3.5`
 - `k8s.gcr.io/etcd:3.5.0-0`
 - `k8s.gcr.io/coredns/coredns:v1.8.4`
+
+进入`master`节点，执行下列命令:
+
+```bash
+$ mkdir -p $HOME/.kube
+$ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+$ sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+记录下加入集群的令牌，如下例所示，在响应的`worker`节点上执行即可: 
+
+```bash
+$ sudo kubeadm join 192.168.1.111:6443 --token 0lnggp.9gsspi36onqd712y \
+    --discovery-token-ca-cert-hash sha256:dcffb0f541a1ea21c8b7baf24fbfc20377b1ddb19af214f693358678f56bf221
+```
+
+检查集群节点
+
+```bash
+$ kubectl get nodes -o wide
+NAME          STATUS   ROLES                  AGE   VERSION   INTERNAL-IP     EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
+k8s-node001   Ready    control-plane,master   20m   v1.22.2   192.168.1.111   <none>        Ubuntu 20.04.3 LTS   5.4.0-88-generic   docker://20.10.9
+k8s-node002   Ready    <none>                 16m   v1.22.2   192.168.1.112   <none>        Ubuntu 20.04.3 LTS   5.4.0-88-generic   docker://20.10.9
+k8s-node003   Ready    <none>                 16m   v1.22.2   192.168.1.113   <none>        Ubuntu 20.04.3 LTS   5.4.0-88-generic   docker://20.10.9
+
+# 启用Flannel插件
+$ kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+```
