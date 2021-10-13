@@ -1,0 +1,110 @@
+# https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+- name: Install dependencies
+  become: true
+  become_method: sudo
+  apt:
+    name: ['apt-transport-https', 'ca-certificates', 'curl']
+    update_cache: yes
+    state: latest
+
+# sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+- name: Check GPG key exists
+  become: true
+  get_url:
+    url: https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg
+    dest: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+    mode: '0644'
+
+# echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+- name: SET UP THE REPOSITORY
+  become: true
+  become_method: sudo
+  apt_repository:
+    repo: deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main
+    state: present
+    filename: kubernetes
+    update_cache: yes
+
+# sudo apt-get install -y kubelet kubeadm kubectl
+- name: Install k8s components
+  become: true
+  apt:
+    name: ['kubeadm', 'kubelet', 'kubectl']
+    update_cache: yes
+    state: latest
+  notify: show-kubeadm-config-images-list
+
+- name: Hold kubelet kubectl
+  become: true
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  with_items:
+    - kubeadm
+    - kubelet
+    - kubectl
+
+- name: Fuck the Great Firewall Pull Images
+  command: >
+    docker pull {{item.mirror}}
+  loop: "{{ gfw_images }}"
+
+- name: Fuck the Great Firewall Tag Images
+  become: true
+  become_method: sudo
+  command: >
+    docker tag {{item.mirror}} {{item.source}}
+  loop: "{{ gfw_images }}"
+
+- name: Initial k8s Cluster
+  shell: |
+    sudo kubeadm reset
+    sudo kubeadm init --pod-network-cidr 10.244.0.0/16
+  args:
+    chdir: /home/deploy
+    creates: /home/deploy/.kube/config
+  when: 
+    - role == "master"
+
+- name: Make config file
+  shell: |
+    mkdir -p $HOME/.kube
+    sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  args:
+    chdir: /home/deploy
+    creates: /home/deploy/.kube/config
+  when: 
+    - role == "master"
+
+# - name: Check kube config exists
+#   stat:
+#     path: $HOME/.kube/config
+#   register: kube_cfg_stat
+
+
+
+# - name: Join k8s cluster
+#   become: true
+#   become_method: sudo
+#   command: >-
+#     kubeadm join 192.168.1.161:6443 --token 6fc0hl.3f5tp9d3i8gl3wsd \
+#     --discovery-token-ca-cert-hash sha256:e0ef78d79f73d2efe0e1d5706e49cef2129b684d4b07b008b43a55c58958dd86
+#   when: 
+#     - k8s_role == "slave"
+
+# - name: kubeadm upgrade apply v1.21.0
+#   become: true
+#   become_method: sudo
+#   command: >
+#     kubeadm upgrade apply -y v1.21.0
+#   when: 
+#     - k8s_role == "master"
+
+    
+  
+  
+
+
+
+

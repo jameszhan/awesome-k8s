@@ -16,6 +16,7 @@ metadata:
   name: xiaomi-router
   namespace: geek-apps
 spec:
+  clusterIP: None
   ports:
     - protocol: TCP
       port: 80

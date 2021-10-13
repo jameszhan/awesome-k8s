@@ -16,7 +16,6 @@
 #     state: absent
 #   with_items:
 #     - "{{ etcd_data_dir }}"
-#     - "{{ etcd_wal_dir }}"
 
 - name: prepare data dir
   become: true
@@ -29,7 +28,6 @@
     mode: '0700'
   with_items:
     - "{{ etcd_data_dir }}"
-    - "{{ etcd_wal_dir }}"
 
 - name: copy config to /etc/default/etcd
   template:

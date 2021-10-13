@@ -1,12 +1,12 @@
-#### Prerequisites
+### Prerequisites
 
-新增`deploy`用户
+#### 新增`deploy`用户
 
 ```bash
 $ ansible-playbook -i k8s-local.cfg -c paramiko --ask-pass --ask-become-pass create-user.yml -v
 ```
 
-安装必要软件
+#### 安装必要软件
 
 ```bash
 $ ansible-playbook -i k8s-local.cfg setup-once.yml -u deploy -v
@@ -15,19 +15,72 @@ $ ansible-playbook -i k8s-local.cfg setup-once.yml -u deploy -v
 $ ansible -i k8s-local.cfg all -m reboot -u deploy --become -v
 ```
 
-
-```bash
-# 安装etcd
-$ ansible-playbook -i hosts -l k8s_workers docker.yml -u deploy -v
-
-# 安装docker
-$ ansible-playbook -i hosts -l k8s_workers docker.yml -u deploy -v
-```
-
-
 #### 时间同步检查
 
 ```bash
-$ ansible -i k8s-local.hosts all -m shell -a 'chronyc sources -v' -u deploy --become -v
-$ ansible -i k8s-local.hosts all -m shell -a 'chronyc sourcestats' -u deploy --become -v
+$ ansible -i k8s-local.cfg all -m shell -a 'chronyc sources -v' -u deploy --become -v
+$ ansible -i k8s-local.cfg all -m shell -a 'chronyc sourcestats' -u deploy --become -v
 ```
+
+### 清理历史安装记录
+
+#### 清理`k8s`节点安装记录
+
+```bash
+# ansible -i k8s-local.cfg all -m shell -a "kubeadm reset" -u deploy --become -v
+$ ansible -i k8s-local.cfg k8s_nodes -m script -a 'cleaner/clean-docker.sh' -u deploy --become -v
+
+$ ansible -i k8s-local.cfg all -m shell -a 'apt-mark unhold kubectl kubeadm kubelet' -u deploy --become -v
+# ansible -i k8s-local.cfg k8s_masters -m apt -a "name=kubectl,kubeadm,kubelet state=absent autoremove=yes" -u deploy --become -v
+$ ansible -i k8s-local.cfg k8s_nodes -m apt -a "name=kubectl,kubeadm,kubelet state=absent autoremove=yes" -u deploy --become -v
+
+$ ansible -i k8s-local.cfg all -m shell -a 'apt -y purge kubectl kubeadm kubelet docker-ce docker-ce-cli containerd.io' -u deploy --become -v
+$ ansible -i k8s-local.cfg all -m shell -a 'apt -y autoremove' -u deploy --become -v
+
+$ ansible -i k8s-local.cfg k8s_nodes -m reboot -u deploy --become -v
+$ ansible -i k8s-local.cfg all -m shell -a 'df -h && free -h' -u deploy --become -v
+```
+
+### 执行安装
+
+#### 安装`etcd`集群
+
+```bash
+$ ansible-playbook -i k8s-local.cfg -l etcd_servers etcd.yml -u deploy --become -v
+
+$ ETCDCTL_API=3 etcdctl --endpoints=http://k8s-node001:2379 endpoint health
+$ ETCDCTL_API=3 etcdctl --write-out=table --endpoints=http://192.168.1.111:2379,http://192.168.1.112:2379,http://192.168.1.113:2379 endpoint health
+```
+
+#### 安装`docker`
+
+```bash
+# 安装docker
+$ ansible-playbook -i k8s-local.cfg -l k8s_nodes docker.yml -u deploy --become -v
+$ ansible -i k8s-local.cfg all -m shell -a 'systemctl status docker' -u deploy --become -v
+```
+
+#### 利用`kubeadm`安装`k8s`集群
+
+目标机器上安装以下的软件包：
+- `kubeadm`: 用来初始化集群的指令。
+- `kubelet`: 在集群中的每个节点上用来启动 Pod 和容器等。
+- `kubectl`: 用来与集群通信的命令行工具。
+
+> `kubeadm`不能帮你安装或者管理`kubelet`或`kubectl`，所以你需要确保它们与通过`kubeadm`安装的控制平面的版本相匹配。 如果不这样做，则存在发生版本偏差的风险，可能会导致一些预料之外的错误和问题。
+
+```bash
+$ ansible-playbook -i k8s-local.cfg k8s-init.yml -u deploy --become -v
+
+$ ansible -i k8s-local.cfg all -m shell -a 'docker images' -u deploy --become -v
+```
+
+`1.22.2`版本会用到如下镜像，正常国内无法下载，我们可以从`registry.cn-hangzhou.aliyuncs.com/google_containers`下载。
+
+- `k8s.gcr.io/kube-apiserver:v1.22.2`
+- `k8s.gcr.io/kube-controller-manager:v1.22.2`
+- `k8s.gcr.io/kube-scheduler:v1.22.2`
+- `k8s.gcr.io/kube-proxy:v1.22.2`
+- `k8s.gcr.io/pause:3.5`
+- `k8s.gcr.io/etcd:3.5.0-0`
+- `k8s.gcr.io/coredns/coredns:v1.8.4`

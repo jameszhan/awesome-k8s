@@ -2,6 +2,7 @@
   hosts: 
     - k8s_nodes
     - k8s_new_nodes
+    - k8s_workers
   tags:
     - install-docker
   roles:

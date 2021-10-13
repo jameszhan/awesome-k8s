@@ -1,0 +1,7 @@
+- name: show-kubeadm-config-images-list
+  become: true
+  become_method: sudo
+  command: >
+    kubeadm config images list
+  when: 
+    - role == "master"

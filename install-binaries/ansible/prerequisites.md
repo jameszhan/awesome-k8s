@@ -6,10 +6,3 @@
 $ ansible-playbook -i hosts -c paramiko --ask-pass --ask-become-pass user-deploy.yml -v
 $ ansible -i hosts all -m ping -u deploy
 ```
-
-#### 检查`ansible`配置
-
-```bash
-$ ansible-playbook -i hosts variables.yml -u deploy -v
-$ ansible-playbook -i hosts gathering-facts.yml -u deploy -v 
-```

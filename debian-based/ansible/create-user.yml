@@ -1,5 +1,7 @@
 - name: Create New User deploy
   hosts:
     - all
+  tags:
+    - create-new-user
   roles:
     - ../../playbooks/roles/users

@@ -205,6 +205,9 @@ $ kubectl get ingress -n geek-apps -o wide
 $ curl -v -k -H "Host: dsm.zizhizhan.com" https://192.168.1.203
 
 $ open https://dsm.zizhizhan.com:8443
+
+# 强制更新
+$ kubectl replace --force -f templates/ingress/synology-dsm.yml
 ```
 
 #### 代理小米路由器
@@ -221,6 +224,9 @@ $ curl -v -k -X GET \
     https://192.168.1.203
 
 $ open https://mi.zizhizhan.com:8443
+
+# 强制更新
+$ kubectl replace --force -f templates/ingress/xiaomi-router.yml
 ```
 
 ### 代理集群内服务

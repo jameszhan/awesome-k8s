@@ -10,12 +10,11 @@
         Inventory Hostname: {{ inventory_hostname }}
         Group Names: {{ group_names }}
         Groups: {{ groups }}
-        Role: {{ role }}
   debug: 
     msg: "{{ ansible_msg.split('\n') }}"
   tags: debug_info
 
-- name: Defaults
+- name: Show ansible varialbes
   debug:
     msg: |
       inventory_hostname: {{ inventory_hostname }} 
