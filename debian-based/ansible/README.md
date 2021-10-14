@@ -7,6 +7,12 @@ $ ansible-playbook -i k8s-local.cfg -c paramiko --ask-pass --ask-become-pass cre
 $ ansible-playbook -i k8s-local.cfg k8s-local.yml -u deploy -v
 ```
 
+| HOST-NAME   | ROLES                | VERSION | INTERNAL-IP   | OS-IMAGE           | 
+| ----------- | -------------------- | ------- | ------------- | ------------------ | 
+| k8s-node001 | control-plane,master | v1.22.2 | 192.168.1.111 | Ubuntu 20.04.3 LTS | 
+| k8s-node002 | worker               | v1.22.2 | 192.168.1.112 | Ubuntu 20.04.3 LTS | 
+| k8s-node003 | worker               | v1.22.2 | 192.168.1.113 | Ubuntu 20.04.3 LTS | 
+
 ## 安装步骤分解
 
 ### Prerequisites
@@ -54,8 +60,8 @@ $ ETCDCTL_API=3 etcdctl --write-out=table --endpoints=http://192.168.1.111:2379,
 
 ```bash
 # 安装docker
-$ ansible-playbook -i k8s-local.cfg -l k8s_nodes docker.yml -u deploy --become -v
-$ ansible -i k8s-local.cfg all -m shell -a 'systemctl status docker' -u deploy --become -v
+$ ansible-playbook -i k8s-local.cfg -l k8s_nodes docker.yml -u deploy -v
+$ ansible -i k8s-local.cfg all -m shell -a 'systemctl status docker' -u deploy -v
 ```
 
 #### 利用`kubeadm`安装`k8s`集群
@@ -68,9 +74,9 @@ $ ansible -i k8s-local.cfg all -m shell -a 'systemctl status docker' -u deploy -
 > `kubeadm`不能帮你安装或者管理`kubelet`或`kubectl`，所以你需要确保它们与通过`kubeadm`安装的控制平面的版本相匹配。 如果不这样做，则存在发生版本偏差的风险，可能会导致一些预料之外的错误和问题。
 
 ```bash
-$ ansible-playbook -i k8s-local.cfg k8s-init.yml -u deploy --become -vv
+$ ansible-playbook -i k8s-local.cfg k8s-init.yml -u deploy -vv
 
-$ ansible -i k8s-local.cfg all -m shell -a 'docker images' -u deploy --become -v
+$ ansible -i k8s-local.cfg all -m shell -a 'docker images' -u deploy -v
 ```
 
 `1.22.2`版本会用到如下镜像，正常国内无法下载，我们可以从`registry.cn-hangzhou.aliyuncs.com/google_containers`下载。
@@ -119,5 +125,5 @@ $ kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Docum
 在`group_vars/k8s_vars.yml`中指定好要升级的`target_version`，并且准备好相关的`docker`镜像.
 
 ```bash
-$ ansible-playbook -i k8s-local.cfg k8s-upgrade.yml -u deploy --become -vv
+$ ansible-playbook -i k8s-local.cfg k8s-upgrade.yml -u deploy -vv
 ```
