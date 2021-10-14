@@ -1,8 +1,33 @@
+- name: k8s deployment prerequisites
+  hosts:
+    - all
+  roles:
+    - ../../playbooks/roles/setup-once
+  vars_files:
+    - group_vars/setup_once.yml
+
 - name: Initial k8s Dev Cluster
   hosts: 
     - all
   roles:
     - docker
+    - k8s
+  vars_files:
+    - group_vars/k8s_vars.yml
+
+- name: install docker for k8s workers
+  hosts: 
+    - k8s_nodes
+  tags:
+    - install-docker
+  roles:
+    - docker
+
+- name: Initial k8s Cluster
+  hosts:
+    - k8s_masters
+    - k8s_nodes
+  roles:
     - k8s
   vars_files:
     - group_vars/k8s_vars.yml

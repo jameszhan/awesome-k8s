@@ -1,3 +1,14 @@
+## TL;NR
+
+```bash
+# 新增用户
+$ ansible-playbook -i k8s-local.cfg -c paramiko --ask-pass --ask-become-pass create-user.yml -v
+# 快速部署本地集群
+$ ansible-playbook -i k8s-local.cfg k8s-local.yml -u deploy -v
+```
+
+## 安装步骤分解
+
 ### Prerequisites
 
 #### 新增`deploy`用户
@@ -18,35 +29,22 @@ $ ansible -i k8s-local.cfg all -m reboot -u deploy --become -v
 #### 时间同步检查
 
 ```bash
-$ ansible -i k8s-local.cfg all -m shell -a 'chronyc sources -v' -u deploy --become -v
-$ ansible -i k8s-local.cfg all -m shell -a 'chronyc sourcestats' -u deploy --become -v
+$ ansible -i k8s-local.cfg all -m shell -a 'chronyc sources -v' -u deploy -v
+$ ansible -i k8s-local.cfg all -m shell -a 'chronyc sourcestats' -u deploy -v
 ```
 
 ### 清理历史安装记录
 
 #### 清理`k8s`节点安装记录
 
-```bash
-# ansible -i k8s-local.cfg all -m shell -a "kubeadm reset" -u deploy --become -v
-$ ansible -i k8s-local.cfg k8s_nodes -m script -a 'cleaner/clean-docker.sh' -u deploy --become -v
-
-$ ansible -i k8s-local.cfg all -m shell -a 'apt-mark unhold kubectl kubeadm kubelet' -u deploy --become -v
-# ansible -i k8s-local.cfg k8s_masters -m apt -a "name=kubectl,kubeadm,kubelet state=absent autoremove=yes" -u deploy --become -v
-$ ansible -i k8s-local.cfg k8s_nodes -m apt -a "name=kubectl,kubeadm,kubelet state=absent autoremove=yes" -u deploy --become -v
-
-$ ansible -i k8s-local.cfg all -m shell -a 'apt -y purge kubectl kubeadm kubelet docker-ce docker-ce-cli containerd.io' -u deploy --become -v
-$ ansible -i k8s-local.cfg all -m shell -a 'apt -y autoremove' -u deploy --become -v
-
-$ ansible -i k8s-local.cfg k8s_nodes -m reboot -u deploy --become -v
-$ ansible -i k8s-local.cfg all -m shell -a 'df -h && free -h' -u deploy --become -v
-```
+参考[cleaner.md](cleaner.md)
 
 ### 执行安装
 
 #### 安装`etcd`集群(可选)
 
 ```bash
-$ ansible-playbook -i k8s-local.cfg -l etcd_servers etcd.yml -u deploy --become -v
+$ ansible-playbook -i k8s-local.cfg -l etcd_servers etcd.yml -u deploy -v
 
 $ ETCDCTL_API=3 etcdctl --endpoints=http://k8s-node001:2379 endpoint health
 $ ETCDCTL_API=3 etcdctl --write-out=table --endpoints=http://192.168.1.111:2379,http://192.168.1.112:2379,http://192.168.1.113:2379 endpoint health
@@ -91,6 +89,9 @@ $ ansible -i k8s-local.cfg all -m shell -a 'docker images' -u deploy --become -v
 $ mkdir -p $HOME/.kube
 $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+# 通过命令获取加入集群的token
+$ kubeadm token create --print-join-command
 ```
 
 记录下加入集群的令牌，如下例所示，在响应的`worker`节点上执行即可: 
@@ -111,4 +112,12 @@ k8s-node003   Ready    <none>                 16m   v1.22.2   192.168.1.113   <n
 
 # 启用Flannel插件
 $ kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+```
+
+#### 升级`k8s`集群
+
+在`group_vars/k8s_vars.yml`中指定好要升级的`target_version`，并且准备好相关的`docker`镜像.
+
+```bash
+$ ansible-playbook -i k8s-local.cfg k8s-upgrade.yml -u deploy --become -vv
 ```

@@ -1,8 +1,8 @@
-- name: Initial k8s Cluster
+- name: Initial k8s Environment
   hosts:
     - k8s_masters
     - k8s_nodes
   roles:
-    - k8s
+    - k8s-upgrade
   vars_files:
     - group_vars/k8s_vars.yml

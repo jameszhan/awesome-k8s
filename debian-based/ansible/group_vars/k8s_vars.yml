@@ -1,3 +1,5 @@
+target_version: v1.22.2
+
 gfw_images: 
   - source: k8s.gcr.io/kube-apiserver:v1.22.2
     mirror: registry.cn-hangzhou.aliyuncs.com/google_containers/kube-apiserver:v1.22.2

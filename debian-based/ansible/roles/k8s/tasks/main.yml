@@ -62,35 +62,90 @@
     sudo kubeadm init --pod-network-cidr 10.244.0.0/16
   args:
     chdir: /home/deploy
-    creates: /home/deploy/.kube/config
+    creates: /etc/kubernetes/admin.conf
   when: 
     - role == "master"
 
-# - name: Make config file
-#   shell: |
-#     mkdir -p $HOME/.kube
-#     sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-#     sudo chown $(id -u):$(id -g) $HOME/.kube/config
-#   args:
-#     chdir: /home/deploy
-#     creates: /home/deploy/.kube/config
-#   when: 
-#     - role == "master"
-
-# - name: Join k8s cluster
-#   become: true
-#   become_method: sudo
-#   command: >-
-#     kubeadm join 192.168.1.161:6443 --token 6fc0hl.3f5tp9d3i8gl3wsd \
-#     --discovery-token-ca-cert-hash sha256:e0ef78d79f73d2efe0e1d5706e49cef2129b684d4b07b008b43a55c58958dd86
-#   when: 
-#     - k8s_role == "slave"
-
-
+# mkdir -p $HOME/.kube
+# sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+# sudo chown $(id -u):$(id -g) $HOME/.kube/config
+- name: chmod go+r /etc/kubernetes/admin.conf
+  become: true
+  ansible.builtin.file:
+    path: /etc/kubernetes/admin.conf
+    mode: go+r
+  when: 
+    - role == "master"
     
+- name: copy config files to k8s-nodes
+  become_user: deploy
+  synchronize:
+    src: /etc/kubernetes/admin.conf
+    dest: /tmp/admin.conf
+    times: yes
+    mode: push
+    recursive: no
+  delegate_to: k8s-node001
+  when: 
+    - role == "worker"
+
+- name: Ensure $HOME/.kube directory exists
+  become: true
+  ansible.builtin.file:
+    path: /home/deploy/.kube
+    state: directory
+    owner: deploy
+    group: deploy
+
+- name: Copy /etc/kubernetes/admin.conf to $HOME/.kube/config
+  become: true
+  copy:
+    remote_src: yes
+    src: /etc/kubernetes/admin.conf
+    dest: /home/deploy/.kube/config
+    owner: deploy
+    group: deploy
+  when: 
+    - role == "master"
+
+- name: Copy /tmp/admin.conf to $HOME/.kube/config
+  become: true
+  copy:
+    remote_src: yes
+    src: /tmp/admin.conf
+    dest: /home/deploy/.kube/config
+    owner: deploy
+    group: deploy
+  when: 
+    - role == "worker"
+
+- name: Get join command
+  become_user: deploy
+  shell: kubeadm token create --print-join-command
+  register: join_command
+  when: 
+    - role == "worker"
+
+- name: Join k8s cluster
+  become: true
+  become_method: sudo
+  command: >-
+    {{ join_command.stdout_lines[0] }}
+  args:
+    creates: /etc/kubernetes/kubelet.conf
+  when: 
+    - role == "worker"
   
-  
+# kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+- name: Copy calico-etcd.yaml files to /tmp
+  template:
+    src: kube-flannel.yml
+    dest: /tmp
+  run_once: true
+  delegate_to: k8s-node001
 
-
-
-
+- name: kubectl apply -f /tmp/kube-flannel.yml
+  become_user: deploy
+  shell: kubectl apply -f /tmp/kube-flannel.yml
+  run_once: true
+  delegate_to: k8s-node001

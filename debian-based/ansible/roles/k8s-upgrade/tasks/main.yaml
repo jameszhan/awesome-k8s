@@ -1,0 +1,19 @@
+- name: Fuck the Great Firewall Pull Images
+  command: >
+    docker pull {{item.mirror}}
+  loop: "{{ gfw_images }}"
+
+- name: Fuck the Great Firewall Tag Images
+  become: true
+  become_method: sudo
+  command: >
+    docker tag {{item.mirror}} {{item.source}}
+  loop: "{{ gfw_images }}"
+
+- name: kubeadm upgrade apply to target version
+  become: true
+  become_method: sudo
+  command: >
+    kubeadm upgrade apply -y {{ target_version }}
+  when: 
+    - role == "master"
