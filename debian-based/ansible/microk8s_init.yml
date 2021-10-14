@@ -1,0 +1,6 @@
+- name: Initial MicroK8s
+  hosts: microk8s
+  roles:
+    - microk8s
+  vars_files:
+    - group_vars/k8s_vars.yml

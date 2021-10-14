@@ -1,0 +1,4 @@
+- name: show-snap-version
+  become: true
+  become_method: sudo
+  command: snap version

@@ -1,0 +1,40 @@
+- name: install snapd
+  become: true
+  become_method: sudo
+  apt:
+    name: snapd
+    update_cache: yes
+    state: present
+  notify:
+    - show-snap-version
+
+- name: Install "MicroK8s" with options
+  become: true
+  become_method: sudo
+  snap:
+    name: microk8s
+    classic: yes
+    channel: 1.18/stable
+
+- name: sudo snap refresh microk8s --classic --channel=1.22/stable
+  shell: sudo snap refresh microk8s --classic --channel=1.22/stable
+
+- name: sudo usermod -a -G microk8s deploy
+  become: true
+  become_method: sudo
+  user:
+    name: deploy
+    group: microk8s
+
+- name: microk8s.enable dns registry
+  command: microk8s.enable dns registry
+
+
+
+
+# - name: sudo chown -f -R james ~/.kube
+#   become: true
+#   become_method: sudo
+#   file:
+#     path: ~/.kube
+#     owner: james
