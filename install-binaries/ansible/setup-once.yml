@@ -1,7 +1,7 @@
 - name: k8s deployment prerequisites
-  hosts: 
+  hosts:
     - all
   roles:
-    - setup-once
+    - ../../playbooks/roles/setup-once
   vars_files:
     - group_vars/setup_once.yml
