@@ -1,3 +1,9 @@
+- name: load docker daemon.json
+  become: true
+  template:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+
 - name: install snapd
   become: true
   become_method: sudo
@@ -10,31 +16,34 @@
 
 - name: Install "MicroK8s" with options
   become: true
-  become_method: sudo
   snap:
     name: microk8s
     classic: yes
-    channel: 1.18/stable
-
-- name: sudo snap refresh microk8s --classic --channel=1.22/stable
-  shell: sudo snap refresh microk8s --classic --channel=1.22/stable
+    channel: 1.22/stable
 
 - name: sudo usermod -a -G microk8s deploy
   become: true
-  become_method: sudo
   user:
     name: deploy
     group: microk8s
 
+- name: load pause images
+  command: |
+    microk8s.ctr images pull registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.1
+    microk8s.ctr images tag registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.1 k8s.gcr.io/pause:3.1
+    
 - name: microk8s.enable dns registry
   command: microk8s.enable dns registry
 
+- name: copy nginx-microk8s.yml
+  template:
+    src: "{{ item }}" 
+    dest: /tmp/
+  with_items:
+    - nginx-microk8s.yml
+    - default.conf
 
-
-
-# - name: sudo chown -f -R james ~/.kube
-#   become: true
-#   become_method: sudo
-#   file:
-#     path: ~/.kube
-#     owner: james
+- name: deploy nginx-microk8s.yml
+  shell: |
+    microk8s.kubectl create configmap nginx-server-config --from-file=/tmp/default.conf
+    microk8s.kubectl apply -f /tmp/nginx-microk8s.yml

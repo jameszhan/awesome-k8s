@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-microk8s
+  labels:
+    app: nginx-microk8s
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-microk8s
+  template:
+    metadata:
+      labels:
+        app: nginx-microk8s
+    spec:
+      containers:
+      - name: nginx-microk8s
+        image: nginx
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        volumeMounts:
+        - mountPath: "/usr/share/nginx/html"
+          name: nginx-microk8s-pvc
+        - mountPath: "/etc/nginx/conf.d"
+          name: nginx-config-volume
+      volumes:
+      - name: nginx-microk8s-pvc
+        hostPath:
+          path: /tmp
+      - name: nginx-config-volume
+        configMap:
+          name: nginx-server-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-microk8s
+  labels:
+    app: nginx-microk8s
+spec:
+  ports:
+  - name: httpport
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: nginx-microk8s

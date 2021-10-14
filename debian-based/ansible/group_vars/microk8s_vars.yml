@@ -1,0 +1,7 @@
+target_version: v1.22.2
+
+gfw_images: 
+  - source: k8s.gcr.io/pause:3.1
+    mirror: registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.1
+  - source: k8s.gcr.io/ingress-nginx/controller:v1.0.0-alpha.2
+    mirror: registry.cn-hangzhou.aliyuncs.com/google_containers/ingress-nginx-controller:v1.0.0-alpha.2
