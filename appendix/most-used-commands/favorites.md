@@ -164,7 +164,6 @@ $ sudo mount -t squashfs -o loop osx-fragments.1m.squash /home/james/mountpoints
 $ sudo umount /home/james/mountpoints
 ```
 
-
 #### `route`
 
 `route -n`

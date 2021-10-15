@@ -57,7 +57,6 @@ $ kubectl label node k8s-node033 cpu=J1900
 $ kubectl get node --show-labels
 ```
 
-
 ```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
@@ -97,6 +96,24 @@ $ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
 ```bash
 $ ping default-backend-service.geek-apps.svc.cluster.local
 $ for loop in 1 2 3 4 5 6; do curl -I http://default-backend-service.geek-apps.svc.cluster.local/; done
+```
+
+#### 修改配置
+
+编辑`ingress-nginx-controller`服务配置
+
+```bash
+$ kubectl edit svc ingress-nginx-controller -n ingress-nginx
+```
+在`clusterIP`基础上新增一个`externalIP`。
+
+```yaml
+spec:
+  clusterIP: 192.168.1.203
+  clusterIPs:
+  - 192.168.1.203
+  externalIPs:
+  - 192.168.1.100
 ```
 
 ```bash

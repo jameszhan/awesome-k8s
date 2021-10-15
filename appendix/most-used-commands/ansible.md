@@ -206,6 +206,11 @@ $ ansible -m shell -a "ifconfig cni0" -i hosts k8s_nodes
 $ ansible -m shell -a "ifconfig flannel.1" -i hosts k8s_nodes
 ```
 
+```bash
+$ ansible -m script -a '/opt/bin/update-system.sh' k8s_nodes -vv
+$ ansible -m shell -a "swapoff -a" --become k8s_nodes
+```
+
 #### 基础监控
 
 ```bash

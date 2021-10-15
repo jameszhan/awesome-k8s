@@ -251,3 +251,12 @@ $ echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/a
 $ sudo apt -y update
 $ sudo apt -y install helm
 ```
+
+### 加入节点到已有集群
+
+从`master`节点复制`/etc/kubernetes/admin.conf`到`worker`节点`$HOME/.kube/config`，然后执行下述命令:
+
+```bash
+$ sudo kubeadm reset
+$ kubeadm token create --print-join-command | sudo bash
+```

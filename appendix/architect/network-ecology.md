@@ -127,3 +127,121 @@ EOF
     > 该调度算法会根据用户请求的目标`IP`进行`Hash`运算而得到一个唯一的`RS`。如果这个`RS`当前可用且未超载，那么就将请求转发给它，否则会告诉用户这个请求失败。大家可能很困惑这种负载均衡调度算法的意义所在，因为它相当于静态绑定了某个`RS`，破坏了均衡性。但是一味地追求"均衡"则属于狭义的负载均衡。从广义上来讲，保证服务的唯一入口也是一种负载均衡。尤其是当使用`LVS`做防火墙负载均衡的时候，防火墙需要保持入口的统一，才能更好地对整个链接进行跟踪。另外，把相同的请求转发给相同的缓存服务器，也可以做到最高的缓存命中率。
 10. 来源地址散列(`Source Hashing`)
     > 该调度算法与`DH`算法一样，不同的是会根据用户请求的来源`IP`进行`Hash`运算而得到一个唯一的`RS`。它的用途也是针对防火墙集群的，只不过与`DH`算法相反，`SH`强调的是对内控制。
+
+
+#### 常用命令
+
+
+```bash
+$ ip route show table local
+local 127.0.0.0/8 dev lo proto kernel scope host src 127.0.0.1
+local 127.0.0.1 dev lo proto kernel scope host src 127.0.0.1
+local 192.168.1.118 dev enp1s0 proto kernel scope host src 192.168.1.118
+local 10.244.19.65 dev tunl0 proto kernel scope host src 10.244.19.65
+local 172.17.0.1 dev docker0 proto kernel scope host src 172.17.0.1
+
+local 192.168.1.100 dev kube-ipvs0 proto kernel scope host src 192.168.1.100
+local 192.168.1.129 dev kube-ipvs0 proto kernel scope host src 192.168.1.129
+local 192.168.1.130 dev kube-ipvs0 proto kernel scope host src 192.168.1.130
+local 192.168.1.139 dev kube-ipvs0 proto kernel scope host src 192.168.1.139
+local 192.168.1.156 dev kube-ipvs0 proto kernel scope host src 192.168.1.156
+local 192.168.1.166 dev kube-ipvs0 proto kernel scope host src 192.168.1.166
+local 192.168.1.179 dev kube-ipvs0 proto kernel scope host src 192.168.1.179
+local 192.168.1.188 dev kube-ipvs0 proto kernel scope host src 192.168.1.188
+local 192.168.1.203 dev kube-ipvs0 proto kernel scope host src 192.168.1.203
+local 192.168.1.213 dev kube-ipvs0 proto kernel scope host src 192.168.1.213
+local 192.168.1.216 dev kube-ipvs0 proto kernel scope host src 192.168.1.216
+local 192.168.1.217 dev kube-ipvs0 proto kernel scope host src 192.168.1.217
+local 192.168.1.223 dev kube-ipvs0 proto kernel scope host src 192.168.1.223
+local 192.168.1.225 dev kube-ipvs0 proto kernel scope host src 192.168.1.225
+local 192.168.1.227 dev kube-ipvs0 proto kernel scope host src 192.168.1.227
+local 192.168.1.233 dev kube-ipvs0 proto kernel scope host src 192.168.1.233
+local 192.168.1.234 dev kube-ipvs0 proto kernel scope host src 192.168.1.234
+
+broadcast 127.0.0.0 dev lo proto kernel scope link src 127.0.0.1
+broadcast 127.255.255.255 dev lo proto kernel scope link src 127.0.0.1
+broadcast 172.17.0.0 dev docker0 proto kernel scope link src 172.17.0.1 linkdown
+broadcast 172.17.255.255 dev docker0 proto kernel scope link src 172.17.0.1 linkdown
+broadcast 192.168.1.0 dev enp1s0 proto kernel scope link src 192.168.1.118
+broadcast 192.168.1.255 dev enp1s0 proto kernel scope link src 192.168.1.118
+
+$ sudo ipvsadm -Ln
+IP Virtual Server version 1.2.1 (size=4096)
+Prot LocalAddress:Port Scheduler Flags
+  -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+TCP  127.0.0.1:38474 rr
+  -> 10.244.77.20:80              Masq    1      0          0
+  -> 10.244.245.19:80             Masq    1      0          0
+TCP  127.0.0.1:46315 rr
+  -> 10.244.77.20:443             Masq    1      0          0
+  -> 10.244.245.19:443            Masq    1      0          0
+TCP  172.17.0.1:38474 rr
+  -> 10.244.77.20:80              Masq    1      0          0
+  -> 10.244.245.19:80             Masq    1      0          0
+TCP  172.17.0.1:46315 rr
+  -> 10.244.77.20:443             Masq    1      0          0
+  -> 10.244.245.19:443            Masq    1      0          0
+TCP  192.168.1.100:80 rr
+  -> 10.244.77.20:80              Masq    1      0          0
+  -> 10.244.245.19:80             Masq    1      0          0
+TCP  192.168.1.100:443 rr
+  -> 10.244.77.20:443             Masq    1      0          0
+  -> 10.244.245.19:443            Masq    1      0          0
+TCP  192.168.1.118:38474 rr
+  -> 10.244.77.20:80              Masq    1      0          0
+  -> 10.244.245.19:80             Masq    1      0          0
+TCP  192.168.1.118:46315 rr
+  -> 10.244.77.20:443             Masq    1      0          0
+  -> 10.244.245.19:443            Masq    1      0          0
+TCP  192.168.1.129:443 rr
+  -> 192.168.1.61:6443            Masq    1      0          0
+  -> 192.168.1.62:6443            Masq    1      3          0
+  -> 192.168.1.63:6443            Masq    1      2          0
+TCP  192.168.1.130:53 rr
+  -> 10.244.77.23:53              Masq    1      0          0
+TCP  192.168.1.130:9153 rr
+  -> 10.244.77.23:9153            Masq    1      0          0
+TCP  192.168.1.139:80 rr
+  -> 10.244.38.143:8888           Masq    1      0          0
+TCP  192.168.1.156:80 rr
+  -> 10.244.6.130:9093            Masq    1      0          0
+TCP  192.168.1.166:80 rr
+  -> 10.244.150.194:3000          Masq    1      0          0
+TCP  192.168.1.179:80 rr
+  -> 10.244.150.195:8080          Masq    1      0          0
+TCP  192.168.1.179:443 rr
+  -> 10.244.150.195:8443          Masq    1      0          0
+TCP  192.168.1.188:8000 rr
+  -> 10.244.245.21:8000           Masq    1      0          0
+TCP  192.168.1.203:80 rr
+  -> 10.244.77.20:80              Masq    1      0          0
+  -> 10.244.245.19:80             Masq    1      0          0
+TCP  192.168.1.203:443 rr
+  -> 10.244.77.20:443             Masq    1      0          1
+  -> 10.244.245.19:443            Masq    1      0          1
+TCP  192.168.1.213:443 rr
+  -> 10.244.77.19:8443            Masq    1      0          0
+TCP  192.168.1.216:80 rr
+  -> 10.244.88.90:9090            Masq    1      0          0
+TCP  192.168.1.217:9117 rr
+  -> 10.244.150.195:9117          Masq    1      0          0
+TCP  192.168.1.223:9091 rr
+  -> 10.244.19.124:9091           Masq    1      0          0
+TCP  192.168.1.225:443 rr
+  -> 10.244.77.21:443             Masq    1      0          0
+TCP  192.168.1.227:3100 rr
+  -> 10.244.19.123:3100           Masq    1      1          0
+TCP  192.168.1.233:443 rr
+  -> 10.244.77.20:8443            Masq    1      0          0
+  -> 10.244.245.19:8443           Masq    1      0          0
+TCP  192.168.1.234:8080 rr
+  -> 10.244.38.142:8080           Masq    1      0          0
+TCP  10.244.19.65:38474 rr
+  -> 10.244.77.20:80              Masq    1      0          0
+  -> 10.244.245.19:80             Masq    1      0          0
+TCP  10.244.19.65:46315 rr
+  -> 10.244.77.20:443             Masq    1      0          0
+  -> 10.244.245.19:443            Masq    1      0          0
+UDP  192.168.1.130:53 rr
+  -> 10.244.77.23:53              Masq    1      0          0
+```
