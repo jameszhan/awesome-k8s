@@ -1,4 +1,15 @@
-# 配置你的服务器-k8s环境
+# 快速搭建`microk8s`环境
+
+TL;NR
+
+```bash
+$ cd ansible
+
+# 新增deploy用户
+$ ansible-playbook -i k8s-local.cfg -c paramiko --ask-pass --ask-become-pass create-user.yml -v
+# 快速部署本地集群
+$ ansible-playbook -i hosts microk8s_init.yml -u deploy -v
+```
 
 ## 环境说明
 
@@ -54,7 +65,7 @@ $ microk8s.kubectl get all -A -o wide
 
 #### 后续配置
 
-##### 配置alias
+##### 配置`alias`
 
 ```bash
 $ alias kubectl='microk8s.kubectl'

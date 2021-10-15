@@ -36,6 +36,69 @@ $ open http://localhost:8080/api/v1/namespaces/geek-apps/services
 $ open http://localhost:8080/api/v1/namespaces/geek-apps/services/default-backend-service
 ```
 
+#### `k8s node selector`
+
+```bash
+$ kubectl get node --show-labels
+
+$ kubectl label node k8s-node001 cpu=R7-5700U
+$ kubectl label node k8s-node002 cpu=R7-5700U
+$ kubectl label node k8s-node003 cpu=R7-5700U
+$ kubectl label node k8s-node005 cpu=R7-5700U
+$ kubectl label node k8s-node006 cpu=R7-5700U
+$ kubectl label node k8s-node007 cpu=R7-5700U
+$ kubectl label node k8s-node008 cpu=R7-5700U
+
+$ kubectl get  node --show-labels
+
+$ kubectl label node k8s-node031 cpu=J1900
+$ kubectl label node k8s-node032 cpu=J1900
+$ kubectl label node k8s-node033 cpu=J1900
+$ kubectl get node --show-labels
+```
+
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-notebook
+  namespace: geek-apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      ...
+  template:
+    metadata:
+      labels:
+        ...
+    spec:
+      containers:
+        ...
+      volumes:
+        ...
+      nodeSelector: 
+        cpu: R7-5700U
+EOF
+```
+
+#### `k8s service`负载均衡检查
+
+```bash
+$ kubectl describe svc default-backend-service -n geek-apps
+
+$ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
+```
+
+检查`x_host`字段
+
+```bash
+$ ping default-backend-service.geek-apps.svc.cluster.local
+$ for loop in 1 2 3 4 5 6; do curl -I http://default-backend-service.geek-apps.svc.cluster.local/; done
+```
+
 ```bash
 $ kubectl delete cm kubernetes-services-endpoint
 ```
@@ -128,20 +191,7 @@ $ kubectl delete ingress pkm-ingress -n geek-apps
 ```
 
 
-#### `k8s service`负载均衡检查
 
-```bash
-$ kubectl describe svc default-backend-service -n geek-apps
-
-$ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
-```
-
-检查`x_host`字段
-
-```bash
-$ ping default-backend-service.geek-apps.svc.cluster.local
-$ for loop in 1 2 3 4 5 6; do curl -I http://default-backend-service.geek-apps.svc.cluster.local/; done
-```
 
 #### 访问指定集群 
 

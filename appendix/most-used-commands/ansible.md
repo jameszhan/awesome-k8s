@@ -168,3 +168,59 @@ $ ansible -m systemd -a "name=etcd state=started" -i hosts --become etcd_servers
 $ ansible -m apt -a "name=nfs-common" -i hosts --become k8s_servers --verbose
 
 ```
+
+
+```bash
+$ sudo apt update
+$ sudo apt install software-properties-common
+$ sudo apt-add-repository --yes --update ppa:ansible/ansible
+$ sudo apt install ansible
+```
+
+#### 安装`Ansible`
+
+```bash
+$ python -m pip install --user ansible
+```
+
+```bash
+$ ansible -m ping all
+$ ansible -m script -a '/opt/bin/update-system.sh' k8s_nodes
+
+$ ansible -m apt -a "name=net-tools,vim state=latest" --become --verbose k8s_nodes 
+
+$ ansible -m command -a "netstat -plntu" --become k8s_nodes
+$ ansible -m command -a "ss -tunelp" --become k8s_nodes
+
+$ ansible -m command -a "timedatectl set-timezone Asia/Shanghai" --become k8s_nodes
+$ ansible -m command -a "localectl set-locale LANG=zh_CN.utf8" --become k8s_nodes
+$ ansible -m command -a "localectl set-keymap en_US" --become k8s_nodes
+```
+
+```bash
+$ ansible -m apt -a "name=nfs-common" -i hosts --become k8s_nodes -vv
+$ ansible -m shell -a "swapoff -a" -i hosts --become k8s_nodes
+
+$ ansible -m shell -a "ifconfig -s" -i hosts k8s_nodes
+$ ansible -m shell -a "ifconfig cni0" -i hosts k8s_nodes
+$ ansible -m shell -a "ifconfig flannel.1" -i hosts k8s_nodes
+```
+
+#### 基础监控
+
+```bash
+$ ansible -m shell -a 'df -h -t ext4' -i hosts k8s_nodes
+$ ansible -m shell -a 'free -h' -i hosts -i hosts k8s_nodes
+
+$ ansible -i hosts -m shell -a "ip link" k8s_nodes
+$ ansible -i hosts -m shell -a "ifconfig -a" k8s_nodes
+
+$ ansible -i hosts -m shell -a "sudo cat /sys/class/dmi/id/product_uuid" k8s_nodes
+$ ansible -i hosts -m shell -a "lsmod | grep br_netfilter" k8s_nodes
+
+$ ansible -i hosts -m shell -a "rm /etc/apt/sources.list.d/kubernetes.list" --become k8s_nodes
+
+$ ansible -i hosts -m shell -a "docker login --username=zizhizhan@gmail.com --password=XXXXXXX registry.cn-shenzhen.aliyuncs.com"  --become k8s_nodes
+
+$ ansible -i hosts -m systemd -a "daemon-reload=yes" --become k8s_nodes
+```
