@@ -16,6 +16,42 @@
 > `ls -l /proc/832/fd | grep socket | wc -l`
 
 
+##### 04. Ubuntu虚拟机提示netplan命令找不到，无法上网问题修复
+
+> netplan: command not found
+
+```bash
+$ mkdir -p /opt/var/offline/packages/
+$ wget http://cn.archive.ubuntu.com/ubuntu/pool/main/n/netplan.io/netplan.io_0.102-0ubuntu1~20.04.2_amd64.deb
+$ wget http://cn.archive.ubuntu.com/ubuntu/pool/main/n/netplan.io/libnetplan0_0.102-0ubuntu1~20.04.2_amd64.deb
+
+$ virsh edit manager-node
+```
+
+`<devices />`节点下增加入如下配置
+
+```xml
+<filesystem type='mount' accessmode='passthrough'>
+  <driver type='path' wrpolicy='immediate'/>
+  <source dir='/opt/var/offline/packages'/>
+  <target dir='packages'/>
+  <readonly />
+</filesystem>
+```
+
+```bash
+$ virsh start manager-node --console
+
+$ sudo mkdir /opt/mnt
+$ sudo mount -v -t 9p -o trans=virtio,ro packages /opt/mnt
+
+$ sudo dpkg -i libnetplan0_0.102-0ubuntu1~20.04.2_amd64.deb
+$ sudo dpkg -i netplan.io_0.102-0ubuntu1~20.04.2_amd64.deb
+
+$ sudo netplan --debug apply
+$ sudo reboot
+```
+
 #### `Docker`
 
 ##### 如何免`sudo`权限运行`docker`命令?

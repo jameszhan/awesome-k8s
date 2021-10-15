@@ -53,9 +53,7 @@ $ sudo usermod -a -G users deploy
 #### 配置`sudo`免密
 
 ```bash
-$ sudo su - root
-$ cat /etc/sudoers.d/README
-$ echo 'deploy ALL = (ALL) NOPASSWD: ALL' > /etc/sudoers.d/deploy
+$ echo 'deploy ALL = (ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/deploy > /dev/null
 ```
 
 #### 配置登陆免密
@@ -166,6 +164,7 @@ $ cat <<EOF | sudo tee /etc/docker/daemon.json > /dev/null
 EOF
 
 # 重启docker服务
+$ sudo systemctl daemon-reload
 $ sudo systemctl restart docker
 ```
 
@@ -223,6 +222,8 @@ $ sudo kubeadm init --pod-network-cidr 10.244.0.0/16
 $ mkdir -p $HOME/.kube
 $ sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 $ sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+$ kubectl get pod -n kube-system -o wide
 ```
 
 #### 配置`worker`
@@ -240,6 +241,7 @@ $ sudo kubeadm join 192.168.1.161:6443 --token 6fc0hl.3f5tp9d3i8gl3wsd \
 
 ```bash
 $ kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+$ kubectl get pod -n kube-system -o wide
 ```
 
 #### 安装`helm`
@@ -259,4 +261,28 @@ $ sudo apt -y install helm
 ```bash
 $ sudo kubeadm reset
 $ kubeadm token create --print-join-command | sudo bash
+
+$ kubectl get nodes
+```
+
+## 升级`k8s`
+
+查看升级计划及变更的镜像
+
+```bash
+$ sudo kubeadm upgrade plan
+$ sudo kubeadm upgrade apply v1.22.2
+$ kubeadm config images list
+```
+
+升级`k8s`集群
+
+在`group_vars/k8s_vars.yml`中指定好要升级的`target_version`，并且准备好相关的`docker`镜像.
+
+```bash
+$ ansible-playbook -i k8s-local.cfg k8s-upgrade.yml -u deploy -vv
+```
+
+```bash
+$ sudo kubeadm upgrade node
 ```
