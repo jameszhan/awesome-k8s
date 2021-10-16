@@ -1,0 +1,101 @@
+---
+# Source: kafdrop/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafdrop
+  namespace: geek-apps
+  labels:
+    app.kubernetes.io/name: kafdrop
+    helm.sh/chart: kafdrop-0.1.0
+    app.kubernetes.io/instance: kafdrop
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: kafdrop
+    app.kubernetes.io/instance: kafdrop
+
+---
+# Source: kafdrop/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafdrop
+  namespace: geek-apps
+  labels:
+    app.kubernetes.io/name: kafdrop
+    helm.sh/chart: kafdrop-0.1.0
+    app.kubernetes.io/instance: kafdrop
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kafdrop
+      app.kubernetes.io/instance: kafdrop
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kafdrop
+        app.kubernetes.io/instance: kafdrop
+      annotations:        
+    spec:
+      containers:
+        - name: kafdrop
+          image: "obsidiandynamics/kafdrop:3.27.0"
+          imagePullPolicy: Always
+          env:
+          - name: KAFKA_BROKERCONNECT
+            value: "kafka:9092"
+          - name: KAFKA_PROPERTIES
+            value: ""
+          - name: KAFKA_TRUSTSTORE
+            value: ""
+          - name: KAFKA_KEYSTORE
+            value: ""
+          - name: JVM_OPTS
+            value: "-Xms32M -Xmx1284M"
+          - name: JMX_PORT
+            value: "8686"
+          - name: HOST
+            value: ""
+          - name: SERVER_SERVLET_CONTEXTPATH
+            value: ""
+          - name: KAFKA_PROPERTIES_FILE
+            value: "kafka.properties"
+          - name: KAFKA_TRUSTSTORE_FILE
+            value: "kafka.truststore.jks"
+          - name: KAFKA_KEYSTORE_FILE
+            value: "kafka.keystore.jks"
+          - name: SERVER_PORT
+            value: "9000"
+          - name: CMD_ARGS
+            value: "--message.format=AVRO --schemaregistry.connect=http://localhost:8080"
+          ports:
+            - name: http
+              containerPort: 9000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: "/actuator/health"
+              port: http
+            initialDelaySeconds: 180
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: "/actuator/health"
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            timeoutSeconds: 10
+          resources:
+            requests:
+              cpu: 1m
+              memory: 128Mi
