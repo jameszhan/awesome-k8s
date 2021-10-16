@@ -141,8 +141,8 @@ $ ansible-playbook -i hosts k8s-ha.yml -u deploy -v
 ```bash
 $ cat ~/.kube/config
 
-$ curl --insecure https://192.168.1.200:8443/
-$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.200:8443/version
+$ curl --insecure https://192.168.1.100:8443/
+$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.100:8443/version
 
 $ kubectl cluster-info
 $ kubectl get componentstatuses

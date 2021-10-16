@@ -11,15 +11,8 @@ GRANT ALL PRIVILEGES ON `phpmyadmin`.* TO 'pma'@'192.168.1.%' WITH GRANT OPTION;
 GRANT SELECT ON *.* TO 'pma'@'192.168.1.%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
-GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.160' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
-GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.161' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
-GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.162' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
-GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.163' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
-GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.165' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
-GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.166' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
-GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.167' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
-GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.168' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
-GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.169' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.80' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.1001' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
 SELECT Host, User, Password, authentication_string, is_role, default_role FROM mysql.user;
@@ -66,5 +59,5 @@ $ kubectl delete pod check-pma-config -n geek-apps
 $ kubectl apply -f templates/phpmyadmin/check-pma-config.yaml
 $ kubectl logs check-pma-config -n geek-apps
 
-$ open https://pma.zizhizhan.com:8443
+$ open https://pma.zizhizhan.com
 ```

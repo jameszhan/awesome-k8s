@@ -48,7 +48,7 @@
   delegate_to: k8s-master01
 
 # Cluster "kubernetes" set.
-# kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server=https://192.168.1.200:8443 --kubeconfig=kube-proxy.kubeconfig
+# kubectl config set-cluster kubernetes --certificate-authority=/opt/kubernetes/ssl/ca.pem --embed-certs=true --server=https://192.168.1.100:8443 --kubeconfig=kube-proxy.kubeconfig
 # User "kube-proxy" set.
 # kubectl config set-credentials kube-proxy --client-certificate=/opt/kubernetes/ssl/kube-proxy.pem --client-key=/opt/kubernetes/ssl/kube-proxy-key.pem --embed-certs=true --kubeconfig=kube-proxy.kubeconfig
 # Context "default" created.

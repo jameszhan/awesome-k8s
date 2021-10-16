@@ -54,7 +54,6 @@ $ cd install-binaries/ansible
 | metrics-server                                        | v0.5.1                    | 集群容器监控服务           |
 | kubernetes-dashboard                                  | v2.3.1                    | 集群Web UI               |
 
-
 #### 配置清单
 
 | role       | ip            | hostname          | port                         | 机器配置   | 主要软件                                              |
@@ -68,22 +67,23 @@ $ cd install-binaries/ansible
 | HA         | 192.168.1.61  | k8s-master01      | 8443,33305                   | 2C/4G/32G  | haproxy,keepalived                                    |
 | HA         | 192.168.1.62  | k8s-master02      | 8443,33305                   | 2C/4G/32G  | haproxy,keepalived                                    |
 | HA         | 192.168.1.63  | k8s-master03      | 8443,33305                   | 2C/4G/32G  | haproxy,keepalived                                    |
-| VIP        | 192.168.1.200 | k8s-master[01-03] | 8443                         |            | keepalived                                            |
+| VIP        | 192.168.1.100 | k8s-master[01-03] | 8443                         |            | keepalived                                            |
+| k8s-worker | 192.168.1.101 | k8s-node021       | 10248,10249,10250,10256      | 2C/4G/128G | docker,kubelet,kube-proxy                             |
+| k8s-worker | 192.168.1.102 | k8s-node022       | 10248,10249,10250,10256      | 2C/4G/128G | docker,kubelet,kube-proxy                             |
 | k8s-worker | 192.168.1.111 | k8s-node001       | 10248,10249,10250,10256      | 4C/8G/64G  | docker,kubelet,kube-proxy                             |
 | k8s-worker | 192.168.1.112 | k8s-node002       | 10248,10249,10250,10256      | 4C/8G/64G  | docker,kubelet,kube-proxy                             |
 | k8s-worker | 192.168.1.113 | k8s-node003       | 10248,10249,10250,10256      | 4C/16G/64G | docker,kubelet,kube-proxy                             |
-| k8s-worker | 192.168.1.101 | k8s-node021       | 10248,10249,10250,10256      | 2C/4G/128G | docker,kubelet,kube-proxy                             |
-| k8s-worker | 192.168.1.102 | k8s-node022       | 10248,10249,10250,10256      | 2C/4G/128G | docker,kubelet,kube-proxy                             |
 | NAS/iSCSI  | 192.168.1.6   | synology-dsm      | 111,892,2049,3260            | 2C/8G/16T  | dsm 7.0                                               |
 
 #### 子网划分
 
-| 网段信息              | 配置             |
+| 网段信息                | 配置             |
 | --------------------- | ---------------- |
 | Host Network Range    | 192.168.1.1/24   |
 | Pod Network Range     | 10.244.0.0/16    |
 | Service Network Range | 192.168.1.128/25 |
-| API SERVER VIP        | 192.168.1.129/32 |
+| API SERVER VIP        | 192.168.1.100/32 |
+| API SERVER IP         | 192.168.1.129/32 |
 | DNS IP                | 192.168.1.130/32 |
 
 ### 安装系统服务
@@ -128,11 +128,11 @@ $ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.p
 $ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.62:6443/version
 
 # 测试高可用集群
-$ curl --insecure https://192.168.1.200:8443/
-$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.200:8443/version
-$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.200:8443/healthz
-$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.200:8443/livez
-$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.200:8443/readyz
+$ curl --insecure https://192.168.1.100:8443/
+$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.100:8443/version
+$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.100:8443/healthz
+$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.100:8443/livez
+$ curl -i --cacert /etc/kubernetes/ssl/ca.pem --cert /etc/kubernetes/ssl/admin.pem --key /etc/kubernetes/ssl/admin-key.pem https://192.168.1.100:8443/readyz
 
 $ kubectl cluster-info
 $ kubectl get componentstatuses
@@ -140,7 +140,7 @@ $ kubectl get all --all-namespaces
 $ kubectl get ep --all-namespaces
 $ kubectl describe svc kubernetes
 
-$ nc -vz 192.168.1.200 8443
+$ nc -vz 192.168.1.100 8443
 ```
 
 #### 安装 `k8s-worker` 集群
@@ -229,7 +229,7 @@ $ kubectl proxy --port=8080 &
 $ curl -i http://localhost:8080/api/
 
 $ TOKEN=$(kubectl describe secret $(kubectl get secrets | grep default | cut -f1 -d ' ') | grep -E '^token' | cut -f2 -d':' | tr -d ' ')
-$ curl -k -v https://192.168.1.200:8443/api/ --header "Authorization: Bearer $TOKEN"
+$ curl -k -v https://192.168.1.100:8443/api/ --header "Authorization: Bearer $TOKEN"
 ```
 
 #### 添加新`worker`节点

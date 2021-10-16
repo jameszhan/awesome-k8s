@@ -195,7 +195,7 @@ $ kubectl describe ClusterRoleBinding kubernetes-dashboard
 $ kubectl get ClusterRoleBinding cluster-admin -o wide
 $ kubectl describe ClusterRoleBinding cluster-admin
 
-$ kubectl logs -f svc/kubernetes-dashboard  -n kubernetes-dashboard
+$ kubectl logs -f svc/kubernetes-dashboard -n kubernetes-dashboard
 ```
 
 ```bash

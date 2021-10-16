@@ -34,6 +34,6 @@ $ wget -O - default-backend-service
 #### 访问`Ingress`服务
 
 ```bash
-$ open https://dl.zizhizhan.com:8443
-$ open https://dl2.zizhizhan.com:8443
+$ open https://dl.zizhizhan.com
+$ open https://dl2.zizhizhan.com
 ```

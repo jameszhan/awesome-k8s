@@ -71,7 +71,7 @@ $ kubectl apply -f templates/loki-stack/loki-stack.yml
 $ kubectl get svc -n geek-apps
 $ kubectl get ingress -n geek-apps
 
-$ open https://grafana.zizhizhan.com:8443
+$ open https://grafana.zizhizhan.com
 # 获取admin密码
 $ kubectl get secret loki-grafana -n loki-stack -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 ```
@@ -80,8 +80,8 @@ $ kubectl get secret loki-grafana -n loki-stack -o jsonpath="{.data.admin-passwo
 
 ### 配置`Prometheus`
 
-- Create -> [Import](https://grafana.zizhizhan.com:8443/dashboard/import) -> 315 -> 选择`Prometheus` -> Import
-- Configuration -> [Data sources](https://grafana.zizhizhan.com:8443/datasources) -> 选择`Prometheus` -> Dashboards -> Import
+- Create -> [Import](https://grafana.zizhizhan.com/dashboard/import) -> 315 -> 选择`Prometheus` -> Import
+- Configuration -> [Data sources](https://grafana.zizhizhan.com/datasources) -> 选择`Prometheus` -> Dashboards -> Import
 
 ### 支持地理位置信息统计
 

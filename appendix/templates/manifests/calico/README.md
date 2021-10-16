@@ -20,7 +20,7 @@ metadata:
   name: kubernetes-services-endpoint
   namespace: kube-system
 data:
-  KUBERNETES_SERVICE_HOST: "192.168.1.200"
+  KUBERNETES_SERVICE_HOST: "192.168.1.100"
   KUBERNETES_SERVICE_PORT: "8443"
 EOF
 ```

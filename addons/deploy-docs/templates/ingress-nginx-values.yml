@@ -436,9 +436,9 @@ controller:
     ## List of IP addresses at which the controller services are available
     ## Ref: https://kubernetes.io/docs/user-guide/services/#external-ips
     ##
-    externalIPs: []
-    # externalIPs:
-    #   - 192.168.1.161
+    # externalIPs: []
+    externalIPs:
+      - 192.168.1.81
 
     # loadBalancerIP: ""
     loadBalancerSourceRanges: []

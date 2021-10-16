@@ -175,7 +175,7 @@ spec:
 EOF
 ```
 
-打开`https://jupyter.zizhizhan.com:8443`，访问`Jupyter Notebook`服务。
+打开`https://jupyter.zizhizhan.com`，访问`Jupyter Notebook`服务。
 
 ### 更新密码
 

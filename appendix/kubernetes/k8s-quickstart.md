@@ -28,7 +28,7 @@ $ kubectl get cm nginx-server-config -n geek-apps -o yaml
 
 $ kubectl apply -f templates/nginx-gallery.deploy.yaml
 
-$ open https://gallery.zizhizhan.com:8443
+$ open https://gallery.zizhizhan.com
 ```
 
 强制更新部署

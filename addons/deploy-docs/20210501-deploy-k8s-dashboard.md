@@ -9,7 +9,7 @@ $ helm repo update
 
 $ helm search repo kubernetes-dashboard
 $ helm delete kubernetes-dashboard -n kube-system
-helm install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard -n kube-system
+$ helm install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard -n kube-system
 ```
 
 ##### `Helm`定制部署`dashboard`
@@ -49,7 +49,6 @@ kind: ServiceAccount
 metadata:
   name: admin-user
   namespace: kubernetes-dashboard
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

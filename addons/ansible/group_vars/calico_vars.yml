@@ -4,7 +4,7 @@
 # etcd_cert_path: /etc/etcd/ssl/etcd.pem
 # etcd_key_path: /etc/etcd/ssl/etcd-key.pem
 
-# kubernetes_service_host: 192.168.1.200
+# kubernetes_service_host: 192.168.1.100
 # kubernetes_service_port: 8443
 
 calico_ipv4_cidr: 10.244.0.0/16

@@ -204,7 +204,7 @@ $ kubectl get ingress -n geek-apps -o wide
 # 192.168.1.203 是 ingress-nginx-controller 服务的 CLUSTER-IP
 $ curl -v -k -H "Host: dsm.zizhizhan.com" https://192.168.1.203
 
-$ open https://dsm.zizhizhan.com:8443
+$ open https://dsm.zizhizhan.com
 
 # 强制更新
 $ kubectl replace --force -f templates/ingress/synology-dsm.yml
@@ -223,7 +223,7 @@ $ curl -v -k -X GET \
     -H "Host: mi.zizhizhan.com" \
     https://192.168.1.203
 
-$ open https://mi.zizhizhan.com:8443
+$ open https://mi.zizhizhan.com
 
 # 强制更新
 $ kubectl replace --force -f templates/ingress/xiaomi-router.yml
@@ -240,7 +240,7 @@ $ kubectl get svc -n geek-apps
 $ kubectl get ingress -n geek-apps
 $ kubectl describe ingress -n geek-apps
 
-$ open https://k8s.zizhizhan.com:8443
+$ open https://k8s.zizhizhan.com
 
 $ curl -v -k -X GET \
     -H "Host: k8s.zizhizhan.com" \
