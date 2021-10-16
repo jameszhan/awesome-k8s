@@ -18,7 +18,7 @@ GRANT ALL PRIVILEGES ON wordpress.* TO deploy@'192.168.1.%' IDENTIFIED BY 'YOUR-
 
 ```bash
 $ helm repo add bitnami https://charts.bitnami.com/bitnami
-$ helm search repo bitnami
+$ helm search repo wordpress
 $ helm repo update
 
 $ mkdir -p templates/wordpress
