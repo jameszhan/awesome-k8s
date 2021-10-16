@@ -1,6 +1,6 @@
 # 通过`kubeadm`构建测试`k8s`集群
 
-## TL;NR
+## TL;DR
 
 ```bash
 # 新增deploy用户

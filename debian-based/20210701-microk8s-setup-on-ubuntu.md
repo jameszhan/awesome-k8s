@@ -1,6 +1,6 @@
 # 快速搭建`microk8s`环境
 
-TL;NR
+## TL;DR
 
 ```bash
 $ cd ansible
