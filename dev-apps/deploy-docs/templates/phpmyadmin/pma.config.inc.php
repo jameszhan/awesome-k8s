@@ -19,6 +19,7 @@ $cfg['blowfish_secret'] = ''; /* YOU MUST FILL IN THIS FOR COOKIE AUTH! */
 
 $cfg['ForceSSL'] = false;
 $cfg['PmaAbsoluteUri'] = 'https://pma.zizhizhan.com';   
+# $cfg['AllowArbitraryServer'] = true;
 
 
 /**
@@ -27,7 +28,7 @@ $cfg['PmaAbsoluteUri'] = 'https://pma.zizhizhan.com';
 $i = 0;
 
 /**
- * First server
+ * mysql-primary
  */
 $i++;
 
@@ -35,7 +36,33 @@ $cfg['Servers'][$i]['ssl'] = false;
 /* Authentication type */
 $cfg['Servers'][$i]['auth_type'] = 'cookie';
 /* Server parameters */
-$cfg['Servers'][$i]['host'] = 'localhost';
+$cfg['Servers'][$i]['host'] = 'mysql-primary';
+$cfg['Servers'][$i]['compress'] = false;
+$cfg['Servers'][$i]['AllowNoPassword'] = false;
+
+/**
+ * mysql-secondary
+ */
+$i++;
+
+$cfg['Servers'][$i]['ssl'] = false;
+/* Authentication type */
+$cfg['Servers'][$i]['auth_type'] = 'cookie';
+/* Server parameters */
+$cfg['Servers'][$i]['host'] = 'mysql-secondary';
+$cfg['Servers'][$i]['compress'] = false;
+$cfg['Servers'][$i]['AllowNoPassword'] = false;
+
+/**
+ * 192.168.1.6
+ */
+$i++;
+
+$cfg['Servers'][$i]['ssl'] = false;
+/* Authentication type */
+$cfg['Servers'][$i]['auth_type'] = 'cookie';
+/* Server parameters */
+$cfg['Servers'][$i]['host'] = '192.168.1.6';
 $cfg['Servers'][$i]['compress'] = false;
 $cfg['Servers'][$i]['AllowNoPassword'] = false;
 

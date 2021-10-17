@@ -4,10 +4,10 @@ metadata:
   name: pma-config
   namespace: geek-apps
 data:
-  PMA_HOST: '192.168.1.6'
+  PMA_HOSTS: 'mysql-primary,mysql-secondary,192.168.1.6'
+  PMA_VERBOSES: 'mysql-primary,mysql-secondary,synology-db'
   PMA_PORT: '3306'
-  PMA_VERBOSE: synology-ds918
-  PMA_QUERYHISTORYDB: phpmyadmin
+  PMA_ABSOLUTE_URI: https://pma.zizhizhan.com
   
 ---
 apiVersion: apps/v1

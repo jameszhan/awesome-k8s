@@ -1,0 +1,16 @@
+** Please be patient while the chart is being deployed **
+
+
+To get your password run:
+    export REDIS_PASSWORD=$(kubectl get secret --namespace "geek-apps" redis-cluster -o jsonpath="{.data.redis-password}" | base64 --decode)
+
+You have deployed a Redis&trade; Cluster accessible only from within you Kubernetes Cluster.INFO: The Job to create the cluster will be created.To connect to your Redis&trade; cluster:
+
+1. Run a Redis&trade; pod that you can use as a client:
+kubectl run --namespace geek-apps redis-cluster-client --rm --tty -i --restart='Never' \
+ --env REDIS_PASSWORD=$REDIS_PASSWORD \
+--image docker.io/bitnami/redis-cluster:6.2.6-debian-10-r0 -- bash
+
+2. Connect using the Redis&trade; CLI:
+
+redis-cli -c -h redis-cluster -a $REDIS_PASSWORD

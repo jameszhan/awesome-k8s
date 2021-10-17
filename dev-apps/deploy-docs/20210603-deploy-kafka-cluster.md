@@ -5,6 +5,8 @@ $ helm repo add bitnami https://charts.bitnami.com/bitnami
 $ helm install kafka bitnami/kafka
 ```
 
+### 安装`Kafka`
+
 ```bash
 $ helm repo add bitnami https://charts.bitnami.com/bitnami
 $ helm search repo kafka
@@ -26,12 +28,13 @@ $ helm -n geek-apps install kafka bitnami/kafka \
 $ kubectl get pods -w --namespace geek-apps -o wide
 ```
 
+### 测试安装效果
 
 ```bash  
 $ kubectl run kafka-client --restart='Never' --image docker.io/bitnami/kafka:2.8.1-debian-10-r0 --namespace geek-apps --command -- sleep infinity
 ```
 
-#### Producer
+#### 生产者
 
 ```bash
 $ kubectl exec --tty -i kafka-client --namespace geek-apps -- bash
@@ -40,7 +43,7 @@ $ kafka-console-producer.sh \
     --topic test
 ```
 
-#### Consumer
+#### 消费者
 
 ```bash
 $ kubectl exec --tty -i kafka-client --namespace geek-apps -- bash
