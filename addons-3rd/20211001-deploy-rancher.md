@@ -62,3 +62,12 @@ $ open https://rancher.zizhizhan.com/dashboard/?setup=YOUR-SECRET
 ```bash
 $ system-tools remove --kubeconfig ~/.kube/config -n cattle-system
 ```
+
+## 重置密码
+
+```bash
+$ POD_NAME=$(kubectl -n cattle-system get pods -l app=rancher | grep '1/1' | head -1 | awk '{ print $1 }')
+$ kubectl --kubeconfig=/home/james/.kube/config -n cattle-system exec $POD_NAME -- reset-password
+New password for default administrator (user-xxxxx):
+<new_password>
+```
