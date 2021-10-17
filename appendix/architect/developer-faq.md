@@ -198,3 +198,10 @@ $ dig github.io @223.5.5.5
 ```bash
 $ source /etc/profile.d/libvirt-uri.sh
 ```
+
+#### `Redis`
+
+##### 如何升级`k8s`部署的`Redis-Cluster`集群
+
+- 如果业务方能接受一定的延迟毛刺，可以在低峰时通过StatefulSet滚动升级的方式来实现
+- 如果业务对延迟有要求，可以通过创建新集群迁移数据的方式来实现
