@@ -1,7 +1,8 @@
 ## TL;DR
+
 ```bash
-$ curl https://docs.projectcalico.org/manifests/calico.yaml -o calico.yaml
-$ kubectl apply -f calico.yaml
+$ curl https://docs.projectcalico.org/manifests/calico.yaml -o templates/calico.yaml
+$ kubectl apply -f templates/calico.yaml
 ```
 
 > 可以按需定制`calico.yaml`配置，比如引入新环境变量: 

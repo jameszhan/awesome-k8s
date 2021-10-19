@@ -1,3 +1,14 @@
+## TL;NR
+
+```bash
+$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+
+# 按需调整配置
+$ helm show values ingress-nginx/ingress-nginx > templates/ingress-nginx-values.yaml
+
+$ helm template -f templates/ingress-nginx-values.yml -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
+```
+
 ## 部署`ingress-nginx`
 
 ### 准备工作
@@ -26,8 +37,8 @@ $ helm repo update
 
 $ helm search repo ingress-nginx
 
-# 确认配置
-$ helm show values ingress-nginx/ingress-nginx
+# 按需调整配置
+$ helm show values ingress-nginx/ingress-nginx > templates/ingress-nginx-values.yaml
 
 # 安装前先需要替换准备好的镜像
 $ helm template -f templates/ingress-nginx-values.yml -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx

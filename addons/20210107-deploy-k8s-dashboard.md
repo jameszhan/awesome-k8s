@@ -1,3 +1,9 @@
+## TL;DR
+
+```bash
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.3.1/aio/deploy/recommended.yaml
+```
+
 #### 部署`Kubernetes Dashboard`
 
 ##### 通过`Helm`安装
