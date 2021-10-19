@@ -7,6 +7,8 @@ require 'sshkit/dsl'
 SSHKit.config.format = :pretty
 SSHKit.config.output_verbosity = :debug
 
+SUDO_USER = 'james'
+
 class Runner
   include Thor::Base
 
@@ -79,6 +81,14 @@ class MakeVM < Thor
         end
       end
     end    
+  end
+
+
+  desc 'user k8s-node005 deploy', 'create new user deploy for k8s-node005'
+  def user(host, username='deploy', port=22)
+    on "#{SUDO_USER}@#{host}:#{port}", in: :sequence, wait: 5 do
+      execute "ls -lah"
+    end
   end
 
   desc 'once 192.168.64.16 james', 'once 192.168.64.16 james'
