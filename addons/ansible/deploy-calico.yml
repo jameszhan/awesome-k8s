@@ -1,6 +1,0 @@
-- name: deploy calico
-  hosts: k8s_masters
-  roles:
-    - calico
-  vars_files:
-    - group_vars/calico_vars.yml

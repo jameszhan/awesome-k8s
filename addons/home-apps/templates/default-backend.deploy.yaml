@@ -65,14 +65,14 @@ spec:
         - mountPath: "/usr/share/nginx/html"
           name: nginx-pvc-vol
         - mountPath: "/etc/nginx/conf.d"
-          name: default-backend-conf-vol
+          name: default-conf-vol
       volumes:
       - name: nginx-pvc-vol
         persistentVolumeClaim:
           claimName: default-backend-pvc
-      - name: default-backend-conf-vol
+      - name: default-conf-vol
         configMap:
-          name: default-backend-conf
+          name: nginx-autoindex-conf
 
 ---
 apiVersion: v1

@@ -1,6 +1,0 @@
-- name: deploy metrics server
-  hosts: k8s_masters
-  roles:
-    - metrics-server
-  vars_files:
-    - group_vars/metrics_server_vars.yml

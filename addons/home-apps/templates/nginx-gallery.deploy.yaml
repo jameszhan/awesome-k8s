@@ -33,6 +33,21 @@ spec:
         app: nginx-gallery
     spec:
       containers:
+      - name: nginx-gallery-admin
+        image: nginx
+        imagePullPolicy: IfNotPresent    
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        volumeMounts:
+        - mountPath: "/usr/share/nginx/html"
+          name: nginx-gallery-vol
+        - mountPath: "/etc/nginx/conf.d/default.conf"
+          name: nginx-config-vol
+          subPath: default.conf
+        - mountPath: "/etc/nginx/conf.d/auth.users"
+          name: auth-users-vol
+          subPath: auth.users
       - name: nginx-gallery
         image: nginx
         imagePullPolicy: IfNotPresent    
@@ -41,16 +56,17 @@ spec:
           protocol: TCP
         volumeMounts:
         - mountPath: "/usr/share/nginx/html"
-          name: nginx-gallery-vol
-        - mountPath: "/etc/nginx/conf.d"
-          name: nginx-config-vol
+          name: nginx-gallery-vol   
       volumes:
       - name: nginx-gallery-vol
         persistentVolumeClaim:
           claimName: nginx-gallery-pvc
       - name: nginx-config-vol
         configMap:
-          name: nginx-server-config
+          name: nginx-basicauth-conf
+      - name: auth-users-vol
+        configMap:
+          name: nginx-auth-users
 
 ---
 apiVersion: v1
@@ -70,6 +86,23 @@ spec:
     app: nginx-gallery
 
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-gallery-admin
+  namespace: geek-apps
+  labels:
+    app: nginx
+spec:
+  clusterIP: None
+  ports:
+  - targetPort: 8080
+    port: 80
+    name: http
+  selector:
+    app: nginx-gallery
+
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -81,6 +114,7 @@ spec:
   tls:
     - hosts:
         - gallery.zizhizhan.com
+        - admin.zizhizhan.com
       secretName: star.zizhizhan.com-tls
   rules:
     - host: gallery.zizhizhan.com
@@ -91,6 +125,16 @@ spec:
             backend:
               service:
                 name: nginx-gallery-service
+                port:
+                  number: 80
+    - host: admin.zizhizhan.com
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: nginx-gallery-admin
                 port:
                   number: 80
 

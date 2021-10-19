@@ -3,8 +3,8 @@
 ### 导入`Nginx`配置
 
 ```bash
-$ kubectl create configmap default-backend-conf -n geek-apps --from-file=default.conf=templates/config/default-nginx.conf
-$ kubectl get cm default-backend-conf -n geek-apps  -o yaml
+$ kubectl create configmap nginx-autoindex-conf -n geek-apps --from-file=default.conf=templates/nginx-conf/autoindex.conf
+$ kubectl get cm nginx-autoindex-conf -n geek-apps  -o yaml
 ```
 
 ### 部署`defaultBackend`服务
