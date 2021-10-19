@@ -40,49 +40,9 @@ class Runner
   end
 end
 
-class MakeVM < Thor
+class Awesome < Thor
   include Actions
   include SSHKit::DSL
-
-  desc 'install ubuntu server01', 'install ubuntu'
-  def install(os, name, count=8)
-    self.__send__("install_#{os}", name, count)
-  end
-
-  desc 'boot server01', 'boot server01'
-  def boot(name)
-    vm_dir = "/james/var/vms/#{name}"
-    Dir.chdir(vm_dir) do 
-      if File.exist?("boot/vmlinuz-4.4.0-142-generic") && File.exist?("boot/initrd.img-4.4.0-142-generic")
-        unless File.exist?("boot-#{name}.sh")
-          boot_script = <<~BOOT_SCRIPT
-            #!/bin/sh
-            KERNEL="boot/vmlinuz-4.4.0-142-generic"
-            INITRD="boot/initrd.img-4.4.0-142-generic"
-            CMDLINE="earlyprintk=serial console=ttyS0 acpi=off root=/dev/vda1 ro"
-  
-            MEM="-m 1G"
-            SMP="-c 2"
-            NET="-s 2:0,virtio-net"
-            IMG_HDD="-s 4,virtio-blk,#{name}.img"
-            PCI_DEV="-s 0:0,hostbridge -s 31,lpc"
-            LPC_DEV="-l com1,stdio"
-  
-            xhyve $MEM $SMP $PCI_DEV $LPC_DEV $NET $IMG_HDD -f kexec,$KERNEL,$INITRD,"$CMDLINE"
-          BOOT_SCRIPT
-          open "boot-#{name}.sh", 'w:UTF-8' do |io|
-            io << boot_script
-          end
-          Runner.batch do
-            run "chmod +x boot-#{name}.sh"
-          end
-        end
-        Runner.batch do
-          run "sudo ./boot-#{name}.sh"
-        end
-      end
-    end    
-  end
 
   desc 'user k8s-node005 deploy', 'create new user deploy for k8s-node005'
   def user(host, username='deploy', port=22)
@@ -125,44 +85,79 @@ class MakeVM < Thor
     end
   end
 
-  desc 'once 192.168.64.16 james', 'once 192.168.64.16 james'
-  def once(ip, user, port=22)
-    on "#{user}@#{ip}:#{port}", in: :sequence, wait: 5 do
-      if test "[ -d /home/#{user}/.ssh ]"
-        puts "/home/#{user}/.ssh have already exists."
+  desc 'setup k8s-node005 deploy', 'setup for k8s-node005 via user deploy'
+  def setup(host, user='deploy', port=22)
+    on "#{user}@#{host}:#{port}", in: :sequence, wait: 5 do
+      if test "[ -f /etc/apt/sources.list_bak ]"
+        puts "/etc/apt/sources.list has already updated"
       else
-        # 本地免密码 SSH 登陆
-        puts "/home/#{user}/.ssh not exists, create one."
-        execute "mkdir /home/#{user}/.ssh"
-        execute "chown -R #{user}:sudo /home/#{user}/.ssh"
-        upload! '/Users/james/.ssh/id_rsa.pub', '/tmp/id_rsa.pub'
-        execute "cat /tmp/id_rsa.pub >> /home/#{user}/.ssh/authorized_keys"
+        sudo :mv, '/etc/apt/sources.list', '/etc/apt/sources.list_bak'
+
+        mirrors_url = 'https://mirrors.ustc.edu.cn'
+        lsb_release_sc = capture(:lsb_release, '-sc')
+        if test "[ `lsb_release -si` = Ubuntu ]"
+          sources_list = StringIO.new <<~SOURCE_LIST
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted
+
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted
+
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc} universe
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} universe
+
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates universe
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates universe
+
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc} multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} multiverse
+
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates multiverse
+
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
+
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted
+
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security universe
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security universe
+
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security multiverse
+          SOURCE_LIST
+        elsif test "[ `lsb_release -si` = Debian ]"
+          sources_list = StringIO.new <<~SOURCE_LIST
+            deb #{mirrors_url}/debian #{lsb_release_sc} main
+            deb-src #{mirrors_url}/debian #{lsb_release_sc} main
+
+            deb #{mirrors_url}/debian-security #{lsb_release_sc}-security main contrib
+            deb-src #{mirrors_url}/debian-security #{lsb_release_sc}-security main contrib
+
+            deb #{mirrors_url}/debian #{lsb_release_sc}-updates main contrib
+            deb-src #{mirrors_url}/debian #{lsb_release_sc}-updates main contrib
+          SOURCE_LIST
+        end
+
+        if sources_list
+          upload! sources_list, '/tmp/apt-sources.list'
+          execute 'cat /tmp/apt-sources.list | sudo tee /etc/apt/sources.list'
+
+          sudo 'apt -y update'
+          sudo 'apt -y upgrade'
+          sudo 'apt -y dist-upgrade'
+          sudo 'apt -y autoclean'
+          sudo 'apt -y full-upgrade'
+          sudo 'apt -y autoremove'
+        end
+
+        sudo :apt, 'install', '-y', 'coreutils procps libseccomp2 net-tools sysstat rsync bash-completion socat'
       end
 
-      # sudo 免输入密码
-      if test "[ -f /etc/sudoers.d/#{user} ]"
-        puts "#{user} is already NOPASSWD sudo user"
-      else
-        execute "echo '#{user} ALL = (ALL) NOPASSWD: ALL' > /tmp/sudoer_#{user}"
-        sudo :mv, "/tmp/sudoer_#{user}", "/etc/sudoers.d/#{user}"
-        sudo :chown, "-R root:root /etc/sudoers.d/#{user}"
-      end
+      execute :echo, 'export LC_ALL=en_US.UTF-8', '> ~/.bashrc' if test '[ -z $LC_ALL ]'
+      execute :echo, 'export LANG=en_US.UTF-8', '> ~/.bashrc' if test '[ -z $LANG ]'
     end
-  end
-
-  desc 'update 192.168.64.16 james', 'update 192.168.64.16 james'
-  def update(ip, user, port=22)
-    on "#{user}@#{ip}:#{port}", in: :sequence, wait: 5 do
-      execute 'export LC_ALL=en_US.UTF-8'
-      execute 'export LANG=en_US.UTF-8'
-      sudo 'apt-get -y update'
-      # sudo 'apt-get -y install python-software-properties'
-      sudo 'apt-get -y upgrade'
-      sudo 'apt-get -y dist-upgrade'
-      sudo 'apt-get -y autoclean'
-      sudo 'apt-get -y clean'
-      sudo 'apt-get -y autoremove'
-    end  
   end
 
   desc 'k8s 192.168.64.16 james', 'k8s 192.168.64.16 james'
@@ -300,4 +295,4 @@ class MakeVM < Thor
 
 end
 
-MakeVM.start(ARGV)
+Awesome.start(ARGV)

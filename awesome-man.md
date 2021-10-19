@@ -14,4 +14,7 @@ $ ./awesome
 
 # 创建新用户deploy
 $ ./awesome user k8s-node005 deploy
+
+# 进行必要设置
+$ ./awesome setup k8s-node005 deploy
 ```
