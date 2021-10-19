@@ -7,7 +7,8 @@ require 'sshkit/dsl'
 SSHKit.config.format = :pretty
 SSHKit.config.output_verbosity = :debug
 
-SUDO_USER = 'james'
+SUDO_USER = ENV['SUDO_USER']
+USER_HOME = ENV['HOME']
 
 class Runner
   include Thor::Base
@@ -83,11 +84,44 @@ class MakeVM < Thor
     end    
   end
 
-
   desc 'user k8s-node005 deploy', 'create new user deploy for k8s-node005'
   def user(host, username='deploy', port=22)
     on "#{SUDO_USER}@#{host}:#{port}", in: :sequence, wait: 5 do
-      execute "ls -lah"
+      if test "[ -d /home/#{username} ]"
+        puts "#{username} has already created."
+      else
+        sudo 'useradd -m -s /bin/bash -u 1001 deploy'
+        sudo 'usermod -aG sudo deploy'
+        sudo 'usermod -aG adm deploy'
+        sudo 'usermod -a -G users deploy'
+      end
+
+      if test "[ -f /etc/sudoers.d/#{username} ]"
+        puts "#{username} is already NOPASSWD sudo user"
+      else
+        # execute "echo '#{username} ALL = (ALL) NOPASSWD: ALL' > /tmp/sudoer_#{username}"
+        # sudo :mv, "/tmp/sudoer_#{username}", "/etc/sudoers.d/#{username}"
+        # sudo :chown, "-R root:root /etc/sudoers.d/#{username}"
+        execute "echo 'deploy ALL = (ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/deploy > /dev/null"
+      end
+
+      if test "[ -d /home/#{username}/.ssh ]"
+        puts "/home/#{username}/.ssh have already exists."
+      else
+        # 本地免密码 SSH 登陆
+        puts "/home/#{username}/.ssh not exists, create it."
+
+        sudo "mkdir /home/#{username}/.ssh"
+        upload! "#{USER_HOME}/.ssh/id_rsa.pub", '/tmp/id_rsa.pub'
+        upload! "#{USER_HOME}/.ssh/id_rsa", '/tmp/id_rsa'
+        execute "cat /tmp/id_rsa.pub | sudo tee -a /home/#{username}/.ssh/authorized_keys"
+
+        sudo :mv, '/tmp/id_rsa.pub', "/home/#{username}/.ssh/"
+        sudo :mv, '/tmp/id_rsa', "/home/#{username}/.ssh/"
+
+        sudo :chown, '-R', "#{username}:sudo", "/home/#{username}/.ssh"
+        sudo :chmod, '-R', 'go-rwx', "/home/#{username}/.ssh/id_rsa"
+      end
     end
   end
 
