@@ -172,10 +172,15 @@ $ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
 #### 安装`Addons`
 
 ```bash
-$ cd addons/ansible
+# 部署Calico，按需调整calico.yaml配置
+$ curl https://docs.projectcalico.org/manifests/calico.yaml -o calico.yaml
+$ kubectl apply -f calico.yaml
 
-$ ansible-playbook -i hosts deploy-calico.yml -u deploy -v
+# 部署CoreDNS
 $ ansible-playbook -i hosts deploy-coredns.yml -u deploy -v
+
+# 部署Metrics Server
+$ ansible-playbook -i hosts deploy-metrics-server.yml -u deploy -v
 ```
 
 测试服务 `ssh deploy@k8s-master01`

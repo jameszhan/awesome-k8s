@@ -10,7 +10,7 @@ $ kubectl get cm default-backend-conf -n geek-apps  -o yaml
 ### 部署`defaultBackend`服务
 
 ```bash
-$ kubectl apply -f templates/default-backend-deploy.yaml
+$ kubectl apply -f templates/default-backend.deploy.yaml
 
 $ kubectl get pv
 $ kubectl get pvc -n geek-apps

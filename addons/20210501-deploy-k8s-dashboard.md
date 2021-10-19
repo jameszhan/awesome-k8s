@@ -1,4 +1,3 @@
-
 #### 部署`Kubernetes Dashboard`
 
 ##### 通过`Helm`安装
