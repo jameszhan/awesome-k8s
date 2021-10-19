@@ -207,7 +207,20 @@ $ kubectl get secret star.zizhizhan.com-tls -n geek-apps -o yaml
 $ kubectl delete ingress pkm-ingress -n geek-apps
 ```
 
+`kubectl run NAME --image=image [--env="key=value"] [--port=port] [--replicas=replicas] [--dry-run=bool] [--overrides=inline-json] [--command] -- [COMMAND] [args...] [options]`
 
+```bash
+kubectl get pod --all-namespaces --show-labels
+
+# kubectl run -i -t busybox --image=busybox --rm --restart=Never
+# kubectl delete pod busybox
+
+kubectl run nginx-app --image=nginx:alpine --port=80
+
+kubectl run nginx --image=nginx:alpine --port=80 --restart=Never
+
+kubectl get pods
+```
 
 
 #### 访问指定集群 

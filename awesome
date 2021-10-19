@@ -1,0 +1,259 @@
+#!/usr/bin/env ruby
+require 'thor'
+require 'sshkit'
+require 'sshkit/sudo'
+require 'sshkit/dsl'
+
+SSHKit.config.format = :pretty
+SSHKit.config.output_verbosity = :debug
+
+class Runner
+  include Thor::Base
+
+  def self.batch(&block)
+    runner = Runner.new
+    runner.instance_eval(&block)
+    runner.execute
+  end
+
+  def initialize(config = {}, &block)
+    @config = config
+    instance_eval(&block) if block_given?
+  end
+
+  def scripts
+    @scripts ||= []
+  end
+
+  def run(command, config = {})
+    say_status :run, command, config.fetch(:verbose, true)
+    scripts << command
+  end
+
+  def execute
+    command = scripts.join(' && ')
+    return if @config[:'dry-run']
+    @config[:capture] ? `#{command}` : system(command)
+  end
+end
+
+class MakeVM < Thor
+  include Actions
+  include SSHKit::DSL
+
+  desc 'install ubuntu server01', 'install ubuntu'
+  def install(os, name, count=8)
+    self.__send__("install_#{os}", name, count)
+  end
+
+  desc 'boot server01', 'boot server01'
+  def boot(name)
+    vm_dir = "/james/var/vms/#{name}"
+    Dir.chdir(vm_dir) do 
+      if File.exist?("boot/vmlinuz-4.4.0-142-generic") && File.exist?("boot/initrd.img-4.4.0-142-generic")
+        unless File.exist?("boot-#{name}.sh")
+          boot_script = <<~BOOT_SCRIPT
+            #!/bin/sh
+            KERNEL="boot/vmlinuz-4.4.0-142-generic"
+            INITRD="boot/initrd.img-4.4.0-142-generic"
+            CMDLINE="earlyprintk=serial console=ttyS0 acpi=off root=/dev/vda1 ro"
+  
+            MEM="-m 1G"
+            SMP="-c 2"
+            NET="-s 2:0,virtio-net"
+            IMG_HDD="-s 4,virtio-blk,#{name}.img"
+            PCI_DEV="-s 0:0,hostbridge -s 31,lpc"
+            LPC_DEV="-l com1,stdio"
+  
+            xhyve $MEM $SMP $PCI_DEV $LPC_DEV $NET $IMG_HDD -f kexec,$KERNEL,$INITRD,"$CMDLINE"
+          BOOT_SCRIPT
+          open "boot-#{name}.sh", 'w:UTF-8' do |io|
+            io << boot_script
+          end
+          Runner.batch do
+            run "chmod +x boot-#{name}.sh"
+          end
+        end
+        Runner.batch do
+          run "sudo ./boot-#{name}.sh"
+        end
+      end
+    end    
+  end
+
+  desc 'once 192.168.64.16 james', 'once 192.168.64.16 james'
+  def once(ip, user, port=22)
+    on "#{user}@#{ip}:#{port}", in: :sequence, wait: 5 do
+      if test "[ -d /home/#{user}/.ssh ]"
+        puts "/home/#{user}/.ssh have already exists."
+      else
+        # 本地免密码 SSH 登陆
+        puts "/home/#{user}/.ssh not exists, create one."
+        execute "mkdir /home/#{user}/.ssh"
+        execute "chown -R #{user}:sudo /home/#{user}/.ssh"
+        upload! '/Users/james/.ssh/id_rsa.pub', '/tmp/id_rsa.pub'
+        execute "cat /tmp/id_rsa.pub >> /home/#{user}/.ssh/authorized_keys"
+      end
+
+      # sudo 免输入密码
+      if test "[ -f /etc/sudoers.d/#{user} ]"
+        puts "#{user} is already NOPASSWD sudo user"
+      else
+        execute "echo '#{user} ALL = (ALL) NOPASSWD: ALL' > /tmp/sudoer_#{user}"
+        sudo :mv, "/tmp/sudoer_#{user}", "/etc/sudoers.d/#{user}"
+        sudo :chown, "-R root:root /etc/sudoers.d/#{user}"
+      end
+    end
+  end
+
+  desc 'update 192.168.64.16 james', 'update 192.168.64.16 james'
+  def update(ip, user, port=22)
+    on "#{user}@#{ip}:#{port}", in: :sequence, wait: 5 do
+      execute 'export LC_ALL=en_US.UTF-8'
+      execute 'export LANG=en_US.UTF-8'
+      sudo 'apt-get -y update'
+      # sudo 'apt-get -y install python-software-properties'
+      sudo 'apt-get -y upgrade'
+      sudo 'apt-get -y dist-upgrade'
+      sudo 'apt-get -y autoclean'
+      sudo 'apt-get -y clean'
+      sudo 'apt-get -y autoremove'
+    end  
+  end
+
+  desc 'k8s 192.168.64.16 james', 'k8s 192.168.64.16 james'
+  def k8s(ip, user, master='slave')
+    on "#{user}@#{ip}", in: :sequence, wait: 5 do
+      unless test('type docker')
+        # install docker
+        sudo 'apt-get remove docker docker-engine docker.io containerd runc'
+        sudo 'apt-get -y update'
+        sudo 'apt-get -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common'
+        execute 'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -'
+        sudo 'apt-key fingerprint 0EBFCD88'
+        sudo 'add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"'
+        sudo 'apt-get -y update'
+        sudo 'apt-get install -y docker-ce docker-ce-cli containerd.io'
+        sudo 'apt-cache madison docker-ce'
+        sudo 'apt-get install -y docker-ce=5:18.09.7~3-0~ubuntu-$(lsb_release -cs) docker-ce-cli=5:18.09.7~3-0~ubuntu-$(lsb_release -cs) containerd.io'
+        docker_daemon = StringIO.new <<~SOURCE_CONTENT
+        {
+          "exec-opts": ["native.cgroupdriver=systemd"],
+          "log-driver": "json-file",
+          "log-opts": {
+            "max-size": "100m"
+          },
+          "storage-driver": "overlay2"
+        }
+        SOURCE_CONTENT
+        upload! docker_daemon, '/tmp/docker_daemon_conf'
+        sudo 'mv /tmp/docker_daemon_conf /etc/docker/daemon.json'
+        sudo 'mkdir -p /etc/systemd/system/docker.service.d'
+
+        # Restart docker.
+        sudo 'systemctl daemon-reload'
+        sudo 'systemctl restart docker'
+      end
+
+      unless test('type kubeadm')
+        sudo 'snap remove microk8s' if test('type snap')
+        sudo 'apt-get -y update'
+        sudo 'apt-get install -y apt-transport-https curl'
+        # 74.125.206.210	packages.cloud.google.com
+        execute 'curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -'
+        k8s_apt_source = StringIO.new <<~EOF
+          deb http://mirrors.ustc.edu.cn/kubernetes/apt kubernetes-xenial main
+        EOF
+        upload! k8s_apt_source, '/tmp/k8s_apt_source'
+        sudo 'mv /tmp/k8s_apt_source /etc/apt/sources.list.d/kubernetes.list'
+        sudo 'apt-get -y update'
+        sudo 'apt-get install -y kubelet kubeadm kubectl'
+        sudo 'apt-mark hold kubelet kubeadm kubectl'
+        sudo 'kubeadm config images pull'
+        sudo 'kubeadm reset --force'
+        sudo 'swapoff -a'
+        # if master == 'master'
+        #   sudo "kubeadm init --apiserver-advertise-address #{ip} --pod-network-cidr 10.244.0.0/16 --kubernetes-version v1.15.0 --ignore-preflight-errors=all"
+        #   execute 'mkdir -p $HOME/.kube'
+        #   sudo 'cp -i /etc/kubernetes/admin.conf $HOME/.kube/config'
+        #   sudo 'chown $(id -u):$(id -g) $HOME/.kube/config'
+        #   sudo 'kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml'
+        # else
+        #   sudo 'kubeadm join 192.168.64.8:6443 --token zu4n0c.qipqccyqcf5p4f7s --discovery-token-ca-cert-hash sha256:e273d2cd784b8f55e6b720d1438d5ffcefdc4a8cc0fdffc0102d1402fb0b1fe4'
+        # end
+      end
+    end
+  end
+
+  private
+  def install_ubuntu(name, count=8)
+    vms_dir = "/james/var/vms"
+    Dir.chdir vms_dir do
+      isofile = "ubuntu/ubuntu-16.04.6-server-amd64.iso"
+      if File.exist?(isofile)
+        say "ubuntu/#{isofile} has already downloaded!", :green, true
+      else
+        `wget -O #{isofile} http://mirrors.zju.edu.cn/ubuntu-releases/16.04.6/ubuntu-16.04.6-server-amd64.iso`
+      end
+      if File.exist?("ubuntu/vmlinuz") && File.exist?("ubuntu/initrd.gz")
+        say "ubuntu/vmlinuz and ubuntu/initrd.gz is ready to execute", :yellow, true
+      else
+        Runner.batch do
+          run 'dd if=/dev/zero bs=2k count=1 of=/tmp/ubuntu16.iso'
+          run 'dd if=ubuntu/ubuntu-16.04.6-server-amd64.iso bs=2k skip=1 >> /tmp/ubuntu16.iso'
+          run 'hdiutil attach /tmp/ubuntu16.iso'
+          run 'cp /Volumes/Ubuntu-Server\ 16/install/vmlinuz ubuntu/'
+          run 'cp /Volumes/Ubuntu-Server\ 16/install/initrd.gz ubuntu/'
+          run 'hdiutil detach /Volumes/Ubuntu-Server\ 16/'
+        end
+      end
+
+      if File.exist?("#{name}/#{name}.img")
+        say "#{name}/#{name}.img is ready", :green, true
+      else
+        Dir.mkdir(name) unless Dir.exist?(name)
+        `dd if=/dev/zero of=#{name}/#{name}.img bs=1g count=#{count}`
+        install_script = <<~INSTALL_SCRIPT
+          #!/bin/sh
+          KERNEL="ubuntu/vmlinuz"
+          INITRD="ubuntu/initrd.gz"
+          CMDLINE="earlyprintk=serial console=ttyS0 acpi=off"
+
+          MEM="-m 1G"
+          SMP="-c 2"
+          NET="-s 2:0,virtio-net"
+          IMG_CD="-s 3,ahci-cd,#{isofile}"
+          IMG_HDD="-s 4,virtio-blk,#{name}/#{name}.img"
+          PCI_DEV="-s 0:0,hostbridge -s 31,lpc"
+          LPC_DEV="-l com1,stdio"
+
+          xhyve $MEM $SMP $PCI_DEV $LPC_DEV $NET $IMG_CD $IMG_HDD -f kexec,$KERNEL,$INITRD,"$CMDLINE"
+        INSTALL_SCRIPT
+
+        open "install-#{name}.sh", 'w:UTF-8' do |io|
+          io << install_script
+        end
+        Runner.batch do
+          run "chmod +x install-#{name}.sh"
+          run "sudo ./install-#{name}.sh"
+        end
+      end
+    end 
+  end
+
+  def generate(template, locals={})
+    context = new_binding(locals)
+    CapturableERB.new(template, nil, "-", "@output_buffer").result(context)
+  end
+
+  def new_binding(locals)
+    binding.tap do |b|
+      locals.each do |name, value|
+        b.local_variable_set(name, value)
+      end
+    end
+  end
+
+end
+
+MakeVM.start(ARGV)

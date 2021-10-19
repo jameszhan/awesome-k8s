@@ -96,10 +96,13 @@ $ sudo apt -y install coreutils procps libseccomp2 net-tools sysstat rsync bash-
 $ echo 'source <(kubectl completion zsh)' >> ~/.bashrc
 ```
 
-#### 永久禁用`swap`
+#### 禁用虚拟内存
 
 ```bash
-$ sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab
+$ sudo swapoff -a
+
+# 永久禁用虚拟内存
+$ sudo sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab
 $ sysctl -w vm.swappiness=0
 ```
 
@@ -217,6 +220,8 @@ $ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:v1.8.4 
 
 ```bash
 $ sudo kubeadm reset --force
+
+# sudo kubeadm init --apiserver-advertise-address 192.168.64.7 --pod-network-cidr 10.244.0.0/16 --kubernetes-version v1.15.0 --ignore-preflight-errors=all
 $ sudo kubeadm init --pod-network-cidr 10.244.0.0/16
 
 $ mkdir -p $HOME/.kube

@@ -36,7 +36,7 @@ $ open https://localhost:8443/
 # 键盘输入`thisisunsafe`命令，可以解除Chrome对不信任签名网站的访问限制。
 
 $ kubectl proxy --address=0.0.0.0
-$ open http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+$ open -a 'Google Chrome' http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
 ```
 > 注意：`proxy`方式将会出现无法正常登陆情况，推荐使用`port-forward`方式。
 
