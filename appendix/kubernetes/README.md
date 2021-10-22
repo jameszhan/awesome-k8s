@@ -11,6 +11,25 @@
 - cloud-controller-manager: 负责管理与底层云服务提供商交互的控制器。
 - kube-proxy: 责维护节点上的网络规则并执行连接转发。
 
+在`Kubernetes`实现容器编排的核心思想中，会使用控制器(`Controller`)模式对`etcd`里的`API`模型对象变化保持不断的监听(`Watch`)，并在控制器中对指定事件进行响应处理，针对不同的`API`模型可以在对应的控制器中添加相应的业务逻辑，通过这种方式完成应用编排中各阶段的事件处理。
+
+#### `k8s`常用插件
+
+- `CoreDNS`: 负责为整个集群提供DNS服务。
+- `Ingress Controller`: 负责为服务提供外网入口。
+- `Prometheus`: 负责资源监控。
+- `Dashboard`: 负责提供`GUI`。
+- `Federation`: 负责提供跨可用区的集群。
+
+#### `k8s`核心组件
+- `etcd`: 协同存储，负责保存整个集群的状态，通常会部署奇数个节点以保证高可用性。
+- `API`: 提供了资源操作的唯一入口，并提供认证、授权、访问控制、`API`注册和发现等机制。
+- `controller manager`: 负责维护集群的状态，执行故障检测、自动扩展、滚动更新等操作。
+- `Scheduler`: 负责资源的调度，按照预定的调度策略将`Pod`调度到相应的机器上。
+- `Kubelet`: 作为工作节点负责维护容器的生命周期，同时也负责对容器存储接口(`CSI`)和容器网络接口(`CNI`)进行管理。
+- 容器运行时: 负责镜像管理，实现`Pod`和容器的真正运行。
+- `Proxy`: 负责提供集群内部的服务发现和负载均衡。
+
 | name                    | description |
 | ----------------------- | ---------------------------- |
 | kubectl                 | a command line client for running commands against Kubernetes clusters. |
@@ -109,7 +128,6 @@ k8s_kube-proxy_kube-proxy
 | etcd                    | Resilient key-value store by CoreOS  |
 | etcd-manager            | A free, cross-platform ETCD v3 client which allows you to manage your ETCD via a modern, easy to use and dynamic UI. Available for Windows, Linux and MacOS X. |
 | cdk-addons              | Addons for Canonical Kubernetes  |
-
 
 
 
