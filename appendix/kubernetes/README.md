@@ -1,15 +1,12 @@
-- [kind](https://kind.sigs.k8s.io/): Run local Kubernetes cluster in Docker
-- [minikube](https://minikube.sigs.k8s.io/): Run a Kubernetes cluster locally
-
-- kubeadm：用来初始化集群的指令。
-- kubelet：在集群中的每个节点上用来启动 Pod 和容器等。运行在集群中每个节点上的节点代理，负责根据 pod 规格来创建 pod 并运行其包含的容器。
-- kubectl：用来与集群通信的命令行工具。
-- kube-apiserver: 该组件对外暴露了 Kubernetes 的 API 接口，是 Kubernetes 的前端控制层。
-- etcd: 这是一个键值数据库，用来保存集群数据。
-- kube-scheduler: 调度器的主要作用是监控新创建的 pod（这是 Kubernetes 集群内的一组容器的集合），为这些 pod 找到最合适的节点，并将 pod 调度到这个节点上。
-- kube-controller-manager: 管理一系列的控制器，这些控制器负责节点故障的恢复，维持服务实例的数量等工作。
-- cloud-controller-manager: 负责管理与底层云服务提供商交互的控制器。
-- kube-proxy: 责维护节点上的网络规则并执行连接转发。
+- `kubeadm`: 用来初始化集群的指令。
+- `kubelet`: 在集群中的每个节点上用来启动`Pod`和容器等。运行在集群中每个节点上的节点代理，负责根据`pod`规格来创建`pod`并运行其包含的容器。
+- `kubectl`: 用来与集群通信的命令行工具。
+- `kube-apiserver`: 该组件对外暴露了`Kubernetes`的`API`接口，是`Kubernetes`的前端控制层。
+- `etcd`: 这是一个键值数据库，用来保存集群数据。
+- `kube-scheduler`: 调度器的主要作用是监控新创建的`pod`(这是`Kubernetes`集群内的一组容器的集合)，为这些`pod`找到最合适的节点，并将`pod`调度到这个节点上。
+- `kube-controller-manager`: 管理一系列的控制器，这些控制器负责节点故障的恢复，维持服务实例的数量等工作。
+- `cloud-controller-manager`: 负责管理与底层云服务提供商交互的控制器。
+- `kube-proxy`: 责维护节点上的网络规则并执行连接转发。
 
 在`Kubernetes`实现容器编排的核心思想中，会使用控制器(`Controller`)模式对`etcd`里的`API`模型对象变化保持不断的监听(`Watch`)，并在控制器中对指定事件进行响应处理，针对不同的`API`模型可以在对应的控制器中添加相应的业务逻辑，通过这种方式完成应用编排中各阶段的事件处理。
 
@@ -107,10 +104,6 @@ k8s_etcd_etcd
 k8s_kube-flannel_kube-flannel-ds
 k8s_kube-proxy_kube-proxy
 
-
-
-
-
 | name                    | description |
 | ----------------------- | ---------------------------- |
 | kubectl                 | a command line client for running commands against Kubernetes clusters. |
@@ -129,9 +122,6 @@ k8s_kube-proxy_kube-proxy
 | etcd-manager            | A free, cross-platform ETCD v3 client which allows you to manage your ETCD via a modern, easy to use and dynamic UI. Available for Windows, Linux and MacOS X. |
 | cdk-addons              | Addons for Canonical Kubernetes  |
 
-
-
-
 docker: Docker container runtime
 MicroK8s: Lightweight Kubernetes for workstations and appliances
 eks: The eks snap packages all the Kubernetes binaries of Amazon EKS Distro (EKS-D) and combines them with a MicroK8s like experience, for an opinionated, self-healing, highly available EKS-compatible Kubernetes anywhere.
@@ -142,8 +132,6 @@ Juju: A model-driven operator lifecycle manager
 LXD: System container and virtual machine manager
 keepalived: High availability VRRP/BFD and load-balancing for Linux
 kata-containers: Lightweight virtual machines that seamlessly plug into the containers ecosystem
-
-
 
 Google Cloud SDK: Command-line interface for Google Cloud Platform products and services
 Microsoft Azure Storage Explorer: Optimize your Azure storage management
@@ -183,7 +171,6 @@ http-to-https: An http to https redirect microservice.
 sync-agent: Infobaleen's sync agent makes it easy to sync data to and from your Infobaleen SaaS platform.
 
 Flutter: A Google’s UI toolkit for building beautiful, natively compiled applications for mobile, web, and desktop from a single codebase.
-
 
 mOAuth: a basic OAuth 2.0 client/server implementation that is geared towards testing and development of OAuth-based services. The client library supports authorization of native macOS, iOS, and Linux applications with PKCE.
 
