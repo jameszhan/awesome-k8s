@@ -1,8 +1,8 @@
 ## 环境准备
 ### 子网划分
 
-| 网段信息     | 配置           |
-| ------------| --------------|
+| 网段信息      | 配置           |
+| ------------ | --------------|
 | Host 网段    | 192.168.1.1/24 |
 | Pod 网段     | 10.244.0.0/16  |
 | Service 网段 | 10.96.0.0/12   |
@@ -20,7 +20,6 @@ $ ansible-playbook -i hosts -c paramiko --ask-pass --ask-become-pass user-deploy
 详细脚本过程参考：
 
 - [Ubuntu 环境下新增新用户](01.add-deploy-user.md)
-
 
 ## 附录
 
@@ -67,12 +66,8 @@ $ ansible -i hosts k8s_nodes -m reboot -u deploy --become -v
 
 $ ansible -i hosts k8s_masters -m reboot -u deploy --become -v
 ```
-
 #### 批量设置免登
 
 ```bash
 $ for h in k8s-master01 k8s-master02 k8s-master03; do ssh-copy-id -i ~/.ssh/id_rsa.pub james@$h; done
 ```
-
-
-

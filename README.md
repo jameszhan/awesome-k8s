@@ -30,6 +30,8 @@ $ ansible -i hosts all -m reboot -u deploy --become -v
 
 ### 准备工作
 
+![k8s ha cluster](https://gallery.zizhizhan.com:8443/images/k8s/kubeadm-ha-topology-external-etcd.svg)
+
 进入安装脚本目录
 
 ```bash
