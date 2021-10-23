@@ -1,20 +1,3 @@
-#### Todos
-
-- [ ] [HTTPie](https://httpie.io/): User-friendly cURL replacement (command-line HTTP client)
-- [ ] [Packer](https://packer.io): Tool for creating identical machine images for multiple platforms
-- [ ] [Vagrant](https://www.vagrantup.com/):
-- [x] [Kubernetes](https://kubernetes.io/): 
-- [ ] [CNCF](https://www.cncf.io/):
-- [ ] [minikube](http://bit.ly/2xNk8w4)
-- [ ] [pushgateway](https://github.com/prometheus/pushgateway)
-- [ ] [Kafdrop – Kafka Web UI](https://github.com/obsidiandynamics/kafdrop)
-- [ ] https://www.telepresence.io/discussion/how-it-works
-- [ ] Try `PXE`+`Kickstart`无人值守安装系统
-- [ ] Proxmox VE
-- [x] ESXi
-- [ ] 智能Bind系统
-
-
 ### 运维工具
 
 #### `Ansible`
@@ -27,14 +10,12 @@
 #### `mussh`
 > 全称是`Multihost SSH Wrapper`，它其实是一个`SSH`封装器，由一个`shell`脚本实现。通过`mussh`可以实现批量管理多台远程主机的功能。
 
-
 #### 自动化部署方案
 
 - `PXE`(Preboot eXecution Environment)
 - `WDS`(Windows Deployment Services)
 - `RedHat`所支持的`Cobbler`
 - `Ubuntu`官方发展的`MaaS`(Metal as a Service)项目
-
 
 ### 虚拟化
 
