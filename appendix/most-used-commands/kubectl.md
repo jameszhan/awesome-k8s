@@ -205,6 +205,12 @@ $ kubectl describe secret star.zizhizhan.com-tls -n geek-apps
 $ kubectl get secret star.zizhizhan.com-tls -n geek-apps -o yaml
 
 $ kubectl delete ingress pkm-ingress -n geek-apps
+
+
+$ kubectl get all --all-namespaces -o wide
+$ kubectl cluster-info dump
+
+$ kubectl delete replicationcontroller default-http-backend -n geek-apps
 ```
 
 `kubectl run NAME --image=image [--env="key=value"] [--port=port] [--replicas=replicas] [--dry-run=bool] [--overrides=inline-json] [--command] -- [COMMAND] [args...] [options]`
