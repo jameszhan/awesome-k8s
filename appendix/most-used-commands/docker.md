@@ -80,3 +80,12 @@ $ sudo chroot rootfs /bin/bash -i
 ```bash
 $ cat /etc/os-release 
 ```
+
+
+#### 查看镜像构建详细记录
+
+使用如下命令，可以清楚地查看到`nginx`镜像使用了哪些`image layer`。
+
+```bash
+$ docker history nginx
+```
