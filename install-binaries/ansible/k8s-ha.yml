@@ -6,3 +6,4 @@
   vars_files:
     - group_vars/global_vars.yml
     - group_vars/keepalived_vars.yml
+  

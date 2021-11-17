@@ -34,7 +34,11 @@ imageMinimumGCAge: 0s
 logging: {}
 nodeStatusReportFrequency: 0s
 nodeStatusUpdateFrequency: 0s
-resolvConf: {{ resolv_conf }}
+{% if lsb_distributor == 'Debian' %}
+resolvConf: /etc/resolv.conf
+{% else %}
+resolvConf: /run/systemd/resolve/resolv.conf
+{% endif %}
 rotateCertificates: true
 runtimeRequestTimeout: 0s
 shutdownGracePeriod: 0s

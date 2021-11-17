@@ -59,8 +59,8 @@
   become: true
   become_method: sudo
   apt:
-    name: [ 'coreutils', 'procps', 'libseccomp2', 'net-tools', 'sysstat', 'rsync', 'bash-completion', 'socat' ]
-    update_cache: yes
+    name: ['coreutils', 'procps', 'libseccomp2', 'net-tools', 'sysstat', 'rsync', 'bash-completion', 'socat']
+    update_cache: true
     state: present
   when: lsb_release_si == 'Ubuntu' or lsb_release_si == 'Debian'
 
@@ -68,8 +68,8 @@
   become: true
   become_method: sudo
   apt:
-    name: [ 'ntpd' ]
-    update_cache: yes
+    name: ['ntpd']
+    update_cache: true
     state: absent
   when: ansible_pkg_mgr == 'apt'
 
@@ -77,8 +77,8 @@
   become: true
   become_method: sudo
   yum:
-    name: [ 'ntpd' ]
-    update_cache: yes
+    name: ['ntpd']
+    update_cache: true
     state: absent
   when: ansible_pkg_mgr == 'yum'
 
@@ -86,8 +86,8 @@
   become: true
   become_method: sudo
   apt:
-    name: [ 'chrony' ]
-    update_cache: yes
+    name: ['chrony']
+    update_cache: true
     state: present
   when: ansible_pkg_mgr == 'apt'
 
@@ -95,8 +95,8 @@
   become: true
   become_method: sudo
   yum:
-    name: [ 'chrony' ]
-    update_cache: yes
+    name: ['chrony']
+    update_cache: true
     state: present
   when: ansible_pkg_mgr == 'yum'
 
@@ -104,7 +104,7 @@
   become: true
   shell: chronyd --version | grep -o -E 'version\s*[0-9.]+' | awk '{print $2}'
   register: chronyd_version_data
- 
+
 - name: set facts for chrony version
   set_fact:
     chrony_version: "{{ chronyd_version_data.stdout_lines[0] }}"
@@ -127,7 +127,7 @@
   template:
     src: templates/chrony.conf
     dest: /etc/chrony
-  notify: 
+  notify:
     - restart-chrony
     - chronyc-makestep
 
@@ -135,8 +135,8 @@
   become: true
   become_method: sudo
   apt:
-    name: [ 'ipvsadm', 'ipset', 'conntrack' ]
-    update_cache: yes
+    name: ['ipvsadm', 'ipset', 'conntrack']
+    update_cache: true
     state: present
   when: lsb_release_si == 'Ubuntu' or lsb_release_si == 'Debian'
 
@@ -211,5 +211,3 @@
     state: present
   loop: "{{ ulimit_conf }}"
   notify: ulimit-shn-65535
-
-

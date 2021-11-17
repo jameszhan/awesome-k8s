@@ -8,7 +8,7 @@
   ansible.builtin.unarchive:
     src: "{{ binaries_fs }}/binaries/x86_64/kubernetes/kubernetes-server-v1.21.4-linux-amd64.tar.gz"
     dest: /tmp
-    remote_src: yes
+    remote_src: true
 
 - name: get executable-files in remote /tmp/kubernetes/server/bin
   ansible.builtin.find:
@@ -24,7 +24,7 @@
 - name: copy executable-files to /usr/local/bin
   become: true
   copy:
-    remote_src: yes
+    remote_src: true
     src: "{{ item.path }}"
     dest: /usr/local/bin
     mode: '755'
@@ -34,6 +34,7 @@
   file:
     path: /tmp/kubernetes/ssl
     state: directory
+    mode: '0644'
   run_once: true
   delegate_to: localhost
 
@@ -41,6 +42,7 @@
   template:
     src: "templates/{{ item }}"
     dest: /tmp/kubernetes/ssl
+    mode: '0644'
   with_items:
     - ca-config.json
     - kube-apiserver-csr.json
@@ -55,6 +57,7 @@
   copy:
     src: "/tmp/etcd/ssl/{{ item }}"
     dest: /tmp/kubernetes/ssl
+    mode: '0644'
   with_items:
     - ca.pem
     - ca-key.pem
@@ -118,7 +121,8 @@
   run_once: true
   delegate_to: localhost
 
-- debug: msg="{{ token_random }}"
+- name: show token_random value
+  debug: msg="{{ token_random }}"
   run_once: true
   delegate_to: localhost
 
@@ -128,6 +132,7 @@
     force: false
     content: |
       {{ token_random.stdout_lines[0] }},kubelet-bootstrap,10001,"system:kubelet-bootstrap"
+    mode: '0644'
   run_once: true
   delegate_to: localhost
 
@@ -145,30 +150,32 @@
   template:
     src: templates/kube-apiserver.conf
     dest: /etc/kubernetes/
+    mode: '0644'
 
 - name: Copy kube-apiserver.service to /usr/lib/systemd/system/
   become: true
   template:
     src: templates/kube-apiserver.service
     dest: /usr/lib/systemd/system/
+    mode: '0644'
 
 - name: Just force systemd to reread configs
   become: true
   ansible.builtin.systemd:
-    daemon_reload: yes
+    daemon_reload: true
 
 - name: Enable service kube-apiserver and ensure it is not masked
   become: true
   ansible.builtin.systemd:
     name: kube-apiserver
-    enabled: yes
-    masked: no
+    enabled: true
+    masked: false
 
 - name: Make sure kube-apiserver service is running
   become: true
   ansible.builtin.systemd:
     state: restarted
-    daemon_reload: yes
+    daemon_reload: true
     name: kube-apiserver
 
 # 生成 kubernetes admin 证书，给 kubernetes 管理员使用
@@ -205,11 +212,12 @@
     state: directory
     owner: deploy
     group: deploy
+    mode: '0755'
 
 - name: copy kube.config to ~/.kube/config
   become: true
   copy:
-    remote_src: yes
+    remote_src: true
     src: /etc/kubernetes/ssl/kube.config
     dest: /home/deploy/.kube/config
     owner: deploy
@@ -260,34 +268,34 @@
   template:
     src: "templates/{{ item }}"
     dest: /etc/kubernetes/
-  with_items: [ "kube-controller-manager.conf", "kube-scheduler.conf" ]
+    mode: '0644'
+  with_items: ["kube-controller-manager.conf", "kube-scheduler.conf"]
 
 - name: Copy kube-controller-manager.service and kube-scheduler.service to /usr/lib/systemd/system/
   become: true
   template:
     src: "templates/{{ item }}"
     dest: /usr/lib/systemd/system/
-  with_items: [ "kube-controller-manager.service", "kube-scheduler.service" ]
+    mode: '0644'
+  with_items: ["kube-controller-manager.service", "kube-scheduler.service"]
 
 - name: Just force systemd to reread configs
   become: true
   ansible.builtin.systemd:
-    daemon_reload: yes
+    daemon_reload: true
 
 - name: Enable kube-controller-manager.service and kube-scheduler.service and ensure it is not masked
   become: true
   ansible.builtin.systemd:
     name: "{{ item }}"
-    enabled: yes
-    masked: no
-  with_items: [ "kube-controller-manager.service", "kube-scheduler.service" ]
+    enabled: true
+    masked: false
+  with_items: ["kube-controller-manager.service", "kube-scheduler.service"]
 
 - name: Make sure kube-controller-manager.service and kube-scheduler.service is running
   become: true
   ansible.builtin.systemd:
     state: restarted
-    daemon_reload: yes
+    daemon_reload: true
     name: "{{ item }}"
-  with_items: [ "kube-controller-manager.service", "kube-scheduler.service" ]
-
-
+  with_items: ["kube-controller-manager.service", "kube-scheduler.service"]

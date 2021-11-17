@@ -2,13 +2,13 @@
   ansible.builtin.unarchive:
     src: "{{ binaries_fs }}/binaries/x86_64/kubernetes/kubernetes-server-v1.21.4-linux-amd64.tar.gz"
     dest: /tmp
-    remote_src: yes
+    remote_src: true
 
 - name: copy executable-files to /usr/local/bin
   become: true
   copy:
-    remote_src: yes
-    src: "/tmp/kubernetes/server/bin/{{item}}"
+    remote_src: true
+    src: "/tmp/kubernetes/server/bin/{{ item }}"
     dest: /usr/local/bin
     mode: '0755'
   with_items:
@@ -24,7 +24,8 @@
   run_once: true
   delegate_to: k8s-master01
 
-- debug: msg="{{ bootstrap_token.stdout_lines[0] }}"
+- name: show bootstrap-token
+  debug: msg="{{ bootstrap_token.stdout_lines[0] }}"
   run_once: true
   delegate_to: k8s-master01
 
@@ -108,19 +109,28 @@
   synchronize:
     src: "{{ item }}"
     dest: "{{ item }}"
-    times: yes
+    times: true
     mode: push
-    recursive: no
+    recursive: false
   delegate_to: k8s-master01
   with_items:
     - /etc/kubernetes/ssl/ca.pem
     - /etc/kubernetes/kubelet-bootstrap.kubeconfig
     - /etc/kubernetes/kube-proxy.kubeconfig
 
+- name: load lsb_release -si
+  shell: lsb_release -si
+  register: lsb_release_si
+
+- name: set facts
+  set_fact:
+    lsb_distributor: "{{ lsb_release_si.stdout_lines[0] }}"
+
 - name: Copy kubelet.yaml and kube-proxy.yaml to /etc/kubernetes/
   template:
     src: "templates/{{ item }}"
     dest: /etc/kubernetes/
+    mode: '0644'
   with_items:
     - kubelet.yaml
     - kube-proxy.yaml
@@ -144,6 +154,9 @@
   template:
     src: "templates/{{ item }}"
     dest: /lib/systemd/system
+    owner: root
+    group: root
+    mode: go+r
   with_items:
     - kubelet.service
     - kube-proxy.service
@@ -151,4 +164,3 @@
     - daemon-reload
     - enable-kubelet-proxy-service
     - restart-kubelet-proxy-service
-    

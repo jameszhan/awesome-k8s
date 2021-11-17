@@ -1,5 +1,5 @@
 - name: k8s deployment
-  hosts: 
+  hosts:
     - k8s_nodes
     - k8s_new_nodes
   roles:

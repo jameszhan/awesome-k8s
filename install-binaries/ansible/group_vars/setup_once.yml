@@ -1,7 +1,7 @@
 mirrors_url: https://mirrors.tuna.tsinghua.edu.cn
 timezone: Asia/Shanghai
 
-etc_hosts: 
+etc_hosts:
   - ip: 192.168.1.61
     hostname: k8s-master01
   - ip: 192.168.1.62
@@ -49,3 +49,4 @@ ulimit_conf:
     line: "* soft memlock unlimited"
   - regexp: /^\*(.*)hard(.*)memlock(.*)/
     line: "* hard memlock unlimited"
+  

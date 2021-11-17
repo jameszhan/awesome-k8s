@@ -1,5 +1,5 @@
-- name: Print ansible debug information 
-  vars: 
+- name: Print ansible debug information
+  vars:
     ansible_msg: |
         Ansible Distribution: {{ ansible_distribution }}
         Ansible Dist version: {{ ansible_distribution_version }}
@@ -10,14 +10,14 @@
         Inventory Hostname: {{ inventory_hostname }}
         Group Names: {{ group_names }}
         Groups: {{ groups }}
-  debug: 
+  debug:
     msg: "{{ ansible_msg.split('\n') }}"
   tags: debug_info
 
 - name: Show ansible varialbes
   debug:
     msg: |
-      inventory_hostname: {{ inventory_hostname }} 
+      inventory_hostname: {{ inventory_hostname }}
       inventory_hostname_short: {{ inventory_hostname_short }}
       inventory_dir: {{ inventory_dir }}"
       inventory_file: {{ inventory_file }}

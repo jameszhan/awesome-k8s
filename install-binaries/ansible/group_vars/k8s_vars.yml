@@ -9,7 +9,7 @@ cluster_cidr: 10.244.0.0/16
 core_dns_ip: 192.168.1.130
 # core_dns_ip: 10.96.0.10
 
-resolv_conf: /run/systemd/resolve/resolv.conf
+# resolv_conf: /run/systemd/resolve/resolv.conf
 static_pod_path: /etc/kubernetes/manifests
 pod_infra_container_image: registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.4.1
 

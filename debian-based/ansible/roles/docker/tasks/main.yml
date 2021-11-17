@@ -5,7 +5,7 @@
   become: true
   become_method: sudo
   apt:
-    name: [ 'docker', 'docker-engine', 'docker.io', 'containerd', 'runc' ]
+    name: ['docker', 'docker-engine', 'docker.io', 'containerd', 'runc']
     state: absent
     purge: 'yes'
 
@@ -15,9 +15,9 @@
   become: true
   become_method: sudo
   apt:
-    name: [ 'apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'lsb-release' ]
-    update_cache: yes
-    state: latest
+    name: ['apt-transport-https', 'ca-certificates', 'curl', 'gnupg', 'lsb-release']
+    update_cache: true
+    state: present
 
 #- name: Check GPG key exists
 #  stat:
@@ -64,15 +64,15 @@
 #    repo: deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/{{ lsb_release_si }} {{ lsb_release_sc }} stable
     state: present
     filename: docker
-    update_cache: yes
+    update_cache: true
 
 # sudo apt-get update; sudo apt-get install docker-ce docker-ce-cli containerd.io
 - name: Install Docker Engine
   become: true
   become_method: sudo
   apt:
-    name: [ 'docker-ce', 'docker-ce-cli', 'containerd.io' ]
-    update_cache: yes
+    name: ['docker-ce', 'docker-ce-cli', 'containerd.io']
+    update_cache: true
     state: present
 
 # https://kubernetes.io/zh/docs/setup/production-environment/container-runtimes/#docker
@@ -81,6 +81,7 @@
   template:
     src: templates/daemon.json
     dest: /etc/docker/daemon.json
+    mode: '0644'
   notify: restart-docker-service
 
 - name: Add the user 'deploy' to group 'docker'
@@ -89,7 +90,7 @@
   ansible.builtin.user:
     name: deploy
     groups: docker
-    append: yes
+    append: true
 
 # - name: docker run hello-world
 #   become: true
