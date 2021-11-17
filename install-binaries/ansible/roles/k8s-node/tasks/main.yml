@@ -1,6 +1,6 @@
 - name: Get k8s-server binary files
   ansible.builtin.unarchive:
-    src: "{{ binaries_fs }}/binaries/x86_64/kubernetes/kubernetes-server-v1.21.4-linux-amd64.tar.gz"
+    src: "{{ binaries_fs }}/binaries/x86_64/kubernetes/kubernetes-server-v1.21.6-linux-amd64.tar.gz"
     dest: /tmp
     remote_src: true
 

@@ -49,4 +49,3 @@ ulimit_conf:
     line: "* soft memlock unlimited"
   - regexp: /^\*(.*)hard(.*)memlock(.*)/
     line: "* hard memlock unlimited"
-  

@@ -29,6 +29,9 @@ $ ansible -i hosts k8s_new_nodes -m reboot -u deploy --become -v
 ```bash
 $ ansible-playbook -i hosts -l k8s_new_nodes setup-once.yml -u deploy -v
 
+# install NFS client and configure the permission on NFS server.
+$ ansible -m apt -a "name=nfs-common" -u deploy -i hosts k8s_new_nodes --become -v
+
 $ cd ../../debian-based/ansible && ansible-playbook -i hosts -l k8s_new_nodes docker.yml -u deploy -v && cd ../../install-binaries/ansible
 
 $ ansible -i hosts k8s_new_nodes -m reboot -u deploy --become -v

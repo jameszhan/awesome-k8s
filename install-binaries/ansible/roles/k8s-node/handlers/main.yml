@@ -1,14 +1,14 @@
 - name: daemon-reload
   become: true
   ansible.builtin.systemd:
-    daemon_reload: yes
-  
+    daemon_reload: true
+
 - name: enable-kubelet-proxy-service
   become: true
   ansible.builtin.systemd:
     name: "{{ item }}"
-    enabled: yes
-    masked: no
+    enabled: true
+    masked: false
   with_items:
     - kubelet.service
     - kube-proxy.service
@@ -17,7 +17,7 @@
   become: true
   ansible.builtin.systemd:
     state: restarted
-    daemon_reload: yes
+    daemon_reload: true
     name: "{{ item }}"
   with_items:
     - kubelet.service

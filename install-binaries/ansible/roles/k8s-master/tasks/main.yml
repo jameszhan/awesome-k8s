@@ -2,11 +2,11 @@
 # https://storage.googleapis.com/kubernetes-release/release/v1.19.13/kubernetes-server-linux-amd64.tar.gz
 # https://storage.googleapis.com/kubernetes-release/release/v1.20.10/kubernetes-server-linux-amd64.tar.gz
 # https://storage.googleapis.com/kubernetes-release/release/v1.21.2/kubernetes-server-linux-amd64.tar.gz
-# https://storage.googleapis.com/kubernetes-release/release/v1.21.4/kubernetes-server-linux-amd64.tar.gz
+# https://storage.googleapis.com/kubernetes-release/release/v1.21.6/kubernetes-server-linux-amd64.tar.gz
 # https://storage.googleapis.com/kubernetes-release/release/v1.22.1/kubernetes-server-linux-amd64.tar.gz
 - name: Get k8s-server binary files
   ansible.builtin.unarchive:
-    src: "{{ binaries_fs }}/binaries/x86_64/kubernetes/kubernetes-server-v1.21.4-linux-amd64.tar.gz"
+    src: "{{ binaries_fs }}/binaries/x86_64/kubernetes/kubernetes-server-v1.21.6-linux-amd64.tar.gz"
     dest: /tmp
     remote_src: true
 
@@ -66,6 +66,7 @@
 
 - name: generate kube-apiserver.csr, kube-apiserver.pem, kube-apiserver-key.pem, admin.csr, admin.pem, admin-key.pem etc
   shell: |
+    set -o pipefail
     cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-apiserver-csr.json | cfssljson -bare kube-apiserver
     cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes admin-csr.json | cfssljson -bare admin
     cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager
@@ -114,7 +115,9 @@
     - kube-proxy.pem
 
 - name: get token_random
-  shell: "head -c 16 /dev/urandom | od -An -t x | tr -d ' '"
+  shell: |
+    set -o pipefail
+    head -c 16 /dev/urandom | od -An -t x | tr -d ' '
   args:
     creates: /tmp/kubernetes/token.csv
   register: token_random
