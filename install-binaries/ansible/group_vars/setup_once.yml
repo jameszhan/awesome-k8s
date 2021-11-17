@@ -24,6 +24,17 @@ etc_hosts:
     hostname: k8s-node007
   - ip: 192.168.1.118
     hostname: k8s-node008
+  - ip: 192.168.1.121
+    hostname: k8s-node011
+  - ip: 192.168.1.122
+    hostname: k8s-node012
+  - ip: 192.168.1.125
+    hostname: k8s-node015
+  - ip: 192.168.1.126
+    hostname: k8s-node016
+  - ip: 192.168.1.127
+    hostname: k8s-node017
+
 
 ulimit_conf:
   - regexp: /^\*(.*)soft(.*)nofile(.*)/
