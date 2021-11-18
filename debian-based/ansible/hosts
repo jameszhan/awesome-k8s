@@ -7,18 +7,20 @@ k8s-master02 ansible_host=192.168.1.62 node_host=192.168.1.62 role=master etcd_n
 k8s-master03 ansible_host=192.168.1.63 node_host=192.168.1.63 role=master etcd_name=etcd-03 keepalived_priority=100 keepalived_state=BACKUP peer_01=192.168.1.61 peer_02=192.168.1.62
 
 [k8s_nodes]
-k8s-node021 ansible_host=192.168.1.101 node_host=192.168.1.101 role=worker 
-k8s-node022 ansible_host=192.168.1.102 node_host=192.168.1.102 role=worker
-k8s-node029 ansible_host=192.168.1.109 node_host=192.168.1.109 role=worker
-k8s-node001 ansible_host=192.168.1.111 node_host=192.168.1.111 role=worker
-k8s-node002 ansible_host=192.168.1.112 node_host=192.168.1.112 role=worker
-k8s-node006 ansible_host=192.168.1.116 node_host=192.168.1.116 role=worker
-k8s-node007 ansible_host=192.168.1.117 node_host=192.168.1.117 role=worker
-k8s-node008 ansible_host=192.168.1.118 node_host=192.168.1.118 role=worker
+k8s-node001 ansible_host=192.168.1.101 node_host=192.168.1.101 role=worker
+k8s-node002 ansible_host=192.168.1.102 node_host=192.168.1.102 role=worker
+k8s-node006 ansible_host=192.168.1.106 node_host=192.168.1.106 role=worker
+k8s-node007 ansible_host=192.168.1.107 node_host=192.168.1.107 role=worker
+k8s-node008 ansible_host=192.168.1.108 node_host=192.168.1.108 role=worker
+
+k8s-node011 ansible_host=192.168.1.111 node_host=192.168.1.111 role=worker
+k8s-node012 ansible_host=192.168.1.112 node_host=192.168.1.112 role=worker
+k8s-node015 ansible_host=192.168.1.115 node_host=192.168.1.115 role=worker
+k8s-node016 ansible_host=192.168.1.116 node_host=192.168.1.116 role=worker
+k8s-node017 ansible_host=192.168.1.117 node_host=192.168.1.117 role=worker
+
+k8s-node021 ansible_host=192.168.1.121 node_host=192.168.1.121 role=worker 
+k8s-node022 ansible_host=192.168.1.122 node_host=192.168.1.122 role=worker
+k8s-node023 ansible_host=192.168.1.129 node_host=192.168.1.129 role=worker
 
 [k8s_new_nodes]
-k8s-node011 ansible_host=192.168.1.121 node_host=192.168.1.121 role=worker
-k8s-node012 ansible_host=192.168.1.122 node_host=192.168.1.122 role=worker
-k8s-node015 ansible_host=192.168.1.125 node_host=192.168.1.125 role=worker
-k8s-node016 ansible_host=192.168.1.126 node_host=192.168.1.126 role=worker
-k8s-node017 ansible_host=192.168.1.127 node_host=192.168.1.127 role=worker
