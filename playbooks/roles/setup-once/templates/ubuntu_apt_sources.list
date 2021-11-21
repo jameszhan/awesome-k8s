@@ -1,32 +1,14 @@
 # mirrors_url="https://mirrors.tuna.tsinghua.edu.cn"
 # mirrors_url="https://mirrors.ustc.edu.cn"
 
-deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }} main restricted
-deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }} main restricted
+deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }} main restricted universe multiverse
+deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }} main restricted universe multiverse
 
-deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-updates main restricted
-deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-updates main restricted
-
-deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }} universe
-deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }} universe
-
-deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-updates universe
-deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-updates universe
-
-deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }} multiverse
-deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }} multiverse
-
-deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-updates multiverse
-deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-updates multiverse
+deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-updates main restricted universe multiverse
+deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-updates main restricted universe multiverse
 
 deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-backports main restricted universe multiverse
 deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-backports main restricted universe multiverse
 
-deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-security main restricted
-deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-security main restricted
-
-deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-security universe
-deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-security universe
-
-deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-security multiverse
-deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-security multiverse
+deb {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-security main restricted universe multiverse
+deb-src {{ mirrors_url }}/ubuntu {{ lsb_release_sc }}-security main restricted universe multiverse
