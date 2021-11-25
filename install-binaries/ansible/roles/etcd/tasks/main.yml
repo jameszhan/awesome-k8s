@@ -1,13 +1,13 @@
 - name: Get etcd binary files
   unarchive:
-    src: "{{ binaries_fs }}/binaries/x86_64/etcd/etcd-v3.5.0-linux-amd64.tar.gz"
+    src: "{{ binaries_fs }}/binaries/x86_64/etcd/etcd-v3.5.1-linux-amd64.tar.gz"
     dest: /tmp
     remote_src: yes
 
 - name: Copy etcd tools to /usr/local/bin
   become: true
   copy:
-    src: "/tmp/etcd-v3.5.0-linux-amd64/{{ item }}"
+    src: "/tmp/etcd-v3.5.1-linux-amd64/{{ item }}"
     dest: "/usr/local/bin/"
     mode: ugo+x
     remote_src: yes
@@ -42,6 +42,7 @@
   file:
     path: /tmp/etcd/ssl
     state: directory
+    mode: '0755'
   run_once: true
   delegate_to: localhost
 

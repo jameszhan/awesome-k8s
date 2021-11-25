@@ -58,24 +58,29 @@ $ cd install-binaries/ansible
 
 #### 配置清单
 
-| role       | ip            | hostname          | port                         | 机器配置   | 主要软件                                              |
-| ---------- | ------------- | ----------------- | ---------------------------- | ---------- | ----------------------------------------------------- |
-| etcd       | 192.168.1.61  | k8s-master01      | 2379,2380                    | 2C/4G/32G  | etcd                                                  |
-| etcd       | 192.168.1.62  | k8s-master02      | 2379,2380                    | 2C/4G/32G  | etcd                                                  |
-| etcd       | 192.168.1.63  | k8s-master03      | 2379,2380                    | 2C/4G/32G  | etcd                                                  |
-| k8s-master | 192.168.1.61  | k8s-master01      | 6443,10251,10252,10257,10259 | 2C/4G/32G  | kube-apiserver,kube-controller-manager,kube-scheduler |
-| k8s-master | 192.168.1.62  | k8s-master02      | 6443,10251,10252,10257,10259 | 2C/4G/32G  | kube-apiserver,kube-controller-manager,kube-scheduler |
-| k8s-master | 192.168.1.63  | k8s-master03      | 6443,10251,10252,10257,10259 | 2C/4G/32G  | kube-apiserver,kube-controller-manager,kube-scheduler |
-| HA         | 192.168.1.61  | k8s-master01      | 8443,33305                   | 2C/4G/32G  | haproxy,keepalived                                    |
-| HA         | 192.168.1.62  | k8s-master02      | 8443,33305                   | 2C/4G/32G  | haproxy,keepalived                                    |
-| HA         | 192.168.1.63  | k8s-master03      | 8443,33305                   | 2C/4G/32G  | haproxy,keepalived                                    |
-| VIP        | 192.168.1.100 | k8s-master[01-03] | 8443                         |            | keepalived                                            |
-| k8s-worker | 192.168.1.101 | k8s-node021       | 10248,10249,10250,10256      | 2C/4G/128G | docker,kubelet,kube-proxy                             |
-| k8s-worker | 192.168.1.102 | k8s-node022       | 10248,10249,10250,10256      | 2C/4G/128G | docker,kubelet,kube-proxy                             |
-| k8s-worker | 192.168.1.111 | k8s-node001       | 10248,10249,10250,10256      | 4C/8G/64G  | docker,kubelet,kube-proxy                             |
-| k8s-worker | 192.168.1.112 | k8s-node002       | 10248,10249,10250,10256      | 4C/8G/64G  | docker,kubelet,kube-proxy                             |
-| k8s-worker | 192.168.1.113 | k8s-node003       | 10248,10249,10250,10256      | 4C/16G/64G | docker,kubelet,kube-proxy                             |
-| NAS/iSCSI  | 192.168.1.6   | synology-dsm      | 111,892,2049,3260            | 2C/8G/16T  | dsm 7.0                                               |
+| role       | ip            | hostname          | port                         | 机器配置     | 主要软件                                              |
+| ---------- | ------------- | ----------------- | ---------------------------- | ----------- | ----------------------------------------------------- |
+| etcd       | 192.168.1.61  | k8s-master01      | 2379,2380                    | 2C/4G/32G   | etcd                                                  |
+| etcd       | 192.168.1.62  | k8s-master02      | 2379,2380                    | 2C/4G/32G   | etcd                                                  |
+| etcd       | 192.168.1.63  | k8s-master03      | 2379,2380                    | 2C/4G/32G   | etcd                                                  |
+| k8s-master | 192.168.1.61  | k8s-master01      | 6443,10251,10252,10257,10259 | 2C/4G/32G   | kube-apiserver,kube-controller-manager,kube-scheduler |
+| k8s-master | 192.168.1.62  | k8s-master02      | 6443,10251,10252,10257,10259 | 2C/4G/32G   | kube-apiserver,kube-controller-manager,kube-scheduler |
+| k8s-master | 192.168.1.63  | k8s-master03      | 6443,10251,10252,10257,10259 | 2C/4G/32G   | kube-apiserver,kube-controller-manager,kube-scheduler |
+| HA         | 192.168.1.61  | k8s-master01      | 8443,33305                   | 2C/4G/32G   | haproxy,keepalived                                    |
+| HA         | 192.168.1.62  | k8s-master02      | 8443,33305                   | 2C/4G/32G   | haproxy,keepalived                                    |
+| HA         | 192.168.1.63  | k8s-master03      | 8443,33305                   | 2C/4G/32G   | haproxy,keepalived                                    |
+| VIP        | 192.168.1.100 | k8s-master[01-03] | 8443                         |             | keepalived                                            |
+| k8s-worker | 192.168.1.101 | k8s-node001       | 10248,10249,10250,10256      | 4C/8G/64G   | docker,kubelet,kube-proxy                             |
+| k8s-worker | 192.168.1.102 | k8s-node002       | 10248,10249,10250,10256      | 4C/8G/64G   | docker,kubelet,kube-proxy                             |
+| k8s-worker | 192.168.1.105 | k8s-node005       | 10248,10249,10250,10256      | 4C/8G/64G   | docker,kubelet,kube-proxy                             |
+| k8s-worker | 192.168.1.106 | k8s-node006       | 10248,10249,10250,10256      | 4C/8G/64G   | docker,kubelet,kube-proxy                             |
+| k8s-worker | 192.168.1.107 | k8s-node007       | 10248,10249,10250,10256      | 4C/8G/64G   | docker,kubelet,kube-proxy                             |
+| k8s-worker | 192.168.1.111 | k8s-node011       | 10248,10249,10250,10256      | 4C/16G/128G | docker,kubelet,kube-proxy                             |
+| k8s-worker | 192.168.1.112 | k8s-node012       | 10248,10249,10250,10256      | 4C/16G/128G | docker,kubelet,kube-proxy                             |
+| k8s-worker | 192.168.1.115 | k8s-node015       | 10248,10249,10250,10256      | 4C/8G/64G   | docker,kubelet,kube-proxy                             |
+| k8s-worker | 192.168.1.116 | k8s-node016       | 10248,10249,10250,10256      | 4C/8G/64G   | docker,kubelet,kube-proxy                             |
+| k8s-worker | 192.168.1.117 | k8s-node017       | 10248,10249,10250,10256      | 4C/8G/64G   | docker,kubelet,kube-proxy                             |
+| NAS/iSCSI  | 192.168.1.6   | synology-dsm      | 111,892,2049,3260            | 2C/8G/16T   | dsm 7.0                                               |
 
 #### 子网划分
 
