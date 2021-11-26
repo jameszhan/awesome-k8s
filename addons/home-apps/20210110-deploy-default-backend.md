@@ -4,7 +4,7 @@
 
 ```bash
 $ kubectl create configmap nginx-autoindex-conf -n geek-apps --from-file=default.conf=templates/nginx-conf/autoindex.conf
-$ kubectl get cm nginx-autoindex-conf -n geek-apps  -o yaml
+$ kubectl get cm nginx-autoindex-conf -n geek-apps -o yaml
 ```
 
 ### 部署`defaultBackend`服务

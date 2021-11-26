@@ -16,8 +16,8 @@ k8s-node015 ansible_host=192.168.1.115 node_host=192.168.1.115 role=worker
 k8s-node016 ansible_host=192.168.1.116 node_host=192.168.1.116 role=worker
 k8s-node017 ansible_host=192.168.1.117 node_host=192.168.1.117 role=worker
 
-k8s-node021 ansible_host=192.168.1.121 node_host=192.168.1.121 role=worker 
-k8s-node022 ansible_host=192.168.1.122 node_host=192.168.1.122 role=worker
-k8s-node023 ansible_host=192.168.1.129 node_host=192.168.1.129 role=worker
+; k8s-node021 ansible_host=192.168.1.121 node_host=192.168.1.121 role=worker 
+; k8s-node022 ansible_host=192.168.1.122 node_host=192.168.1.122 role=worker
+; k8s-node023 ansible_host=192.168.1.123 node_host=192.168.1.123 role=worker
 
 [k8s_new_nodes]
