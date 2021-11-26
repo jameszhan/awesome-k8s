@@ -6,7 +6,7 @@ $ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 # 按需调整配置
 $ helm show values ingress-nginx/ingress-nginx > templates/ingress-nginx-values.yaml
 
-$ helm template -f templates/ingress-nginx-values.yml -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
+$ helm install -f templates/ingress-nginx-values.yaml --create-namespace -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
 ```
 
 ## 部署`ingress-nginx`
@@ -41,7 +41,7 @@ $ helm search repo ingress-nginx
 $ helm show values ingress-nginx/ingress-nginx > templates/ingress-nginx-values.yaml
 
 # 安装前先需要替换准备好的镜像
-$ helm template -f templates/ingress-nginx-values.yml -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
+$ helm template -f templates/ingress-nginx-values.yaml -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
 ```
 
 ### 安装及升级
@@ -52,7 +52,7 @@ $ helm template -f templates/ingress-nginx-values.yml -n ingress-nginx --debug i
 # helm pull ingress-nginx/ingress-nginx
 $ helm uninstall ingress-nginx -n ingress-nginx 
 # helm install ingress-nginx ingress-nginx/ingress-nginx
-$ helm install -f templates/ingress-nginx-values.yml --create-namespace -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
+$ helm install -f templates/ingress-nginx-values.yaml --create-namespace -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
 # [install-notes](../../appendix/templates/banners/ingress-nginx-install-notes.txt)
 ```
 
@@ -69,7 +69,7 @@ $ helm install -f ingress-nginx/values.yaml ingress-nginx/ingress-nginx --n geek
 #### 升级`ingress-nginx`
 
 ```bash
-$ helm upgrade -f templates/ingress-nginx-values.yml -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
+$ helm upgrade -f templates/ingress-nginx-values.yaml -n ingress-nginx --debug ingress-nginx ingress-nginx/ingress-nginx
 ```
 
 ## 更新`ingress`配置
