@@ -42,6 +42,7 @@
   file:
     path: /tmp/etcd/ssl
     state: directory
+    mode: '0755'
   run_once: true
   delegate_to: localhost
 

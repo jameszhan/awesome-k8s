@@ -81,7 +81,7 @@ $ for h in k8s-master01 k8s-master02 k8s-master03; do ssh-copy-id -i ~/.ssh/id_r
 #### 清理node节点
 
 ```bash
-$ ansible -m script -a 'cleaner/clean-kubelet.sh' -i hosts k8s_nodes -u deploy --become -v
+$ ansible -m script -a 'cleaner/clean-k8s-node.sh' -i hosts k8s_nodes -u deploy --become -v
 $ ansible -m script -a 'cleaner/clean-docker.sh' -i hosts k8s_nodes -u deploy --become -v
 $ ansible -i hosts k8s_nodes -m reboot -u deploy --become -v
 ```
@@ -98,7 +98,6 @@ $ ansible -i hosts k8s_masters -m reboot -u deploy --become -v
 ### 全新安装
 
 #### 安装etcd
-
 
 ```bash
 $ ansible-playbook -i hosts etcd.yml -u deploy -v

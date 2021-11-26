@@ -19,5 +19,5 @@ env:
 
 ```bash
 $ kubectl set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface="(eth0|enp1s0|ens33|ens18)"
-$ kubectl set env daemonset/calico-node -n kube-system CALICO_IPV4POOL_CIDR=interface="10.244.0.0/16"
+$ kubectl set env daemonset/calico-node -n kube-system CALICO_IPV4POOL_CIDR="10.244.0.0/16"
 ```

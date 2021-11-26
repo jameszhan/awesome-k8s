@@ -5,7 +5,7 @@ metadata:
   namespace: geek-apps
 subsets:
   - addresses:
-      - ip: 192.168.1.80
+      - ip: 192.168.1.58
     ports:
       - port: 8080
 

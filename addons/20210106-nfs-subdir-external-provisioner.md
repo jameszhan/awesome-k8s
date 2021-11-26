@@ -23,4 +23,3 @@ nfs-csi      nfs.csi.k8s.io                                  Delete          Imm
 # 更新安装
 $ helm upgrade --install -f templates/nfs-subdir-external-provisioner/values.yaml -n kube-system nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner
 ```
-

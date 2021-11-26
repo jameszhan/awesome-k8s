@@ -12,6 +12,10 @@ etc_hosts:
     hostname: k8s-node001
   - ip: 192.168.1.102
     hostname: k8s-node002
+  - ip: 192.168.1.103
+    hostname: k8s-node003
+  - ip: 192.168.1.105
+    hostname: k8s-node005
   - ip: 192.168.1.106
     hostname: k8s-node006
   - ip: 192.168.1.107
@@ -22,12 +26,16 @@ etc_hosts:
     hostname: k8s-node011
   - ip: 192.168.1.112
     hostname: k8s-node012
+  - ip: 192.168.1.113
+    hostname: k8s-node013
   - ip: 192.168.1.115
     hostname: k8s-node015
   - ip: 192.168.1.116
     hostname: k8s-node016
   - ip: 192.168.1.117
     hostname: k8s-node017
+  - ip: 192.168.1.118
+    hostname: k8s-node018
   - ip: 192.168.1.121
     hostname: k8s-node021
   - ip: 192.168.1.122
