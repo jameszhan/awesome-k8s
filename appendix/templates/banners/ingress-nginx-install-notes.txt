@@ -4,28 +4,28 @@ It may take a few minutes for the LoadBalancer IP to be available.
 You can watch the status by running 'kubectl --namespace ingress-nginx get services -o wide -w ingress-nginx-controller'
 
 An example Ingress that makes use of the controller:
-
   apiVersion: networking.k8s.io/v1
   kind: Ingress
   metadata:
-    annotations:
-      kubernetes.io/ingress.class: nginx
     name: example
     namespace: foo
   spec:
+    ingressClassName: nginx
     rules:
       - host: www.example.com
         http:
           paths:
             - backend:
-                serviceName: exampleService
-                servicePort: 80
+                service:
+                  name: exampleService
+                  port:
+                    number: 80
               path: /
     # This section is only required if TLS is to be enabled for the Ingress
     tls:
-        - hosts:
-            - www.example.com
-          secretName: example-tls
+      - hosts:
+        - www.example.com
+        secretName: example-tls
 
 If TLS is enabled for the Ingress, a Secret containing the certificate and key must also be provided:
 

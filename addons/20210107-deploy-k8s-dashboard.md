@@ -1,7 +1,7 @@
 ## TL;DR
 
 ```bash
-$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.3.1/aio/deploy/recommended.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.4.0/aio/deploy/recommended.yaml
 ```
 
 #### 部署`Kubernetes Dashboard`
@@ -28,7 +28,7 @@ $ helm install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard \
 ##### 极简方式安装(推荐)
 
 ```bash
-$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.3.1/aio/deploy/recommended.yaml
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.4.0/aio/deploy/recommended.yaml
 $ kubectl describe svc kubernetes-dashboard -n kubernetes-dashboard
 
 $ kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard 8443:443
@@ -37,6 +37,8 @@ $ open https://localhost:8443/
 
 $ kubectl proxy --address=0.0.0.0
 $ open -a 'Google Chrome' http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+
+$ kubectl apply -f templates/ingress/kubernetes-dashboard.yml
 ```
 > 注意：`proxy`方式将会出现无法正常登陆情况，推荐使用`port-forward`方式。
 

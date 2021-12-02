@@ -10,13 +10,13 @@
 controller:
   name: controller
   image:
-    registry: registry.cn-shenzhen.aliyuncs.com
-    image: jameszhan/ingress-nginx-controller
+    registry: registry.cn-hangzhou.aliyuncs.com
+    image: google_containers/nginx-ingress-controller
     # for backwards compatibility consider setting the full image url via the repository value below
     # use *either* current default registry/image or repository format or installing chart by providing the values.yaml will fail
     # repository:
-    tag: "v1.0.3"
-    digest: sha256:8b1011b1f6f3be2c9180bffe2313b8ee55213f965b40d1c99a77e3688a4778ab
+    tag: "v1.1.0"
+    digest: sha256:f766669fdcf3dc26347ed273a55e754b427eb4411ee075a53f30718b4499076a
     pullPolicy: IfNotPresent
     # www-data -> uid 101
     runAsUser: 101
@@ -137,6 +137,9 @@ controller:
   scope:
     enabled: false
     namespace: ""   # defaults to $(POD_NAMESPACE)
+    # When scope.enabled == false, instead of watching all namespaces, we watching namespaces whose labels
+    #   only match with namespaceSelector. Format like foo=bar. Defaults to empty, means watching all namespaces.
+    namespaceSelector: ""
 
   ## Allows customization of the configmap / nginx-configmap namespace
   ##
@@ -184,7 +187,7 @@ controller:
   annotations: {}
   #  keel.sh/pollSchedule: "@every 60m"
 
-  ## Labels to be added to the controller Deployment or DaemonSet
+  ## Labels to be added to the controller Deployment or DaemonSet and other resources that do not have option to specify labels
   ##
   labels: {}
   #  keel.sh/policy: patch
@@ -429,6 +432,14 @@ controller:
   service:
     enabled: true
 
+    ## If enabled is adding an appProtocol option for Kubernetes service. An appProtocol field replacing annotations that were
+    ## using for setting a backend protocol. Here is an example for AWS: service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    ## It allows choosing the protocol for each backend specified in the Kubernetes service.
+    ## See the following GitHub issue for more details about the purpose: https://github.com/kubernetes/kubernetes/issues/40244
+    ## Will be ignored for Kubernetes versions older than 1.20
+    ##
+    appProtocol: true
+
     annotations: {}
     labels: {}
     # clusterIP: ""
@@ -446,19 +457,30 @@ controller:
     enableHttp: true
     enableHttps: true
 
-    ## Set external traffic policy to: "Local" to preserve source IP on
-    ## providers supporting it
+    ## Set external traffic policy to: "Local" to preserve source IP on providers supporting it.
     ## Ref: https://kubernetes.io/docs/tutorials/services/source-ip/#source-ip-for-services-with-typeloadbalancer
     # externalTrafficPolicy: ""
 
-    # Must be either "None" or "ClientIP" if set. Kubernetes will default to "None".
-    # Ref: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
+    ## Must be either "None" or "ClientIP" if set. Kubernetes will default to "None".
+    ## Ref: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies
     # sessionAffinity: ""
 
-    # specifies the health check node port (numeric port number) for the service. If healthCheckNodePort isn’t specified,
-    # the service controller allocates a port from your cluster’s NodePort range.
-    # Ref: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
+    ## Specifies the health check node port (numeric port number) for the service. If healthCheckNodePort isn’t specified,
+    ## the service controller allocates a port from your cluster’s NodePort range.
+    ## Ref: https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip
     # healthCheckNodePort: 0
+
+    ## Represents the dual-stack-ness requested or required by this Service. Possible values are
+    ## SingleStack, PreferDualStack or RequireDualStack.
+    ## The ipFamilies and clusterIPs fields depend on the value of this field.
+    ## Ref: https://kubernetes.io/docs/concepts/services-networking/dual-stack/
+    ipFamilyPolicy: "SingleStack"
+
+    ## List of IP families (e.g. IPv4, IPv6) assigned to the service. This field is usually assigned automatically
+    ## based on cluster configuration and the ipFamilyPolicy field.
+    ## Ref: https://kubernetes.io/docs/concepts/services-networking/dual-stack/
+    ipFamilies:
+      - IPv4
 
     ports:
       http: 80
@@ -481,6 +503,9 @@ controller:
       https: ""
       tcp: {}
       udp: {}
+
+    external:
+      enabled: true
 
     ## Enables an additional internal load balancer (besides the external one).
     ## Annotations are mandatory for the load balancer to come up. Varies with the cloud service.
@@ -548,6 +573,8 @@ controller:
     key: "/usr/local/certificates/key"
     namespaceSelector: {}
     objectSelector: {}
+    ## Labels to be added to admission webhooks
+    labels: {}
 
     # Use an existing PSP instead of creating one
     existingPsp: ""
@@ -576,13 +603,13 @@ controller:
     patch:
       enabled: true
       image:
-        registry: registry.cn-shenzhen.aliyuncs.com
-        image: jameszhan/ingress-nginx_kube-webhook-certgen
+        registry: registry.cn-hangzhou.aliyuncs.com
+        image: google_containers/kube-webhook-certgen
         # for backwards compatibility consider setting the full image url via the repository value below
         # use *either* current default registry/image or repository format or installing chart by providing the values.yaml will fail
         # repository:
-        tag: v1.0
-        digest: sha256:597784742b823bfab67dc1a987fd889a30119059ecf51bf7ba9a0958bab88dc7
+        tag: v1.1.1
+        digest: sha256:64d8c73dca984af206adf9d6d7e46aa550362b1d7a01f3a0a91b20cc67868660
         pullPolicy: IfNotPresent
       ## Provide a priority class name to the webhook patching job
       ##
@@ -591,6 +618,8 @@ controller:
       nodeSelector:
         kubernetes.io/os: linux
       tolerations: []
+      ## Labels to be added to patch job resources
+      labels: {}
       runAsUser: 2000
 
   metrics:
@@ -759,6 +788,12 @@ defaultBackend:
   ##
   podSecurityContext: {}
 
+  ## Security Context policies for controller main container.
+  ## See https://kubernetes.io/docs/tasks/administer-cluster/sysctl-cluster/ for
+  ## notes on enabling and using sysctls
+  ##
+  containerSecurityContext: {}
+
   # labels to add to the pod container metadata
   podLabels: {}
   #  key: value
@@ -777,14 +812,13 @@ defaultBackend:
 
   minAvailable: 1
 
-  # resources: {}
-  resources:
+  resources: {}
   # limits:
   #   cpu: 10m
   #   memory: 20Mi
-    requests:
-      cpu: 10m
-      memory: 20Mi
+  # requests:
+  #   cpu: 10m
+  #   memory: 20Mi
 
   extraVolumeMounts: []
   ## Additional volumeMounts to the default backend container.
@@ -820,6 +854,8 @@ defaultBackend:
     type: ClusterIP
 
   priorityClassName: ""
+  ## Labels to be added to the default backend resources
+  labels: {}
 
 ## Enable RBAC as per https://github.com/kubernetes/ingress-nginx/blob/main/docs/deploy/rbac.md and https://github.com/kubernetes/ingress-nginx/issues/266
 rbac:
