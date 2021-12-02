@@ -154,9 +154,8 @@ kind: Ingress
 metadata:
   name: jupyterlab-ingress
   namespace: geek-apps
-  annotations:
-    kubernetes.io/ingress.class: nginx
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
       - jupyter.zizhizhan.com
