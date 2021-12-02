@@ -21,7 +21,7 @@ $ helm -n geek-apps install mysql bitnami/mysql \
     --set auth.replicationPassword=root \
     --set metrics.enabled=true \
     --set volumePermissions.enabled=true \
-    --set global.storageClass=nfs-csi \
+    --set global.storageClass=ceph-rbd \
     --set primary.persistence.size=32Gi \
     --set secondary.persistence.size=16Gi
 

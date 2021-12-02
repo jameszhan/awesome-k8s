@@ -15,9 +15,8 @@ kind: Ingress
 metadata:
   name: grafana-ingress
   namespace: geek-apps
-  annotations:
-    kubernetes.io/ingress.class: nginx
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
       - grafana.zizhizhan.com
