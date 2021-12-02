@@ -37,7 +37,10 @@ fsid 2d72a497-00cc-4c20-979c-39bebaf20e70
 > ceph-csi currently only supports the legacy V1 protocol.
 
 ```bash
-$ cat <<EOF > templates/csi-config-map.yaml
+$ mkdir -p templates/ceph-csi
+$ kubectl create ns ceph-csi
+
+$ cat <<EOF > templates/ceph-csi/csi-config-map.yaml
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -54,10 +57,10 @@ data:
     ]
 metadata:
   name: ceph-csi-config
-  namespace: kube-system
 EOF
+$ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-config-map.yaml
 
-$ cat <<EOF > templates/csi-kms-config-map.yaml
+$ cat <<EOF > templates/ceph-csi/csi-kms-config-map.yaml
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -66,10 +69,10 @@ data:
     {}
 metadata:
   name: ceph-csi-encryption-kms-config
-  namespace: kube-system
 EOF
+$ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-kms-config-map.yaml
 
-$ cat <<EOF > templates/ceph-config-map.yaml
+$ cat <<EOF > templates/ceph-csi/ceph-config-map.yaml
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -83,38 +86,89 @@ data:
   keyring: |
 metadata:
   name: ceph-config
-  namespace: kube-system
 EOF
-```
-
-```bash
-
+$ kubectl apply -n ceph-csi -f templates/ceph-csi/ceph-config-map.yaml
 ```
 
 #### GENERATE CEPH-CSI CEPHX SECRET
 
 ```bash
-$ cat <<EOF > csi-rbd-secret.yaml
+$ cat <<EOF > templates/ceph-csi/csi-rbd-secret.yaml
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: csi-rbd-secret
-  namespace: kube-system
 stringData:
   userID: kubernetes
   userKey: AQBI2ahhip1rAxAASf9dezG2u5oFCkAXSHdk3g==
 EOF
+$ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-rbd-secret.yaml
 ```
 
 #### CONFIGURE CEPH-CSI PLUGINS
 
 ```bash
-$ kubectl apply -f https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-provisioner-rbac.yaml
-$ kubectl apply -f https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-nodeplugin-rbac.yaml
+$ wget -O templates/ceph-csi/csi-provisioner-rbac.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-provisioner-rbac.yaml
+$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi/csi-provisioner-rbac.yaml
 
-$ wget https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-rbdplugin-provisioner.yaml
-$ kubectl apply -f csi-rbdplugin-provisioner.yaml
-$ wget https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-rbdplugin.yaml
-$ kubectl apply -f csi-rbdplugin.yaml
+$ wget -O templates/ceph-csi/csi-nodeplugin-rbac.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-nodeplugin-rbac.yaml
+$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi/csi-nodeplugin-rbac.yaml
+
+$ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-provisioner-rbac.yaml
+$ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-nodeplugin-rbac.yaml
+```
+
+```bash
+$ wget -O templates/ceph-csi/csi-rbdplugin-provisioner.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-rbdplugin-provisioner.yaml
+$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi/csi-rbdplugin-provisioner.yaml
+$ sed -i "s/k8s.gcr.io\/sig-storage/registry.cn-hangzhou.aliyuncs.com\/google_containers/g" templates/ceph-csi/csi-rbdplugin-provisioner.yaml
+
+$ wget -O templates/ceph-csi/csi-rbdplugin.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-rbdplugin.yaml
+$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi/csi-rbdplugin.yaml
+$ sed -i "s/k8s.gcr.io\/sig-storage/registry.cn-hangzhou.aliyuncs.com\/google_containers/g" templates/ceph-csi/csi-rbdplugin.yaml
+
+$ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-rbdplugin-provisioner.yaml
+$ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-rbdplugin.yaml
+```
+
+检查替换后的镜像
+
+```bash
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/csi-provisioner:v3.0.0
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/csi-snapshotter:v4.2.0
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/csi-attacher:v3.3.0
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/csi-resizer:v1.3.0
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/csi-node-driver-registrar:v2.3.0
+```
+
+### USING CEPH BLOCK DEVICES
+
+#### CREATE A STORAGECLASS
+
+```bash
+$ cat <<EOF | kubectl create -f -
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+   name: ceph-rbd
+   namespace: ceph-csi
+provisioner: rbd.csi.ceph.com
+parameters:
+   clusterID: 2d72a497-00cc-4c20-979c-39bebaf20e70
+   pool: kubernetes
+   imageFeatures: layering
+   csi.storage.k8s.io/provisioner-secret-name: csi-rbd-secret
+   csi.storage.k8s.io/provisioner-secret-namespace: ceph-csi
+   csi.storage.k8s.io/controller-expand-secret-name: csi-rbd-secret
+   csi.storage.k8s.io/controller-expand-secret-namespace: ceph-csi
+   csi.storage.k8s.io/node-stage-secret-name: csi-rbd-secret
+   csi.storage.k8s.io/node-stage-secret-namespace: ceph-csi
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+mountOptions:
+   - discard
+EOF
+
+$ kubectl get sc -A
 ```
