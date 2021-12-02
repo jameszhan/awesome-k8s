@@ -8,12 +8,16 @@ $ helm repo update
 
 $ helm search repo grafana
 
-$ helm template grafana/loki
-$ helm template grafana/loki-stack --namespace=loki-stack
-
 $ kubectl create ns loki-stack
+$ helm pull grafana/loki-stack
+$ tar -zxvf loki-stack-2.5.0.tgz
+$ sed -i 's/rbac.authorization.k8s.io\/v1beta1/rbac.authorization.k8s.io\/v1/g' loki-stack/charts/filebeat/templates/clusterrole.yaml
+$ sed -i 's/rbac.authorization.k8s.io\/v1beta1/rbac.authorization.k8s.io\/v1/g' loki-stack/charts/filebeat/templates/clusterrolebinding.yaml
+$ sed -i 's/rbac.authorization.k8s.io\/v1beta1/rbac.authorization.k8s.io\/v1/g' loki-stack/charts/prometheus/charts/kube-state-metrics/templates/clusterrole.yaml
+$ sed -i 's/rbac.authorization.k8s.io\/v1beta1/rbac.authorization.k8s.io\/v1/g' loki-stack/charts/prometheus/charts/kube-state-metrics/templates/clusterrolebinding.yaml
 
-$ helm upgrade --install --namespace=loki-stack loki grafana/loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false,loki.persistence.enabled=true,loki.persistence.storageClassName=nfs-csi,loki.persistence.size=16Gi,loki.securityContext.runAsGroup=0,loki.securityContext.runAsUser=0,loki.securityContext.runAsNonRoot=false
+$ helm upgrade --install --namespace=loki-stack loki loki-stack --set grafana.enabled=true,prometheus.enabled=true,prometheus.alertmanager.persistentVolume.enabled=false,prometheus.server.persistentVolume.enabled=false,loki.persistence.enabled=true,loki.persistence.storageClassName=ceph-rbd,loki.persistence.size=16Gi,loki.securityContext.runAsGroup=0,loki.securityContext.runAsUser=0,loki.securityContext.runAsNonRoot=false
+$ rm -fr loki-stack
 ```
 
 #### 其他安装选项
