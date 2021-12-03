@@ -19,7 +19,7 @@ $ helm -n geek-apps uninstall redis-cluster
 
 $ helm -n geek-apps install redis-cluster bitnami/redis-cluster \
     --set persistence.enabled=true \
-    --set global.storageClass=nfs-csi \
+    --set global.storageClass=ceph-rbd \
     --set persistence.size=8Gi \
     --set volumePermissions.enabled=true \
     --set cluster.init=ture \
