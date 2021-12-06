@@ -53,6 +53,11 @@ Cloud images are operating system templates and every instance starts out as an 
 
 ![APT命令详解](images/apt-sub-commands.jpg)
 
+### Ubuntu 常见工具
+
+- juju: [Juju](https://juju.is/)
+    - Juju 是一个 Charmed Operator 框架，由 Charmed Operator Lifecycle Manager 和 Charmed Operator SDK 组成。跨混合云无缝部署、集成和管理 Kubernetes、容器和 VM 原生应用程序。
+
 ### 附录
 
 #### 资源地址
