@@ -93,7 +93,7 @@ $ sudo apt -y update
 $ sudo apt -y install coreutils procps libseccomp2 net-tools sysstat rsync bash-completion socat
 
 # 启用 kubectl 自动补全功能
-$ echo 'source <(kubectl completion zsh)' >> ~/.bashrc
+$ echo 'source <(kubectl completion bash)' >> ~/.bashrc
 ```
 
 #### 禁用虚拟内存

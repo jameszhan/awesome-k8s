@@ -55,4 +55,5 @@ $ redis-cli -c -h redis-cluster -a $REDIS_PASSWORD
 ```bash
 $ cluster info
 $ cluster nodes
+$ cluster slots
 ```
