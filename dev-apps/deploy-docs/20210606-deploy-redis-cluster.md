@@ -27,6 +27,17 @@ $ helm -n geek-apps install redis-cluster bitnami/redis-cluster \
     --set cluster.replicas=1 \
     --set metrics.enabled=true
 
+$ helm upgrade --install -n geek-apps redis-cluster bitnami/redis-cluster \
+    --set persistence.enabled=true \
+    --set global.storageClass=ceph-rbd \
+    --set persistence.size=8Gi \
+    --set volumePermissions.enabled=true \
+    --set cluster.init=ture \
+    --set cluster.nodes=6 \
+    --set cluster.replicas=1 \
+    --set metrics.enabled=true \
+    --set password=Hello123456
+
 $ kubectl get pods -w --namespace geek-apps -o wide
 ```
 

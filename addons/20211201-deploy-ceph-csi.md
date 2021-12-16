@@ -20,7 +20,7 @@ $ rbd pool init kubernetes
 ```bash
 $ ceph auth get-or-create client.kubernetes mon 'profile rbd' osd 'profile rbd pool=kubernetes' mgr 'profile rbd pool=kubernetes'
 [client.kubernetes]
-	key = AQBI2ahhip1rAxAASf9dezG2u5oFCkAXSHdk3g==
+	key = AQBsYLlh4ulcIhAA5bL+z02iz1zr7qTL8JZ9wQ==
 ```
 
 #### GENERATE CEPH-CSI CONFIGMAP
@@ -28,7 +28,7 @@ $ ceph auth get-or-create client.kubernetes mon 'profile rbd' osd 'profile rbd p
 ```bash
 $ ceph mon dump
 epoch 1
-fsid 2d72a497-00cc-4c20-979c-39bebaf20e70
+fsid 3a5cad60-a648-48aa-a281-21795b69d6b3
 <...>
 0: [v2:192.168.1.50:3300/0,v1:192.168.1.50:6789/0] mon.pve-5900hx
 1: [v2:192.168.1.60:3300/0,v1:192.168.1.60:6789/0] mon.pve-5700u
@@ -48,7 +48,7 @@ data:
   config.json: |-
     [
       {
-        "clusterID": "2d72a497-00cc-4c20-979c-39bebaf20e70",
+        "clusterID": "3a5cad60-a648-48aa-a281-21795b69d6b3",
         "monitors": [
           "192.168.1.50:6789",
           "192.168.1.60:6789"
@@ -101,7 +101,7 @@ metadata:
   name: csi-rbd-secret
 stringData:
   userID: kubernetes
-  userKey: AQBI2ahhip1rAxAASf9dezG2u5oFCkAXSHdk3g==
+  userKey: AQBsYLlh4ulcIhAA5bL+z02iz1zr7qTL8JZ9wQ==
 EOF
 $ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-rbd-secret.yaml
 ```
@@ -147,6 +147,8 @@ $ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/csi-node-drive
 #### CREATE A STORAGECLASS
 
 ```bash
+$ kubectl delete storageclasses.storage.k8s.io ceph-rbd
+
 $ cat <<EOF | kubectl create -f -
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -155,7 +157,7 @@ metadata:
    namespace: ceph-csi
 provisioner: rbd.csi.ceph.com
 parameters:
-   clusterID: 2d72a497-00cc-4c20-979c-39bebaf20e70
+   clusterID: 3a5cad60-a648-48aa-a281-21795b69d6b3
    pool: kubernetes
    imageFeatures: layering
    csi.storage.k8s.io/provisioner-secret-name: csi-rbd-secret
