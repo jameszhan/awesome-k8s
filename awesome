@@ -8,7 +8,7 @@ SSHKit.config.format = :pretty
 SSHKit.config.output_verbosity = :debug
 
 SUDO_USER = ENV['SUDO_USER']
-USER_HOME = ENV['HOME']
+SUDO_PASS = ENV['SUDO_PASS']
 
 class Runner
   include Thor::Base
@@ -40,29 +40,54 @@ class Runner
   end
 end
 
+class PasswordInteractionHandler
+
+  def on_data(command, stream_name, data, channel)
+    case data
+      when /password/i
+        channel.send_data("#{SUDO_PASS}\n")
+      else
+        puts "#{command}, #{stream_name}, #{data}, #{channel}"
+        channel.send_data("#{SUDO_PASS}\n")
+    end
+  end
+
+end
+
 class Awesome < Thor
   include Actions
   include SSHKit::DSL
 
-  desc 'user k8s-node005 deploy', 'create new user deploy for k8s-node005'
-  def user(host, username='deploy', port=22)
-    on "#{SUDO_USER}@#{host}:#{port}", in: :sequence, wait: 5 do
+  desc 'user k8s-node003 deploy', 'create new user deploy for k8s-node003'
+  def user(hostname, username='deploy', port=22)
+    target_host = SSHKit::Host.new(
+      hostname: hostname,
+      port: port,
+      user: SUDO_USER,
+      password: SUDO_PASS,
+      ssh_options: {}
+    )
+
+    pass_cb = PasswordInteractionHandler.new
+
+    on target_host, in: :sequence, wait: 5 do |host|
       if test "[ -d /home/#{username} ]"
         puts "#{username} has already created."
       else
-        sudo 'useradd -m -s /bin/bash -u 1001 deploy'
-        sudo 'usermod -aG sudo deploy'
-        sudo 'usermod -aG adm deploy'
-        sudo 'usermod -a -G users deploy'
+        sudo 'useradd -m -s /bin/bash -u 1001 deploy', interaction_handler: pass_cb
+        sudo 'usermod -aG sudo deploy', interaction_handler: pass_cb
+        sudo 'usermod -aG adm deploy', interaction_handler: pass_cb
+        sudo 'usermod -a -G users deploy', interaction_handler: pass_cb
+        sudo 'usermod -a -G staff deploy', interaction_handler: pass_cb
       end
 
       if test "[ -f /etc/sudoers.d/#{username} ]"
         puts "#{username} is already NOPASSWD sudo user"
       else
-        # execute "echo '#{username} ALL = (ALL) NOPASSWD: ALL' > /tmp/sudoer_#{username}"
-        # sudo :mv, "/tmp/sudoer_#{username}", "/etc/sudoers.d/#{username}"
-        # sudo :chown, "-R root:root /etc/sudoers.d/#{username}"
-        execute "echo 'deploy ALL = (ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/deploy > /dev/null"
+        execute "echo '#{username} ALL = (ALL) NOPASSWD: ALL' > /tmp/sudoer_#{username}"
+        sudo :mv, "/tmp/sudoer_#{username}", "/etc/sudoers.d/#{username}", interaction_handler: pass_cb
+        sudo :chown, "-R root:root /etc/sudoers.d/#{username}", interaction_handler: pass_cb
+        # execute "echo 'deploy ALL = (ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/deploy", interaction_handler: pass_cb
       end
 
       if test "[ -d /home/#{username}/.ssh ]"
@@ -71,61 +96,46 @@ class Awesome < Thor
         # 本地免密码 SSH 登陆
         puts "/home/#{username}/.ssh not exists, create it."
 
-        sudo "mkdir /home/#{username}/.ssh"
-        upload! "#{USER_HOME}/.ssh/id_rsa.pub", '/tmp/id_rsa.pub'
-        upload! "#{USER_HOME}/.ssh/id_rsa", '/tmp/id_rsa'
-        execute "cat /tmp/id_rsa.pub | sudo tee -a /home/#{username}/.ssh/authorized_keys"
+        sudo "mkdir /home/#{username}/.ssh", interaction_handler: pass_cb
+        upload! "/home/#{SUDO_USER}/.ssh/id_rsa.pub", '/tmp/id_rsa.pub'
+        upload! "/home/#{SUDO_USER}/.ssh/id_rsa", '/tmp/id_rsa'
+        upload! "/home/#{SUDO_USER}/.ssh/authorized_keys", '/tmp/authorized_keys'
+        # execute "cat /tmp/id_rsa.pub | sudo tee -a /home/#{username}/.ssh/authorized_keys", interaction_handler: pass_cb
 
-        sudo :mv, '/tmp/id_rsa.pub', "/home/#{username}/.ssh/"
-        sudo :mv, '/tmp/id_rsa', "/home/#{username}/.ssh/"
+        sudo :mv, '/tmp/id_rsa.pub', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+        sudo :mv, '/tmp/id_rsa', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+        sudo :mv, '/tmp/authorized_keys', "/home/#{username}/.ssh/", interaction_handler: pass_cb
 
-        sudo :chown, '-R', "#{username}:sudo", "/home/#{username}/.ssh"
-        sudo :chmod, '-R', 'go-rwx', "/home/#{username}/.ssh/id_rsa"
+        sudo :chown, '-R', "#{username}:#{username}", "/home/#{username}/.ssh", interaction_handler: pass_cb
+        sudo :chmod, '-R', 'go-rwx', "/home/#{username}/.ssh/id_rsa", interaction_handler: pass_cb
       end
     end
   end
 
-  desc 'setup k8s-node005 deploy', 'setup for k8s-node005 via user deploy'
-  def setup(host, user='deploy', port=22)
-    on "#{user}@#{host}:#{port}", in: :sequence, wait: 5 do
+  desc 'setup k8s-node003 deploy', 'setup for k8s-node003 via user deploy'
+  def setup(hostname, user='deploy', port=22)
+    on "#{user}@#{hostname}:#{port}", in: :sequence, wait: 5 do
       if test "[ -f /etc/apt/sources.list_bak ]"
         puts "/etc/apt/sources.list has already updated"
       else
         sudo :mv, '/etc/apt/sources.list', '/etc/apt/sources.list_bak'
 
-        mirrors_url = 'https://mirrors.ustc.edu.cn'
+        # mirrors_url = 'https://mirrors.ustc.edu.cn'
+        mirrors_url = 'https://mirrors.tuna.tsinghua.edu.cn'
         lsb_release_sc = capture(:lsb_release, '-sc')
         if test "[ `lsb_release -si` = Ubuntu ]"
           sources_list = StringIO.new <<~SOURCE_LIST
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted
-
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted
-
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc} universe
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} universe
-
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates universe
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates universe
-
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc} multiverse
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} multiverse
-
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates multiverse
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates multiverse
-
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
+            
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
+            
             deb #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
             deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
-
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted
-
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security universe
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security universe
-
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security multiverse
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security multiverse
+            
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
           SOURCE_LIST
         elsif test "[ `lsb_release -si` = Debian ]"
           sources_list = StringIO.new <<~SOURCE_LIST
@@ -144,19 +154,181 @@ class Awesome < Thor
           upload! sources_list, '/tmp/apt-sources.list'
           execute 'cat /tmp/apt-sources.list | sudo tee /etc/apt/sources.list'
 
+          execute 'export DEBIAN_FRONTEND=noninteractive'
           sudo 'apt -y update'
+          sudo 'apt -o Dpkg::Options::="--force-confold" upgrade -q -y'
+          sudo 'apt -o Dpkg::Options::="--force-confold" dist-upgrade -q -y'
           sudo 'apt -y upgrade'
           sudo 'apt -y dist-upgrade'
           sudo 'apt -y autoclean'
           sudo 'apt -y full-upgrade'
-          sudo 'apt -y autoremove'
+          sudo 'apt -y autoremove'      
         end
 
         sudo :apt, 'install', '-y', 'coreutils procps libseccomp2 net-tools sysstat rsync bash-completion socat'
       end
 
+      if test "[ -f /etc/hosts.bak ]"
+        puts "/etc/hosts has already updated"
+      else
+        sudo :mv, '/etc/hosts', '/etc/hosts.bak'
+        host_conf = StringIO.new <<~HOST_CONF
+          127.0.0.1 localhost
+          127.0.1.1 #{hostname}
+          
+          # The following lines are desirable for IPv6 capable hosts
+          ::1     ip6-localhost ip6-loopback
+          fe00::0 ip6-localnet
+          ff00::0 ip6-mcastprefix
+          ff02::1 ip6-allnodes
+          ff02::2 ip6-allrouters
+
+          192.168.1.61  k8s-master01
+          192.168.1.62  k8s-master02
+          192.168.1.63  k8s-master03
+
+          192.168.1.101 k8s-node001
+          192.168.1.102 k8s-node002
+          192.168.1.103 k8s-node003
+          192.168.1.104 k8s-node004
+          192.168.1.105 k8s-node005
+          192.168.1.106 k8s-node006
+          192.168.1.107 k8s-node007
+          192.168.1.108 k8s-node008
+          192.168.1.109 k8s-node009
+          192.168.1.111 k8s-node011
+          192.168.1.112 k8s-node012
+          192.168.1.113 k8s-node013
+          192.168.1.114 k8s-node014
+          192.168.1.115 k8s-node015
+          192.168.1.116 k8s-node016
+          192.168.1.117 k8s-node017
+          192.168.1.118 k8s-node018
+          192.168.1.119 k8s-node019
+
+          192.168.1.6	  synology-ds918.local
+          192.168.1.50  pve-5900hx.local
+          192.168.1.60  pve-5700u.local
+          192.168.1.90  ubuntu-server.local
+        HOST_CONF
+
+        upload! host_conf, '/tmp/hosts'
+        execute 'cat /tmp/hosts | sudo tee /etc/hosts'
+      end
+
       execute :echo, 'export LC_ALL=en_US.UTF-8', '> ~/.bashrc' if test '[ -z $LC_ALL ]'
       execute :echo, 'export LANG=en_US.UTF-8', '> ~/.bashrc' if test '[ -z $LANG ]'
+    end
+  end
+
+  desc 'ntp k8s-node003 deploy', 'ntp k8s-node003 deploy'
+  def ntp(hostname, user='deploy')
+    on "#{user}@#{hostname}", in: :sequence, wait: 5 do
+      unless test('type chronyd')
+        sudo 'apt -y remove ntpd' if test('type ntpd')
+        sudo 'apt -y update'
+        sudo 'apt -y install chrony'
+
+        sudo 'timedatectl set-timezone Asia/Shanghai'
+        sudo 'timedatectl set-ntp true'
+
+        sudo 'cp /etc/chrony/chrony.conf /etc/chrony/chrony.conf.bak' if test "[ -f /etc/chrony/chrony.conf ]"
+        chrony_version = capture("chronyd --version | grep -o -E 'version\s*[0-9.]+' | awk '{print $2}'")
+
+        chrony_conf = <<~CHRONY_CONF
+          server ntp.aliyun.com iburst
+          server cn.ntp.org.cn iburst
+          server ntp.shu.edu.cn iburst
+          server 0.cn.pool.ntp.org iburst
+          server 1.cn.pool.ntp.org iburst
+          server 2.cn.pool.ntp.org iburst
+          server 3.cn.pool.ntp.org iburst
+          
+          keyfile /etc/chrony/chrony.keys
+          driftfile /var/lib/chrony/chrony.drift
+          logdir /var/log/chrony
+          
+          maxupdateskew 100.0
+          rtcsync
+          makestep 1.0 3
+        CHRONY_CONF
+  
+        if chrony_version.start_with?('4.')
+          chrony_conf =<<~MORE_CONF
+            #{chrony_conf}
+            confdir /etc/chrony/conf.d
+            ntsdumpdir /var/lib/chrony
+            sourcedir /run/chrony-dhcp
+            sourcedir /etc/chrony/sources.d
+            
+            leapsectz right/UTC
+          MORE_CONF
+        end
+
+        upload! StringIO.new(chrony_conf), '/tmp/chrony.conf'
+        execute 'cat /tmp/chrony.conf | sudo tee /etc/chrony/chrony.conf'
+
+        sudo :systemctl, 'daemon-reload'
+        sudo :systemctl, 'restart', 'chrony'
+        sudo :chronyc, 'makestep'
+      else
+        puts "ntp has already setup"
+      end   
+    end
+  end
+
+  desc 'kernel k8s-node003 deploy', 'kernel k8s-node003 deploy'
+  def kernel(hostname, user='deploy')
+    on "#{user}@#{hostname}", in: :sequence, wait: 5 do
+      unless test "[ -f /etc/modules-load.d/k8s.conf ]"
+        sudo 'apt -y update'
+        sudo 'apt -y install ipvsadm ipset conntrack'
+
+        k8s_mod_cfg = StringIO.new <<~K8S_MOD
+          overlay
+          ip_vs
+          ip_vs_rr
+          ip_vs_wrr
+          ip_vs_lc
+          ip_vs_wlc
+          ip_vs_sh
+          ip_vs_dh
+          br_netfilter
+          nf_conntrack
+        K8S_MOD
+        upload! k8s_mod_cfg, '/tmp/k8s-mod.conf'
+        execute 'cat /tmp/k8s-mod.conf | sudo tee /etc/modules-load.d/k8s.conf'
+
+        k8s_sysctl_cfg = StringIO.new <<~K8S_SYSCTL
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1
+          net.ipv4.ip_forward = 1
+          net.ipv4.tcp_keepalive_time = 600
+          net.ipv4.tcp_keepalive_intvl = 30
+          net.ipv4.tcp_keepalive_probes = 10
+        K8S_SYSCTL
+        upload! k8s_sysctl_cfg, '/tmp/k8s-sysctl.conf'
+        execute 'cat /tmp/k8s-sysctl.conf | sudo tee /etc/sysctl.d/k8s.conf'
+
+        sudo 'sysctl --system'
+
+        ulimit_cfg = StringIO.new <<~ULIMIT
+          * soft nofile 655360
+          * hard nofile 131072
+          * soft nproc 655350
+          * hard nproc 655350
+          * soft memlock unlimited
+          * hard memlock unlimited
+        ULIMIT
+        upload! ulimit_cfg, '/tmp/limits.conf'
+        execute 'cat /tmp/limits.conf | sudo tee /etc/security/limits.conf'
+        execute 'ulimit -SHn 65535'
+
+        sudo 'sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab'
+        sudo 'swapoff -a'
+      else
+        puts "kernel optimize has already setup"
+      end   
     end
   end
 
@@ -225,73 +397,18 @@ class Awesome < Thor
   end
 
   private
-  def install_ubuntu(name, count=8)
-    vms_dir = "/james/var/vms"
-    Dir.chdir vms_dir do
-      isofile = "ubuntu/ubuntu-16.04.6-server-amd64.iso"
-      if File.exist?(isofile)
-        say "ubuntu/#{isofile} has already downloaded!", :green, true
-      else
-        `wget -O #{isofile} http://mirrors.zju.edu.cn/ubuntu-releases/16.04.6/ubuntu-16.04.6-server-amd64.iso`
-      end
-      if File.exist?("ubuntu/vmlinuz") && File.exist?("ubuntu/initrd.gz")
-        say "ubuntu/vmlinuz and ubuntu/initrd.gz is ready to execute", :yellow, true
-      else
-        Runner.batch do
-          run 'dd if=/dev/zero bs=2k count=1 of=/tmp/ubuntu16.iso'
-          run 'dd if=ubuntu/ubuntu-16.04.6-server-amd64.iso bs=2k skip=1 >> /tmp/ubuntu16.iso'
-          run 'hdiutil attach /tmp/ubuntu16.iso'
-          run 'cp /Volumes/Ubuntu-Server\ 16/install/vmlinuz ubuntu/'
-          run 'cp /Volumes/Ubuntu-Server\ 16/install/initrd.gz ubuntu/'
-          run 'hdiutil detach /Volumes/Ubuntu-Server\ 16/'
+    def generate(template, locals={})
+      context = new_binding(locals)
+      CapturableERB.new(template, nil, "-", "@output_buffer").result(context)
+    end
+    
+    def new_binding(locals)
+      binding.tap do |b|
+        locals.each do |name, value|
+          b.local_variable_set(name, value)
         end
-      end
-
-      if File.exist?("#{name}/#{name}.img")
-        say "#{name}/#{name}.img is ready", :green, true
-      else
-        Dir.mkdir(name) unless Dir.exist?(name)
-        `dd if=/dev/zero of=#{name}/#{name}.img bs=1g count=#{count}`
-        install_script = <<~INSTALL_SCRIPT
-          #!/bin/sh
-          KERNEL="ubuntu/vmlinuz"
-          INITRD="ubuntu/initrd.gz"
-          CMDLINE="earlyprintk=serial console=ttyS0 acpi=off"
-
-          MEM="-m 1G"
-          SMP="-c 2"
-          NET="-s 2:0,virtio-net"
-          IMG_CD="-s 3,ahci-cd,#{isofile}"
-          IMG_HDD="-s 4,virtio-blk,#{name}/#{name}.img"
-          PCI_DEV="-s 0:0,hostbridge -s 31,lpc"
-          LPC_DEV="-l com1,stdio"
-
-          xhyve $MEM $SMP $PCI_DEV $LPC_DEV $NET $IMG_CD $IMG_HDD -f kexec,$KERNEL,$INITRD,"$CMDLINE"
-        INSTALL_SCRIPT
-
-        open "install-#{name}.sh", 'w:UTF-8' do |io|
-          io << install_script
-        end
-        Runner.batch do
-          run "chmod +x install-#{name}.sh"
-          run "sudo ./install-#{name}.sh"
-        end
-      end
-    end 
-  end
-
-  def generate(template, locals={})
-    context = new_binding(locals)
-    CapturableERB.new(template, nil, "-", "@output_buffer").result(context)
-  end
-
-  def new_binding(locals)
-    binding.tap do |b|
-      locals.each do |name, value|
-        b.local_variable_set(name, value)
       end
     end
-  end
 
 end
 
