@@ -72,7 +72,7 @@ class Awesome < Thor
 
     on target_host, in: :sequence, wait: 5 do |host|
       if test "[ -d /home/#{username} ]"
-        puts "#{username} has already created."
+        puts "\e[0;32m USER #{username} has already created. \e[0m\n"
       else
         sudo 'useradd -m -s /bin/bash -u 1001 deploy', interaction_handler: pass_cb
         sudo 'usermod -aG sudo deploy', interaction_handler: pass_cb
@@ -82,7 +82,7 @@ class Awesome < Thor
       end
 
       if test "[ -f /etc/sudoers.d/#{username} ]"
-        puts "#{username} is already NOPASSWD sudo user"
+        puts "\e[0;32m USER #{username} is already NOPASSWD sudo user. \e[0m\n"
       else
         execute "echo '#{username} ALL = (ALL) NOPASSWD: ALL' > /tmp/sudoer_#{username}"
         sudo :mv, "/tmp/sudoer_#{username}", "/etc/sudoers.d/#{username}", interaction_handler: pass_cb
@@ -91,10 +91,10 @@ class Awesome < Thor
       end
 
       if test "[ -d /home/#{username}/.ssh ]"
-        puts "/home/#{username}/.ssh have already exists."
+        puts "\e[0;32m /home/#{username}/.ssh have already exists. \e[0m\n"
       else
         # 本地免密码 SSH 登陆
-        puts "/home/#{username}/.ssh not exists, create it."
+        puts "\e[0;33m /home/#{username}/.ssh not exists, create it. \e[0m\n"
 
         sudo "mkdir /home/#{username}/.ssh", interaction_handler: pass_cb
         upload! "/home/#{SUDO_USER}/.ssh/id_rsa.pub", '/tmp/id_rsa.pub'
@@ -329,6 +329,81 @@ class Awesome < Thor
       else
         puts "kernel optimize has already setup"
       end   
+    end
+  end
+
+  desc 'docker k8s-node003 deploy', 'docker k8s-node003 deploy'
+  def docker(hostname, user='deploy', master='slave')
+    on "#{user}@#{hostname}", in: :sequence, wait: 5 do
+      unless test('type containerd')
+        # install docker
+        execute 'sudo apt remove docker docker-engine docker.io containerd runc' if test('type docker')
+        sudo 'apt -y update'
+        sudo 'apt -y install ca-certificates curl gnupg lsb-release'
+
+        lsb_release_sc = capture(:lsb_release, '-sc')
+        lsb_release_si = capture(:lsb_release, '-si').downcase
+        arch = capture(:dpkg, '--print-architecture')
+        unless test "[ -f /usr/share/keyrings/docker-archive-keyring.gpg ]"
+          # curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+          # curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+          execute "curl -fsSL https://download.docker.com/linux/#{lsb_release_si}/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg"
+        end
+        # echo \
+        # "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+        # $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        execute <<-EOS
+          echo 'deb [arch=#{arch} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/#{lsb_release_si} #{lsb_release_sc} stable' \
+          | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        EOS
+
+        sudo 'apt -y update'
+        sudo 'apt -y install docker-ce docker-ce-cli containerd.io'
+        daemon_json = StringIO.new <<~JSON
+        {
+          "data-root": "/var/lib/docker",
+          "log-driver": "json-file",
+          "log-opts": {
+            "max-size": "200m",
+            "max-file": "5"
+          },
+          "default-ulimits": {
+            "nofile": {
+              "Name": "nofile",
+              "Hard": 655360,
+              "Soft": 655360
+            },
+            "nproc": {
+              "Name": "nproc",
+              "Hard": 655360,
+              "Soft": 655360
+            }
+          },
+          "live-restore": true,
+          "oom-score-adjust": -1000,
+          "max-concurrent-downloads": 10,
+          "max-concurrent-uploads": 10,
+          "storage-driver": "overlay2",
+          "storage-opts": [
+            "overlay2.override_kernel_check=true"
+          ],
+          "exec-opts": [
+            "native.cgroupdriver=systemd"
+          ],
+          "registry-mirrors": [
+            "https://yssx4sxy.mirror.aliyuncs.com/"
+          ],
+          "insecure-registries": [
+            "harbor.default.svc.cluster.local"
+          ]
+        }
+        JSON
+        upload! daemon_json, '/tmp/daemon.json'
+        sudo 'mkdir /etc/docker' unless test "[ -d /etc/docker ]"
+        execute 'cat /tmp/daemon.json | sudo tee /etc/docker/daemon.json > /dev/null'
+      else
+        puts "\e[0;32m docker have already installed. \e[0m\n"    
+      end
     end
   end
 

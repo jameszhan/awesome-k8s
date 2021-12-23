@@ -47,3 +47,12 @@ $ ./awesome kernel k8s-node004 deploy
 $ ./awesome kernel k8s-node008 deploy
 $ ./awesome kernel k8s-node009 deploy
 ```
+
+安装`docker`
+
+```bash
+$ ./awesome docker k8s-node003 deploy
+$ ./awesome docker k8s-node004 deploy
+$ ./awesome docker k8s-node008 deploy
+$ ./awesome docker k8s-node009 deploy
+```
