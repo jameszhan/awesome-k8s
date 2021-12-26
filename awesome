@@ -401,6 +401,8 @@ class Awesome < Thor
         upload! daemon_json, '/tmp/daemon.json'
         sudo 'mkdir /etc/docker' unless test "[ -d /etc/docker ]"
         execute 'cat /tmp/daemon.json | sudo tee /etc/docker/daemon.json > /dev/null'
+
+        sudo "usermod -aG docker #{user}"
       else
         puts "\e[0;32m docker have already installed. \e[0m\n"    
       end
