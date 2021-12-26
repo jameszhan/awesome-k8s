@@ -216,8 +216,8 @@ class Awesome < Thor
         execute 'cat /tmp/hosts | sudo tee /etc/hosts'
       end
 
-      execute :echo, 'export LC_ALL=en_US.UTF-8', '> ~/.bashrc' if test '[ -z $LC_ALL ]'
-      execute :echo, 'export LANG=en_US.UTF-8', '> ~/.bashrc' if test '[ -z $LANG ]'
+      execute :echo, 'export LC_ALL=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LC_ALL ]'
+      execute :echo, 'export LANG=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LANG ]'
     end
   end
 
@@ -409,66 +409,203 @@ class Awesome < Thor
     end
   end
 
-  desc 'k8s 192.168.64.16 james', 'k8s 192.168.64.16 james'
-  def k8s(ip, user, master='slave')
-    on "#{user}@#{ip}", in: :sequence, wait: 5 do
-      unless test('type docker')
-        # install docker
-        sudo 'apt-get remove docker docker-engine docker.io containerd runc'
-        sudo 'apt-get -y update'
-        sudo 'apt-get -y install apt-transport-https ca-certificates curl gnupg-agent software-properties-common'
-        execute 'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -'
-        sudo 'apt-key fingerprint 0EBFCD88'
-        sudo 'add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"'
-        sudo 'apt-get -y update'
-        sudo 'apt-get install -y docker-ce docker-ce-cli containerd.io'
-        sudo 'apt-cache madison docker-ce'
-        sudo 'apt-get install -y docker-ce=5:18.09.7~3-0~ubuntu-$(lsb_release -cs) docker-ce-cli=5:18.09.7~3-0~ubuntu-$(lsb_release -cs) containerd.io'
-        docker_daemon = StringIO.new <<~SOURCE_CONTENT
-        {
-          "exec-opts": ["native.cgroupdriver=systemd"],
-          "log-driver": "json-file",
-          "log-opts": {
-            "max-size": "100m"
-          },
-          "storage-driver": "overlay2"
-        }
-        SOURCE_CONTENT
-        upload! docker_daemon, '/tmp/docker_daemon_conf'
-        sudo 'mv /tmp/docker_daemon_conf /etc/docker/daemon.json'
-        sudo 'mkdir -p /etc/systemd/system/docker.service.d'
+  desc 'k8s k8s-node003 deploy', 'k8s k8s-node003 deploy'
+  option :role, :default => 'master'
+  option :dnsip, :default => '192.168.1.130'
+  option :cluster_cidr, :default => "10.244.0.0/16"
+  option :kube_proxy_mode, :default => 'iptables'
+  def k8s(hostname, user=deploy, role='worker')
+    role = options[:role]
+    core_dns_ip = options[:dnsip]
+    cluster_cidr = options[:cluster_cidr]
+    kube_proxy_mode = options[:kube_proxy_mode]
+    on "#{user}@#{hostname}", in: :sequence, wait: 5 do
+      if role == 'master'
+        puts "\e[0;32m master node setup script is upcoming. \e[0m\n"
+      else
+        unless test('type kubelet')
+          unless test "[ -d /tmp/kubernetes/server/bin ]"
+            execute 'wget --quiet https://dl.zizhizhan.com:8443/binaries/x86_64/kubernetes/kubernetes-server-v1.23.1-linux-amd64.tar.gz --output-document=/tmp/kubernetes.tar.gz' 
+            execute 'cd /tmp && tar -zxf kubernetes.tar.gz'
+          end
 
-        # Restart docker.
-        sudo 'systemctl daemon-reload'
-        sudo 'systemctl restart docker'
-      end
+          sudo 'cp /tmp/kubernetes/server/bin/kube-proxy /usr/local/bin'
+          sudo 'cp /tmp/kubernetes/server/bin/kubelet /usr/local/bin'
+        end
 
-      unless test('type kubeadm')
-        sudo 'snap remove microk8s' if test('type snap')
-        sudo 'apt-get -y update'
-        sudo 'apt-get install -y apt-transport-https curl'
-        # 74.125.206.210	packages.cloud.google.com
-        execute 'curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -'
-        k8s_apt_source = StringIO.new <<~EOF
-          deb http://mirrors.ustc.edu.cn/kubernetes/apt kubernetes-xenial main
-        EOF
-        upload! k8s_apt_source, '/tmp/k8s_apt_source'
-        sudo 'mv /tmp/k8s_apt_source /etc/apt/sources.list.d/kubernetes.list'
-        sudo 'apt-get -y update'
-        sudo 'apt-get install -y kubelet kubeadm kubectl'
-        sudo 'apt-mark hold kubelet kubeadm kubectl'
-        sudo 'kubeadm config images pull'
-        sudo 'kubeadm reset --force'
-        sudo 'swapoff -a'
-        # if master == 'master'
-        #   sudo "kubeadm init --apiserver-advertise-address #{ip} --pod-network-cidr 10.244.0.0/16 --kubernetes-version v1.15.0 --ignore-preflight-errors=all"
-        #   execute 'mkdir -p $HOME/.kube'
-        #   sudo 'cp -i /etc/kubernetes/admin.conf $HOME/.kube/config'
-        #   sudo 'chown $(id -u):$(id -g) $HOME/.kube/config'
-        #   sudo 'kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml'
-        # else
-        #   sudo 'kubeadm join 192.168.64.8:6443 --token zu4n0c.qipqccyqcf5p4f7s --discovery-token-ca-cert-hash sha256:e273d2cd784b8f55e6b720d1438d5ffcefdc4a8cc0fdffc0102d1402fb0b1fe4'
-        # end
+        unless test "[ -d /etc/kubernetes/ssl ]"
+          sudo 'mkdir -p /etc/kubernetes/ssl'
+          sudo 'mkdir -p /etc/kubernetes/manifests'
+          sudo 'mkdir -p /var/lib/kubelet'
+          sudo 'mkdir -p /var/lib/kube-proxy'
+
+          execute 'scp -o StrictHostKeyChecking=no k8s-master01:/etc/kubernetes/ssl/ca.pem /tmp'
+          execute 'scp -o StrictHostKeyChecking=no k8s-master01:/etc/kubernetes/kubelet-bootstrap.kubeconfig /tmp'
+          execute 'scp -o StrictHostKeyChecking=no k8s-master01:/etc/kubernetes/kube-proxy.kubeconfig /tmp'
+          sudo 'mv /tmp/ca.pem /etc/kubernetes/ssl'
+          sudo 'mv /tmp/kubelet-bootstrap.kubeconfig /etc/kubernetes'
+          sudo 'mv /tmp/kube-proxy.kubeconfig /etc/kubernetes'
+          sudo 'chown -R root:root /etc/kubernetes'
+        end
+
+        lsb_release_si = capture(:lsb_release, '-si')
+        if lsb_release_si == 'Ubuntu'
+          resolv_conf = "/run/systemd/resolve/resolv.conf"
+        else
+          resolv_conf = "/etc/resolv.conf"
+        end
+
+        unless test "[ -f /etc/kubernetes/kubelet.yaml ]"
+          kubelet_yaml = StringIO.new <<~YAML
+            apiVersion: kubelet.config.k8s.io/v1beta1
+            kind: KubeletConfiguration
+            
+            staticPodPath: /etc/kubernetes/manifests
+            syncFrequency: 1m
+            fileCheckFrequency: 20s
+            httpCheckFrequency: 20s
+            
+            address: 0.0.0.0
+            port: 10250
+            
+            # rotateCertificates: false
+            rotateCertificates: true
+            
+            authentication:
+              anonymous:
+                enabled: false
+              webhook:
+                cacheTTL: 2m
+                enabled: true
+              x509:
+                clientCAFile: /etc/kubernetes/ssl/ca.pem
+            
+            authorization:
+              mode: Webhook
+              webhook:
+                cacheAuthorizedTTL: 0s
+                cacheUnauthorizedTTL: 0s
+            
+            healthzPort: 10248
+            healthzBindAddress: 127.0.0.1
+            
+            clusterDomain: cluster.local
+            clusterDNS:
+              - #{core_dns_ip}
+            
+            streamingConnectionIdleTimeout: 4h
+            nodeStatusUpdateFrequency: 10s
+            nodeStatusReportFrequency: 5m
+            imageMinimumGCAge: 2m
+            volumeStatsAggPeriod: 1m
+            
+            # cgroupDriver: cgroupfs
+            cgroupDriver: systemd
+            
+            cpuManagerReconcilePeriod: 10s
+            runtimeRequestTimeout: 2m
+            
+            resolvConf: #{resolv_conf}
+            
+            evictionPressureTransitionPeriod: 5m
+            
+            logging: 
+              format: text
+            
+            shutdownGracePeriod: 0s
+            shutdownGracePeriodCriticalPods: 0s
+          YAML
+
+          upload! kubelet_yaml, '/tmp/kubelet.yaml'
+          execute 'cat /tmp/kubelet.yaml | sudo tee /etc/kubernetes/kubelet.yaml > /dev/null'
+        end
+
+        unless test "[ -f /etc/kubernetes/kube-proxy.yaml ]"
+          kube_proxy_yaml = StringIO.new <<~YAML
+            apiVersion: kubeproxy.config.k8s.io/v1alpha1
+            kind: KubeProxyConfiguration
+
+            bindAddress: 0.0.0.0
+            clientConnection:
+              kubeconfig: /etc/kubernetes/kube-proxy.kubeconfig
+            clusterCIDR: #{cluster_cidr}
+
+            healthzBindAddress: 0.0.0.0:10256
+            metricsBindAddress: 127.0.0.1:10249
+            hostnameOverride: "#{hostname}"
+            mode: #{kube_proxy_mode}
+          YAML
+
+          upload! kube_proxy_yaml, '/tmp/kube-proxy.yaml'
+          execute 'cat /tmp/kube-proxy.yaml | sudo tee /etc/kubernetes/kube-proxy.yaml > /dev/null'
+        end
+
+        unless test "[ -f /lib/systemd/system/kubelet.service ]"
+          kubelet_svc = StringIO.new <<~INI
+            [Unit]
+            Description=Kubernetes Kubelet
+            Documentation=https://github.com/kubernetes/kubernetes
+            After=docker.service
+            Requires=docker.service
+            
+            [Service]
+            WorkingDirectory=/var/lib/kubelet
+            ExecStart=/usr/local/bin/kubelet \\
+              --hostname-override=#{hostname} \\
+              --bootstrap-kubeconfig=/etc/kubernetes/kubelet-bootstrap.kubeconfig \\
+              --kubeconfig=/etc/kubernetes/kubelet.kubeconfig \\
+              --config=/etc/kubernetes/kubelet.yaml \\
+              --network-plugin=cni \\
+              --cert-dir=/etc/kubernetes/ssl \\
+              --pod-infra-container-image=registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.5 \\
+              --alsologtostderr=true \\
+              --logtostderr=false \\
+              --log-dir=/var/log/kubernetes \\
+              --v=2
+            
+            Restart=on-failure
+            RestartSec=5
+            
+            [Install]
+            WantedBy=multi-user.target
+          INI
+
+          upload! kubelet_svc, '/tmp/kubelet.service'
+          execute 'cat /tmp/kubelet.service | sudo tee /lib/systemd/system/kubelet.service > /dev/null'
+        end
+
+        unless test "[ -f /lib/systemd/system/kube-proxy.service ]"
+          kubeproxy_svc = StringIO.new <<~INI
+            [Unit]
+            Description=Kubernetes Kube-Proxy Server
+            Documentation=https://github.com/kubernetes/kubernetes
+            After=network.target
+            
+            [Service]
+            WorkingDirectory=/var/lib/kube-proxy
+            ExecStart=/usr/local/bin/kube-proxy \\
+              --config=/etc/kubernetes/kube-proxy.yaml \\
+              --alsologtostderr=true \\
+              --logtostderr=false \\
+              --log-dir=/var/log/kubernetes \\
+              --v=2
+            Restart=on-failure
+            RestartSec=5
+            LimitNOFILE=65536
+            
+            [Install]
+            WantedBy=multi-user.target
+          INI
+
+          upload! kubeproxy_svc, '/tmp/kube-proxy.service'
+          execute 'cat /tmp/kube-proxy.service | sudo tee /lib/systemd/system/kube-proxy.service > /dev/null'
+
+          sudo :systemctl, 'daemon-reload'
+          sudo :systemctl, 'enable kubelet'
+          sudo :systemctl, 'enable kube-proxy'
+          sudo :systemctl, 'restart kubelet'
+          sudo :systemctl, 'restart kube-proxy'
+        end
       end
     end
   end
