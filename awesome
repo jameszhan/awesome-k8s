@@ -610,6 +610,14 @@ class Awesome < Thor
     end
   end
 
+  desc 'addons k8s-node003 deploy', 'install addons for k8s-node003'
+  def addons(hostname, user='deploy')
+    on "#{user}@#{hostname}", in: :sequence, wait: 5 do
+      sudo :apt, '-y update'
+      sudo :apt, '-y install nfs-common'
+    end
+  end
+
   private
     def generate(template, locals={})
       context = new_binding(locals)

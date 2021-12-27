@@ -31,8 +31,9 @@ binaries
         ├── kubernetes-server-v1.19.13-linux-amd64.tar.gz
         ├── kubernetes-server-v1.20.10-linux-amd64.tar.gz
         ├── kubernetes-server-v1.21.2-linux-amd64.tar.gz
-        ├── kubernetes-server-v1.21.4-linux-amd64.tar.gz
-        └── kubernetes-server-v1.22.1-linux-amd64.tar.gz
+        ├── kubernetes-server-v1.22.1-linux-amd64.tar.gz
+        ├── kubernetes-server-v1.22.5-linux-amd64.tar.gz
+        └── kubernetes-server-v1.23.1-linux-amd64.tar.gz
 ```
 
 - [cfssl](https://github.com/cloudflare/cfssl/releases)

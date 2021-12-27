@@ -5,6 +5,12 @@
 ```bash
 $ kubectl create configmap nginx-autoindex-conf -n geek-apps --from-file=default.conf=templates/nginx-conf/autoindex.conf
 $ kubectl get cm nginx-autoindex-conf -n geek-apps -o yaml
+
+# 更新配置
+$ kubectl delete cm nginx-autoindex-conf -n geek-apps
+$ kubectl create configmap nginx-autoindex-conf -n geek-apps --from-file=default.conf=templates/nginx-conf/autoindex.conf
+$ kubectl scale --replicas=0 deployment/nginx-default-backend -n geek-apps
+$ kubectl scale --replicas=3 deployment/nginx-default-backend -n geek-apps
 ```
 
 ### 部署`defaultBackend`服务

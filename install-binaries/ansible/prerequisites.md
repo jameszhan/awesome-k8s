@@ -6,3 +6,10 @@
 $ ansible-playbook -i hosts -c paramiko --ask-pass --ask-become-pass user-deploy.yml -v
 $ ansible -i hosts all -m ping -u deploy
 ```
+
+#### 更新系统
+
+```bash
+$ ansible -i hosts k8s_nodes -m script -a "/opt/bin/update-system.sh" -u deploy -v
+$ ansible -i hosts k8s_nodes -m reboot -u deploy --become -v
+```

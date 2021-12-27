@@ -19,6 +19,7 @@ $ ./awesome user k8s-node003 deploy
 $ ./awesome user k8s-node004 deploy
 $ ./awesome user k8s-node008 deploy
 $ ./awesome user k8s-node009 deploy
+$ ./awesome user k8s-node013 deploy
 ```
 
 基础配置
@@ -28,6 +29,7 @@ $ ./awesome setup k8s-node003 deploy
 $ ./awesome setup k8s-node004 deploy
 $ ./awesome setup k8s-node008 deploy
 $ ./awesome setup k8s-node009 deploy
+$ ./awesome setup k8s-node013 deploy
 ```
 
 `ntp`配置
@@ -37,6 +39,7 @@ $ ./awesome ntp k8s-node003 deploy
 $ ./awesome ntp k8s-node004 deploy
 $ ./awesome ntp k8s-node008 deploy
 $ ./awesome ntp k8s-node009 deploy
+$ ./awesome ntp k8s-node013 deploy
 ```
 
 内核优化
@@ -46,6 +49,7 @@ $ ./awesome kernel k8s-node003 deploy
 $ ./awesome kernel k8s-node004 deploy
 $ ./awesome kernel k8s-node008 deploy
 $ ./awesome kernel k8s-node009 deploy
+$ ./awesome kernel k8s-node013 deploy
 ```
 
 安装`docker`
@@ -55,6 +59,7 @@ $ ./awesome docker k8s-node003 deploy
 $ ./awesome docker k8s-node004 deploy
 $ ./awesome docker k8s-node008 deploy
 $ ./awesome docker k8s-node009 deploy
+$ ./awesome docker k8s-node013 deploy
 $ ./awesome docker ubuntu-desktop.local james
 $ ./awesome docker code-server.local james
 ```
@@ -66,7 +71,18 @@ $ ./awesome k8s k8s-node003 deploy --role=worker --kube_proxy_mode=ipvs --cluste
 $ ./awesome k8s k8s-node004 deploy --role=worker --kube_proxy_mode=ipvs --cluster_cidr=10.244.0.0/16 --dnsip=192.168.1.130
 $ ./awesome k8s k8s-node008 deploy --role=worker --kube_proxy_mode=ipvs --cluster_cidr=10.244.0.0/16 --dnsip=192.168.1.130
 $ ./awesome k8s k8s-node009 deploy --role=worker --kube_proxy_mode=ipvs --cluster_cidr=10.244.0.0/16 --dnsip=192.168.1.130
+$ ./awesome k8s k8s-node013 deploy --role=worker --kube_proxy_mode=ipvs --cluster_cidr=10.244.0.0/16 --dnsip=192.168.1.130
 
 # 接受新加入节点申请
 $ kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate approve
+```
+
+安装附件软件
+
+```bash
+$ ./awesome addons k8s-node003 deploy
+$ ./awesome addons k8s-node004 deploy
+$ ./awesome addons k8s-node008 deploy
+$ ./awesome addons k8s-node009 deploy
+$ ./awesome addons k8s-node013 deploy
 ```
