@@ -61,7 +61,7 @@ $ ./awesome docker k8s-node008 deploy
 $ ./awesome docker k8s-node009 deploy
 $ ./awesome docker k8s-node013 deploy
 $ ./awesome docker ubuntu-desktop.local james
-$ ./awesome docker code-server.local james
+$ ./awesome docker code-server.local james --daemon_json=false
 ```
 
 安装`kubernetes`
@@ -87,10 +87,18 @@ $ ./awesome addons k8s-node009 deploy
 $ ./awesome addons k8s-node013 deploy
 ```
 
+## 安装`microk8s`
+
 ```bash
 $ ./awesome microk8s ubuntu-desktop.local james --channel=1.23/stable
 ```
 
+## 安装`kubeadm`
+
+```bash
+$ ./awesome docker ubuntu-kubeadm.local james --daemon_json=false
+$ ./awesome kubeadm ubuntu-kubeadm.local james --role=master
+```
 
 ## 清理工作
 

@@ -335,7 +335,9 @@ class Awesome < Thor
   # https://docs.docker.com/engine/install/ubuntu/
   # https://docs.docker.com/engine/install/debian/
   desc 'docker k8s-node003 deploy', 'docker k8s-node003 deploy'
+  option :daemon_json, :type => :boolean, :default => true
   def docker(hostname, user='deploy')
+    enable_daemon_json = options[:daemon_json]
     on "#{user}@#{hostname}", in: :sequence, wait: 5 do
       unless test('type containerd')
         # install docker
@@ -361,48 +363,50 @@ class Awesome < Thor
 
         sudo 'apt -y update'
         sudo 'apt -y install docker-ce docker-ce-cli containerd.io'
-        daemon_json = StringIO.new <<~JSON
-        {
-          "data-root": "/var/lib/docker",
-          "log-driver": "json-file",
-          "log-opts": {
-            "max-size": "200m",
-            "max-file": "5"
-          },
-          "default-ulimits": {
-            "nofile": {
-              "Name": "nofile",
-              "Hard": 655360,
-              "Soft": 655360
+        if enable_daemon_json
+          daemon_json = StringIO.new <<~JSON
+          {
+            "data-root": "/var/lib/docker",
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "200m",
+              "max-file": "5"
             },
-            "nproc": {
-              "Name": "nproc",
-              "Hard": 655360,
-              "Soft": 655360
-            }
-          },
-          "live-restore": true,
-          "oom-score-adjust": -1000,
-          "max-concurrent-downloads": 10,
-          "max-concurrent-uploads": 10,
-          "storage-driver": "overlay2",
-          "storage-opts": [
-            "overlay2.override_kernel_check=true"
-          ],
-          "exec-opts": [
-            "native.cgroupdriver=systemd"
-          ],
-          "registry-mirrors": [
-            "https://yssx4sxy.mirror.aliyuncs.com/"
-          ],
-          "insecure-registries": [
-            "harbor.default.svc.cluster.local"
-          ]
-        }
-        JSON
-        upload! daemon_json, '/tmp/daemon.json'
-        sudo 'mkdir /etc/docker' unless test "[ -d /etc/docker ]"
-        execute 'cat /tmp/daemon.json | sudo tee /etc/docker/daemon.json > /dev/null'
+            "default-ulimits": {
+              "nofile": {
+                "Name": "nofile",
+                "Hard": 655360,
+                "Soft": 655360
+              },
+              "nproc": {
+                "Name": "nproc",
+                "Hard": 655360,
+                "Soft": 655360
+              }
+            },
+            "live-restore": true,
+            "oom-score-adjust": -1000,
+            "max-concurrent-downloads": 10,
+            "max-concurrent-uploads": 10,
+            "storage-driver": "overlay2",
+            "storage-opts": [
+              "overlay2.override_kernel_check=true"
+            ],
+            "exec-opts": [
+              "native.cgroupdriver=systemd"
+            ],
+            "registry-mirrors": [
+              "https://yssx4sxy.mirror.aliyuncs.com/"
+            ],
+            "insecure-registries": [
+              "harbor.default.svc.cluster.local"
+            ]
+          }
+          JSON
+          upload! daemon_json, '/tmp/daemon.json'
+          sudo 'mkdir /etc/docker' unless test "[ -d /etc/docker ]"
+          execute 'cat /tmp/daemon.json | sudo tee /etc/docker/daemon.json > /dev/null'
+        end
 
         sudo "usermod -aG docker #{user}"
       else
@@ -559,7 +563,7 @@ class Awesome < Thor
               --config=/etc/kubernetes/kubelet.yaml \\
               --network-plugin=cni \\
               --cert-dir=/etc/kubernetes/ssl \\
-              --pod-infra-container-image=registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.5 \\
+              --pod-infra-container-image=registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.6 \\
               --alsologtostderr=true \\
               --logtostderr=false \\
               --log-dir=/var/log/kubernetes \\
@@ -638,6 +642,125 @@ class Awesome < Thor
         end
 
         
+      end
+    end
+  end
+
+  # https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/
+  desc 'kubeadm ubuntu-kubeadm.local deploy', 'install kubeadm for ubuntu-kubeadm'
+  option :role, :default => 'worker'
+  def kubeadm(hostname, user='deploy')
+    role = options[:role]
+    on "#{user}@#{hostname}", in: :sequence, wait: 5 do
+
+      unless test "[ -f /etc/modules-load.d/k8s.conf ]"
+        # cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+        # br_netfilter
+        # EOF
+        k8s_mod_conf = StringIO.new <<~CONF
+          br_netfilter
+        CONF
+        upload! k8s_mod_conf, '/tmp/k8s_mod.conf'
+        execute 'cat /tmp/k8s_mod.conf | sudo tee /etc/modules-load.d/k8s.conf'
+      end
+
+      unless test "[ -f /etc/sysctl.d/k8s.conf ]"
+        # cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+        # net.bridge.bridge-nf-call-ip6tables = 1
+        # net.bridge.bridge-nf-call-iptables = 1
+        # EOF
+        k8s_sysctl_conf = StringIO.new <<~CONF
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1
+        CONF
+        upload! k8s_sysctl_conf, '/tmp/k8s_sysctl.conf'
+        execute 'cat /tmp/k8s_sysctl.conf | sudo tee /etc/sysctl.d/k8s.conf'
+
+        sudo :sysctl, '--system'
+      end
+
+      unless test('type kubeadm')
+        sudo :apt, '-y update'
+        sudo :apt, 'install -y apt-transport-https ca-certificates curl'
+        
+        unless test "[ -f /usr/share/keyrings/kubernetes-archive-keyring.gpg ]"
+          # sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+          sudo :curl, '-fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://mirrors.aliyun.com/kubernetes/apt/doc/apt-key.gpg'
+        end
+
+        unless test "[ -f /etc/apt/sources.list.d/kubernetes.list ]"
+          # echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+          execute <<-SCRIPT
+            echo 'deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://mirrors.aliyun.com/kubernetes/apt/ kubernetes-xenial main' \
+            | sudo tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
+          SCRIPT
+        end
+
+        sudo :apt, '-y update'
+        sudo :apt, 'install -y kubelet kubeadm kubectl'
+        sudo 'apt-mark hold kubelet kubeadm kubectl'
+      end
+
+      fstab = capture('cat /etc/fstab')
+      if fstab.include?('swap.img')
+        sudo 'sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab'
+        sudo 'swapoff -a'
+      end
+
+      unless test "[ -f /etc/docker/daemon.json ]"
+        # Check /var/lib/kubelet/config.yaml cgroupDriver
+        daemon_json = StringIO.new <<~JSON
+        {
+          "exec-opts": ["native.cgroupdriver=systemd"]
+        }
+        JSON
+        upload! daemon_json, '/tmp/daemon.json'
+        sudo 'mkdir /etc/docker' unless test "[ -d /etc/docker ]"
+        execute 'cat /tmp/daemon.json | sudo tee /etc/docker/daemon.json > /dev/null'
+        sudo :systemctl, 'restart docker'
+      end
+
+      docker_images = capture('docker images')
+      unless docker_images.include?('k8s.gcr.io/pause')
+        # kubeadm config images list
+        images = %w{
+          k8s.gcr.io/kube-apiserver:v1.23.1
+          k8s.gcr.io/kube-controller-manager:v1.23.1
+          k8s.gcr.io/kube-scheduler:v1.23.1
+          k8s.gcr.io/kube-proxy:v1.23.1
+          k8s.gcr.io/pause:3.6
+          k8s.gcr.io/etcd:3.5.1-0
+          k8s.gcr.io/coredns/coredns:v1.8.6
+        }
+        images.each do |image|
+          if image.include?('coredns')
+            mirror_image = image.sub('k8s.gcr.io/coredns', 'registry.cn-hangzhou.aliyuncs.com/google_containers')
+          else
+            mirror_image = image.sub('k8s.gcr.io', 'registry.cn-hangzhou.aliyuncs.com/google_containers')
+          end
+          execute :docker, "pull #{mirror_image}"
+          execute :docker, "tag #{mirror_image} #{image}"
+        end
+      end
+
+      if role == 'master'
+        unless test "[ -f $HOME/.kube/config ]"
+          sudo :kubeadm, 'reset --force'
+          sudo :kubeadm, 'init --pod-network-cidr 10.244.0.0/16'
+
+          execute :mkdir, '-p $HOME/.kube'
+          sudo :cp, '/etc/kubernetes/admin.conf $HOME/.kube/config'
+          sudo :chown, '$(id -u):$(id -g) $HOME/.kube/config'
+
+          # Installing a Pod network add-on
+          execute :kubectl, 'apply -f https://docs.projectcalico.org/manifests/calico.yaml'
+          execute :kubectl, 'set env daemonset/calico-node -n kube-system CALICO_IPV4POOL_CIDR="10.244.0.0/16"'
+          execute :kubectl, 'set env daemonset/calico-node -n kube-system IP_AUTODETECTION_METHOD=interface="(eth0|enp1s0|ens33|ens18)"'
+        end
+      elsif role == 'worker'
+
+      else
+        puts "Unknown Role #{role}."
       end
     end
   end
