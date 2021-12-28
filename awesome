@@ -332,8 +332,10 @@ class Awesome < Thor
     end
   end
 
+  # https://docs.docker.com/engine/install/ubuntu/
+  # https://docs.docker.com/engine/install/debian/
   desc 'docker k8s-node003 deploy', 'docker k8s-node003 deploy'
-  def docker(hostname, user='deploy', master='slave')
+  def docker(hostname, user='deploy')
     on "#{user}@#{hostname}", in: :sequence, wait: 5 do
       unless test('type containerd')
         # install docker
@@ -615,6 +617,65 @@ class Awesome < Thor
     on "#{user}@#{hostname}", in: :sequence, wait: 5 do
       sudo :apt, '-y update'
       sudo :apt, '-y install nfs-common'
+    end
+  end
+
+  desc 'upgrade k8s-node003 deploy', 'install addons for k8s-node003'
+  option :role, :default => 'master'
+  option :version, :default => '1.23.1'
+  def upgrade(hostname, user='deploy')
+    role = options[:role]
+    version = options[:version]
+
+    if role == 'master'
+      puts "\e[0;32m master node setup script is upcoming. \e[0m\n"
+    elsif role == 'worker'
+      on "#{user}@#{hostname}", in: :sequence, wait: 5 do
+        unless test "[ -f /tmp/kubernetes-v#{version}.tar.gz ]"
+          execute "wget --quiet https://dl.zizhizhan.com:8443/binaries/x86_64/kubernetes/kubernetes-server-v#{version}-linux-amd64.tar.gz --output-document=/tmp/kubernetes-v#{version}.tar.gz"
+          execute 'rm -fr /tmp/kubernetes'
+          execute "cd /tmp && tar -zxf kubernetes-v#{version}.tar.gz"
+        end
+
+        
+      end
+    end
+  end
+
+  # https://microk8s.io/
+  desc 'microk8s ubuntu-desktop deploy', 'install microk8s for ubuntu-desktop'
+  option :channel, :default => 'latest/stable'
+  def microk8s(hostname, user='deploy')
+    channel = options[:channel]
+    on "#{user}@#{hostname}", in: :sequence, wait: 5 do
+      sudo :snap, 'refresh'
+      # sudo snap info microk8s
+      sudo :snap, "install microk8s --classic --channel=#{channel}"
+
+      images = capture('microk8s ctr images list')
+      unless images.include?('k8s.gcr.io/pause:3.1')
+        execute :microk8s, 'ctr images pull registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.1'
+        execute :microk8s, 'ctr images tag registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.1 k8s.gcr.io/pause:3.1'
+      end
+
+      unless images.include?('k8s.gcr.io/metrics-server/metrics-server:v0.5.2')
+        execute :microk8s, 'ctr images pull registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server:v0.5.2'
+        execute :microk8s, 'ctr images tag registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server:v0.5.2 k8s.gcr.io/metrics-server/metrics-server:v0.5.2'
+      end
+
+      bashrc = capture('cat ~/.bashrc')
+      unless bashrc.include?('alias kubectl')
+        execute <<~BASH
+          echo "alias kubectl='microk8s.kubectl'" | tee -a ~/.bashrc
+        BASH
+      end
+
+      sudo :usermod, "-a -G microk8s #{user}"
+      sudo :chown, "-f -R #{user} ~/.kube" if test "[ -d /home/#{user}/.kube ]"
+
+      # reboot
+      # microk8s enable dashboard dns registry istio
+      # microk8s status
     end
   end
 

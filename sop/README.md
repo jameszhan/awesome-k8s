@@ -86,3 +86,18 @@ $ ./awesome addons k8s-node008 deploy
 $ ./awesome addons k8s-node009 deploy
 $ ./awesome addons k8s-node013 deploy
 ```
+
+```bash
+$ ./awesome microk8s ubuntu-desktop.local james --channel=1.23/stable
+```
+
+
+## 清理工作
+
+### 卸载`Docker`
+
+```bash
+$ sudo apt purge docker-ce docker-ce-cli containerd.io
+$ sudo rm -rf /var/lib/docker
+$ sudo rm -rf /var/lib/containerd
+```
