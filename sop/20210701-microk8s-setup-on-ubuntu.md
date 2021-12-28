@@ -2,25 +2,37 @@
 
 ## TL;DR
 
+### 基于`Ansible`
+
 ```bash
-$ cd ansible
+$ cd debian-based/ansible
 
 # 新增deploy用户
 $ ansible-playbook -i k8s-local.cfg -c paramiko --ask-pass --ask-become-pass create-user.yml -v
+
 # 快速部署本地集群
-$ ansible-playbook -i hosts microk8s_init.yml -u deploy -v
+$ ansible-playbook -i k8s-local.cfg microk8s_init.yml -u deploy -v
+```
+
+### 基于`SSHKit`
+
+```bash
+# 新增deploy用户
+$ ./awesome user ubuntu-desktop.local deploy
+# 快速部署本地集群
+$ ./awesome microk8s ubuntu-desktop.local james --channel=1.23/stable
 ```
 
 ## 环境说明
 
-- 服务端操作系统: Ubuntu Server 20.04
-- 服务端k8s: MicroK8s v1.22.2
+- 服务端操作系统: Ubuntu 20.04.3 LTS
+- 服务端`k8s`: MicroK8s v1.23.1
 
 ## 安装k8s
 
 ### 安装前准备
 
-- [x] 确保snap已安装，如果未安装，可以使用如下命令安装:
+- [x] 确保`snap`已安装，如果未安装，可以使用如下命令安装:
   
 ```bash
 $ sudo apt -y install snapd
@@ -29,17 +41,18 @@ $ sudo snap refresh
 
 ### 安装MicroK8S
 
-<del>由于BFW的限制，某些镜像不能顺利下载，会导致安装失败，建议先从1.18版本安装，再逐步升级到1.22。</del>
-
-#### 安装 microK8S v1.22
+#### 安装 microK8S v1.23
 
 ```bash
-$ sudo snap remove microk8s
+# 查看可安装的版本
 $ sudo snap info microk8s
-$ sudo snap install microk8s --classic --channel=1.22/stable
+
+$ sudo snap remove microk8s
+$ sudo snap install microk8s --classic --channel=1.23/stable
 
 # 检查状态
 $ microk8s.status
+
 # 定位失败原因
 $ microk8s.inspect
 
@@ -47,20 +60,15 @@ $ microk8s.inspect
 $ microk8s.kubectl get nodes -o wide
 ```
 
-在不翻墙情况下，正常pod都是不能正常启动的，需要我们手动导入镜像。
+在不翻墙情况下，正常`pod`都是不能正常启动的，需要我们手动导入镜像。
 
 ```bash
 $ microk8s.ctr images pull registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.1
 $ microk8s.ctr images tag registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.1 k8s.gcr.io/pause:3.1
+$ microk8s ctr images pull registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server:v0.5.2
+$ microk8s ctr images tag registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server:v0.5.2 k8s.gcr.io/metrics-server/metrics-server:v0.5.2
+
 $ microk8s.ctr images list
-```
-
-##### 升级到1.22
-
-```bash
-$ sudo snap refresh microk8s --classic --channel=1.22/stable
-$ microk8s.kubectl version
-$ microk8s.kubectl get all -A -o wide
 ```
 
 #### 后续配置
@@ -69,6 +77,7 @@ $ microk8s.kubectl get all -A -o wide
 
 ```bash
 $ alias kubectl='microk8s.kubectl'
+$ sudo usermod -a -G microk8s deploy
 ```
 
 ##### 配置私有镜像库
