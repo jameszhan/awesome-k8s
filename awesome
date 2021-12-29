@@ -461,22 +461,12 @@ class Awesome < Thor
           resolv_conf = "/etc/resolv.conf"
         end
 
+        # https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/
         unless test "[ -f /etc/kubernetes/kubelet.yaml ]"
           kubelet_yaml = StringIO.new <<~YAML
             apiVersion: kubelet.config.k8s.io/v1beta1
             kind: KubeletConfiguration
-            
-            staticPodPath: /etc/kubernetes/manifests
-            syncFrequency: 1m
-            fileCheckFrequency: 20s
-            httpCheckFrequency: 20s
-            
-            address: 0.0.0.0
-            port: 10250
-            
-            # rotateCertificates: false
-            rotateCertificates: true
-            
+
             authentication:
               anonymous:
                 enabled: false
@@ -491,22 +481,34 @@ class Awesome < Thor
               webhook:
                 cacheAuthorizedTTL: 0s
                 cacheUnauthorizedTTL: 0s
-            
-            healthzPort: 10248
-            healthzBindAddress: 127.0.0.1
-            
+
+            # cgroupDriver: cgroupfs
+            cgroupDriver: systemd
+
             clusterDomain: cluster.local
             clusterDNS:
               - #{core_dns_ip}
+            
+            staticPodPath: /etc/kubernetes/manifests
+
+            syncFrequency: 1m
+            fileCheckFrequency: 20s
+            httpCheckFrequency: 20s
+            
+            address: 0.0.0.0
+            port: 10250
+
+            healthzPort: 10248
+            healthzBindAddress: 127.0.0.1
+            
+            # rotateCertificates: false
+            rotateCertificates: true
             
             streamingConnectionIdleTimeout: 4h
             nodeStatusUpdateFrequency: 10s
             nodeStatusReportFrequency: 5m
             imageMinimumGCAge: 2m
             volumeStatsAggPeriod: 1m
-            
-            # cgroupDriver: cgroupfs
-            cgroupDriver: systemd
             
             cpuManagerReconcilePeriod: 10s
             runtimeRequestTimeout: 2m
@@ -515,8 +517,12 @@ class Awesome < Thor
             
             evictionPressureTransitionPeriod: 5m
             
-            logging: 
-              format: text
+            logging:
+              flushFrequency: 0
+              options:
+                json:
+                  infoBufferSize: "0"
+              verbosity: 0
             
             shutdownGracePeriod: 0s
             shutdownGracePeriodCriticalPods: 0s
@@ -526,6 +532,7 @@ class Awesome < Thor
           execute 'cat /tmp/kubelet.yaml | sudo tee /etc/kubernetes/kubelet.yaml > /dev/null'
         end
 
+        # https://kubernetes.io/docs/reference/config-api/kube-proxy-config.v1alpha1/
         unless test "[ -f /etc/kubernetes/kube-proxy.yaml ]"
           kube_proxy_yaml = StringIO.new <<~YAML
             apiVersion: kubeproxy.config.k8s.io/v1alpha1

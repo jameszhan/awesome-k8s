@@ -1,10 +1,8 @@
 ## TL;DR
 
-
-
 ## Deploy Ceph CSI
 
-![Kubernetes/Ceph Technology Stack](https://gallery.zizhizhan.com:8443/images/k8s/ceph-csi.png)
+![Kubernetes/Ceph Technology Stack](https://gallery.zizhizhan.com:8443/images/virt/ceph-csi.png)
 
 ### CREATE A POOL
 
