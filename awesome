@@ -417,11 +417,13 @@ class Awesome < Thor
 
   desc 'k8s k8s-node003 deploy', 'k8s k8s-node003 deploy'
   option :role, :default => 'master'
+  option :version, :default => '1.23.1'
   option :dnsip, :default => '192.168.1.130'
   option :cluster_cidr, :default => "10.244.0.0/16"
   option :kube_proxy_mode, :default => 'iptables'
   def k8s(hostname, user=deploy, role='worker')
     role = options[:role]
+    version = options[:version]
     core_dns_ip = options[:dnsip]
     cluster_cidr = options[:cluster_cidr]
     kube_proxy_mode = options[:kube_proxy_mode]
@@ -431,7 +433,7 @@ class Awesome < Thor
       else
         unless test('type kubelet')
           unless test "[ -d /tmp/kubernetes/server/bin ]"
-            execute 'wget --quiet https://dl.zizhizhan.com:8443/binaries/x86_64/kubernetes/kubernetes-server-v1.23.1-linux-amd64.tar.gz --output-document=/tmp/kubernetes.tar.gz' 
+            execute "wget --quiet https://dl.zizhizhan.com:8443/binaries/x86_64/kubernetes/kubernetes-server-v#{version}-linux-amd64.tar.gz --output-document=/tmp/kubernetes.tar.gz"
             execute 'cd /tmp && tar -zxf kubernetes.tar.gz'
           end
 
@@ -638,19 +640,61 @@ class Awesome < Thor
     role = options[:role]
     version = options[:version]
 
-    if role == 'master'
-      puts "\e[0;32m master node setup script is upcoming. \e[0m\n"
-    elsif role == 'worker'
-      on "#{user}@#{hostname}", in: :sequence, wait: 5 do
-        unless test "[ -f /tmp/kubernetes-v#{version}.tar.gz ]"
-          execute "wget --quiet https://dl.zizhizhan.com:8443/binaries/x86_64/kubernetes/kubernetes-server-v#{version}-linux-amd64.tar.gz --output-document=/tmp/kubernetes-v#{version}.tar.gz"
-          execute 'rm -fr /tmp/kubernetes'
-          execute "cd /tmp && tar -zxf kubernetes-v#{version}.tar.gz"
-        end
+    on "#{user}@#{hostname}", in: :sequence, wait: 5 do
+      unless test "[ -f /tmp/kubernetes-v#{version}.tar.gz ]"
+        execute "wget --quiet https://dl.zizhizhan.com:8443/binaries/x86_64/kubernetes/kubernetes-server-v#{version}-linux-amd64.tar.gz --output-document=/tmp/kubernetes-v#{version}.tar.gz"
+        execute 'rm -fr /tmp/kubernetes'
+        execute "cd /tmp && tar -zxf kubernetes-v#{version}.tar.gz"
 
-        
+        if role == 'master'
+          sudo :systemctl, 'stop kube-controller-manager'
+          sudo :systemctl, 'stop kube-scheduler'
+          sudo :systemctl, 'stop kube-apiserver'
+  
+          sudo :rm, '/usr/local/bin/apiextensions-apiserver' if test "[ -f /usr/local/bin/apiextensions-apiserver ]"
+          sudo :rm, '/usr/local/bin/kube-aggregator' if test "[ -f /usr/local/bin/kube-aggregator ]"
+          sudo :rm, '/usr/local/bin/kube-apiserver'
+          sudo :rm, '/usr/local/bin/kube-controller-manager'
+          sudo :rm, '/usr/local/bin/kube-log-runner' if test "[ -f /usr/local/bin/kube-log-runner ]"
+          sudo :rm, '/usr/local/bin/kube-scheduler'
+          sudo :rm, '/usr/local/bin/kubeadm' if test "[ -f /usr/local/bin/kubeadm ]"
+          sudo :rm, '/usr/local/bin/kubectl'
+          sudo :rm, '/usr/local/bin/kubectl-convert' if test "[ -f /usr/local/bin/kubectl-convert ]"
+          sudo :rm, '/usr/local/bin/mounter' if test "[ -f /usr/local/bin/mounter ]"
+
+          sudo :cp, '/tmp/kubernetes/server/bin/apiextensions-apiserver /usr/local/bin' if test "[ -f /tmp/kubernetes/server/bin/apiextensions-apiserver ]"
+          sudo :cp, '/tmp/kubernetes/server/bin/kube-aggregator /usr/local/bin' if test "[ -f /tmp/kubernetes/server/bin/kube-aggregator ]"
+          sudo :cp, '/tmp/kubernetes/server/bin/kube-apiserver /usr/local/bin'
+          sudo :cp, '/tmp/kubernetes/server/bin/kube-controller-manager /usr/local/bin'
+          sudo :cp, '/tmp/kubernetes/server/bin/kube-log-runner /usr/local/bin' if test "[ -f /tmp/kubernetes/server/bin/kube-log-runner ]"
+          sudo :cp, '/tmp/kubernetes/server/bin/kube-scheduler /usr/local/bin'
+          sudo :cp, '/tmp/kubernetes/server/bin/kubeadm /usr/local/bin' if test "[ -f /tmp/kubernetes/server/bin/kubeadm ]"
+          sudo :cp, '/tmp/kubernetes/server/bin/kubectl /usr/local/bin'
+          sudo :cp, '/tmp/kubernetes/server/bin/kubectl-convert /usr/local/bin' if test "[ -f /tmp/kubernetes/server/bin/kubectl-convert ]"
+          sudo :cp, '/tmp/kubernetes/server/bin/mounter /usr/local/bin' if test "[ -f /tmp/kubernetes/server/bin/mounter ]"
+  
+          sudo :systemctl, 'daemon-reload'
+          sudo :systemctl, 'start kube-apiserver'
+          sudo :systemctl, 'start kube-scheduler'
+          sudo :systemctl, 'start kube-controller-manager'
+        elsif role == 'worker'
+          sudo :systemctl, 'stop kubelet'
+          sudo :systemctl, 'stop kube-proxy'
+  
+          sudo :rm, '/usr/local/bin/kubelet'
+          sudo :rm, '/usr/local/bin/kube-proxy'
+  
+          sudo :cp, '/tmp/kubernetes/server/bin/kube-proxy /usr/local/bin'
+          sudo :cp, '/tmp/kubernetes/server/bin/kubelet /usr/local/bin'
+  
+          sudo :systemctl, 'daemon-reload'
+          sudo :systemctl, 'start kubelet'
+          sudo :systemctl, 'start kube-proxy'
+        else
+          puts "\e[0;31m Unknown role #{role}. \e[0m\n"
+        end
       end
-    end
+    end 
   end
 
   # https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/

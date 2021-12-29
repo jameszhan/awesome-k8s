@@ -77,6 +77,27 @@ $ ./awesome k8s k8s-node013 deploy --role=worker --kube_proxy_mode=ipvs --cluste
 $ kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate approve
 ```
 
+升级`kubernetes`
+
+```bash
+$ ./awesome upgrade k8s-node001 deploy --role=worker --version=1.23.1
+$ ./awesome upgrade k8s-node002 deploy --role=worker --version=1.23.1
+$ ./awesome upgrade k8s-node003 deploy --role=worker --version=1.23.1
+$ ./awesome upgrade k8s-node004 deploy --role=worker --version=1.23.1
+$ ./awesome upgrade k8s-node005 deploy --role=worker --version=1.23.1
+$ ./awesome upgrade k8s-node006 deploy --role=worker --version=1.23.1
+$ ./awesome upgrade k8s-node007 deploy --role=worker --version=1.23.1
+$ ./awesome upgrade k8s-node008 deploy --role=worker --version=1.23.1
+$ ./awesome upgrade k8s-node009 deploy --role=worker --version=1.23.1
+$ cd install-binaries/ansible && ansible -i hosts k8s_nodes -m reboot -u deploy --become -v && cd ../../
+
+$ ./awesome upgrade k8s-master03 deploy --role=master --version=1.23.1
+$ ./awesome upgrade k8s-master02 deploy --role=master --version=1.23.1
+$ ./awesome upgrade k8s-master01 deploy --role=master --version=1.23.1
+$ cd install-binaries/ansible && ansible -i hosts k8s_masters -m script -a "/opt/bin/update-system.sh" -u deploy -v && cd ../../
+$ cd install-binaries/ansible && ansible -i hosts k8s_masters -m reboot -u deploy --become -v && cd ../../
+```
+
 安装附件软件
 
 ```bash
