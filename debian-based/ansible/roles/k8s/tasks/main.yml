@@ -135,7 +135,7 @@
     - role == "worker"
   
 # kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-- name: Copy calico-etcd.yaml files to /tmp
+- name: Copy kube-flannel.yml files to /tmp
   template:
     src: kube-flannel.yml
     dest: /tmp

@@ -2,7 +2,10 @@
 
 ## TL;DR
 
+### 基于`Ansible`
+
 ```bash
+$ cd debian-based/ansible
 # 新增deploy用户
 $ ansible-playbook -i k8s-local.cfg -c paramiko --ask-pass --ask-become-pass create-user.yml -v
 # 快速部署本地集群
@@ -13,28 +16,32 @@ $ ansible-playbook -i k8s-local.cfg k8s-local.yml -u deploy -v
 
 ```ini
 [k8s_masters]
-k8s-node001 ansible_host=192.168.1.111 role=master
+ubuntu-kubeadm ansible_host=192.168.1.80 role=master
 
 [k8s_nodes]
-k8s-node001 ansible_host=192.168.1.111 role=master
-k8s-node002 ansible_host=192.168.1.112 role=worker
-k8s-node003 ansible_host=192.168.1.113 role=worker
+ubuntu-kubeadm ansible_host=192.168.1.80 role=master
+```
+
+### 基于`SSHKit`
+
+```bash
+$ ./awesome docker ubuntu-kubeadm.local james --daemon_json=false
+$ ./awesome kubeadm ubuntu-kubeadm.local james --role=master
 ```
 
 ## 环境说明
 
 - 服务端操作系统: Ubuntu Server 20.04
-- 服务端`k8s`版本: v1.22.2
+- 服务端`k8s`版本: v1.23.1
 
 ## 准备工作
 
 ### 服务器说明
 
-| HOST-NAME   | ROLES                | VERSION | INTERNAL-IP   | OS-IMAGE           | 
-| ----------- | -------------------- | ------- | ------------- | ------------------ | 
-| k8s-node001 | control-plane,master | v1.22.2 | 192.168.1.111 | Ubuntu 20.04.3 LTS | 
-| k8s-node002 | worker               | v1.22.2 | 192.168.1.112 | Ubuntu 20.04.3 LTS | 
-| k8s-node003 | worker               | v1.22.2 | 192.168.1.113 | Ubuntu 20.04.3 LTS | 
+| HOST-NAME      | ROLES                | VERSION | INTERNAL-IP   | OS-IMAGE           | 
+| -------------- | -------------------- | ------- | ------------- | ------------------ | 
+| ubuntu-kubeadm | control-plane,master | v1.23.1 | 192.168.1.80  | Ubuntu 20.04.3 LTS | 
+
 
 ### 新增用户`deploy`
 
@@ -134,32 +141,6 @@ $ sudo usermod -aG docker deploy
 # 配置/etc/docker/daemon.json
 $ cat <<EOF | sudo tee /etc/docker/daemon.json > /dev/null
 {
-  "data-root": "/var/lib/docker",
-  "log-driver": "json-file",
-  "log-opts": {
-    "max-size": "200m",
-    "max-file": "5"
-  },
-  "default-ulimits": {
-    "nofile": {
-      "Name": "nofile",
-      "Hard": 655360,
-      "Soft": 655360
-    },
-    "nproc": {
-      "Name": "nproc",
-      "Hard": 655360,
-      "Soft": 655360
-    }
-  },
-  "live-restore": true,
-  "oom-score-adjust": -1000,
-  "max-concurrent-downloads": 10,
-  "max-concurrent-uploads": 10,
-  "storage-driver": "overlay2",
-  "storage-opts": [
-    "overlay2.override_kernel_check=true"
-  ],
   "exec-opts": [
     "native.cgroupdriver=systemd"
   ]
@@ -199,21 +180,21 @@ $ sudo apt hold kubelet kubeadm kubectl
 ```bash
 $ sudo kubeadm config images list
 
-$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-apiserver:v1.22.2
-$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-controller-manager:v1.22.2
-$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler:v1.22.2
-$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-proxy:v1.22.2
-$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.5
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-apiserver:v1.23.1
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-controller-manager:v1.23.1
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler:v1.23.1
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-proxy:v1.23.1
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.6
 $ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/etcd:3.5.0-0
-$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:v1.8.4
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:v1.8.6
 
-$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-apiserver:v1.22.2 k8s.gcr.io/kube-apiserver:v1.22.2
-$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-controller-manager:v1.22.2 k8s.gcr.io/kube-controller-manager:v1.22.2
-$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler:v1.22.2 k8s.gcr.io/kube-scheduler:v1.22.2
-$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-proxy:v1.22.2 k8s.gcr.io/kube-proxy:v1.22.2
-$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.5 k8s.gcr.io/pause:3.5
+$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-apiserver:v1.23.1 k8s.gcr.io/kube-apiserver:v1.23.1
+$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-controller-manager:v1.23.1 k8s.gcr.io/kube-controller-manager:v1.23.1
+$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler:v1.23.1 k8s.gcr.io/kube-scheduler:v1.23.1
+$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/kube-proxy:v1.23.1 k8s.gcr.io/kube-proxy:v1.23.1
+$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.6 k8s.gcr.io/pause:3.6
 $ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/etcd:3.5.0-0 k8s.gcr.io/etcd:3.5.0-0
-$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:v1.8.4 k8s.gcr.io/coredns/coredns:v1.8.4
+$ docker tag registry.cn-hangzhou.aliyuncs.com/google_containers/coredns:v1.8.6 k8s.gcr.io/coredns/coredns:v1.8.6
 ```
 
 #### 配置`control-plane`和`master`

@@ -14,6 +14,13 @@ $ ansible-playbook -i k8s-local.cfg -c paramiko --ask-pass --ask-become-pass cre
 $ ansible-playbook -i k8s-local.cfg microk8s_init.yml -u deploy -v
 ```
 
+本例中`k8s-local.cfg`主要配置内容如下:
+
+```ini
+[microk8s]
+k8s-node003 ansible_host=192.168.1.59
+```
+
 ### 基于`SSHKit`
 
 ```bash
