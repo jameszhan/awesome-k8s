@@ -1,6 +1,6 @@
 ## TL;DR
 
-## Deploy Ceph CSI
+## Deploy Ceph CSI RBD
 
 ![Kubernetes/Ceph Technology Stack](https://gallery.zizhizhan.com:8443/images/virt/ceph-csi.png)
 
@@ -91,7 +91,7 @@ $ kubectl apply -n ceph-csi -f templates/ceph-csi/ceph-config-map.yaml
 #### GENERATE CEPH-CSI CEPHX SECRET
 
 ```bash
-$ cat <<EOF > templates/ceph-csi/csi-rbd-secret.yaml
+$ cat <<EOF > templates/ceph-csi-rbd/csi-rbd-secret.yaml
 ---
 apiVersion: v1
 kind: Secret
@@ -107,27 +107,27 @@ $ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-rbd-secret.yaml
 #### CONFIGURE CEPH-CSI PLUGINS
 
 ```bash
-$ wget -O templates/ceph-csi/csi-provisioner-rbac.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-provisioner-rbac.yaml
-$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi/csi-provisioner-rbac.yaml
+$ wget -O templates/ceph-csi-rbd/csi-provisioner-rbac.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-provisioner-rbac.yaml
+$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi-rbd/csi-provisioner-rbac.yaml
 
-$ wget -O templates/ceph-csi/csi-nodeplugin-rbac.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-nodeplugin-rbac.yaml
-$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi/csi-nodeplugin-rbac.yaml
+$ wget -O templates/ceph-csi-rbd/csi-nodeplugin-rbac.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-nodeplugin-rbac.yaml
+$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi-rbd/csi-nodeplugin-rbac.yaml
 
-$ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-provisioner-rbac.yaml
-$ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-nodeplugin-rbac.yaml
+$ kubectl apply -n ceph-csi -f templates/ceph-csi-rbd/csi-provisioner-rbac.yaml
+$ kubectl apply -n ceph-csi -f templates/ceph-csi-rbd/csi-nodeplugin-rbac.yaml
 ```
 
 ```bash
-$ wget -O templates/ceph-csi/csi-rbdplugin-provisioner.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-rbdplugin-provisioner.yaml
-$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi/csi-rbdplugin-provisioner.yaml
-$ sed -i "s/k8s.gcr.io\/sig-storage/registry.cn-hangzhou.aliyuncs.com\/google_containers/g" templates/ceph-csi/csi-rbdplugin-provisioner.yaml
+$ wget -O templates/ceph-csi-rbd/csi-rbdplugin-provisioner.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-rbdplugin-provisioner.yaml
+$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi-rbd/csi-rbdplugin-provisioner.yaml
+$ sed -i "s/k8s.gcr.io\/sig-storage/registry.cn-hangzhou.aliyuncs.com\/google_containers/g" templates/ceph-csi-rbd/csi-rbdplugin-provisioner.yaml
 
-$ wget -O templates/ceph-csi/csi-rbdplugin.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-rbdplugin.yaml
-$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi/csi-rbdplugin.yaml
-$ sed -i "s/k8s.gcr.io\/sig-storage/registry.cn-hangzhou.aliyuncs.com\/google_containers/g" templates/ceph-csi/csi-rbdplugin.yaml
+$ wget -O templates/ceph-csi-rbd/csi-rbdplugin.yaml https://raw.githubusercontent.com/ceph/ceph-csi/master/deploy/rbd/kubernetes/csi-rbdplugin.yaml
+$ sed -i "s/namespace: default/namespace: ceph-csi/g" templates/ceph-csi-rbd/csi-rbdplugin.yaml
+$ sed -i "s/k8s.gcr.io\/sig-storage/registry.cn-hangzhou.aliyuncs.com\/google_containers/g" templates/ceph-csi-rbd/csi-rbdplugin.yaml
 
-$ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-rbdplugin-provisioner.yaml
-$ kubectl apply -n ceph-csi -f templates/ceph-csi/csi-rbdplugin.yaml
+$ kubectl apply -n ceph-csi -f templates/ceph-csi-rbd/csi-rbdplugin-provisioner.yaml
+$ kubectl apply -n ceph-csi -f templates/ceph-csi-rbd/csi-rbdplugin.yaml
 ```
 
 检查替换后的镜像

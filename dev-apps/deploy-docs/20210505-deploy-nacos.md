@@ -5,7 +5,7 @@ GRANT ALL PRIVILEGES ON nacos.* TO deploy@'192.168.1.%' IDENTIFIED BY 'YOUR-PASS
 ```
 
 ```bash
-$ kubectl apply -f templates/nacos/nacos-pvc-nfs.yaml
+$ kubectl apply -f templates/nacos/nacos-pvc-ceph.yaml
 
 $ for i in 0 1 2; do echo nacos-$i; kubectl exec -n geek-apps nacos-$i -- cat conf/cluster.conf; done
 $ for i in 0 1 2; do echo nacos-$i; kubectl exec -n geek-apps nacos-$i -- curl -X GET "http://localhost:8848/nacos/v1/ns/raft/state"; done
@@ -20,10 +20,8 @@ kind: Ingress
 metadata:
   name: nacos-ingress
   namespace: geek-apps
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/app-root: /nacos
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
       - nacos.zizhizhan.com

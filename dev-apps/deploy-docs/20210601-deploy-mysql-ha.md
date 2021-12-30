@@ -12,6 +12,16 @@ $ helm repo update
 
 $ mkdir -p templates/mysql
 $ helm show values bitnami/mysql > templates/mysql/mysql-values.yaml
+$ helm -n geek-apps template mysql bitnami/mysql \
+    --set architecture=replication \
+    --set auth.rootPassword=root \
+    --set auth.database=authdb \
+    --set auth.replicationPassword=root \
+    --set metrics.enabled=true \
+    --set volumePermissions.enabled=true \
+    --set global.storageClass=ceph-rbd \
+    --set primary.persistence.size=32Gi \
+    --set secondary.persistence.size=16Gi
 
 $ helm -n geek-apps uninstall mysql 
 $ helm -n geek-apps install mysql bitnami/mysql \
