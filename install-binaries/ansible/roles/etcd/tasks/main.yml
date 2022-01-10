@@ -1,6 +1,6 @@
 - name: Get etcd binary files
   unarchive:
-    src: "{{ binaries_fs }}/binaries/x86_64/etcd/etcd-v3.5.1-linux-amd64.tar.gz"
+    src: "{{ binaries_fs }}/binaries/etcd/etcd-v3.5.1-linux-amd64.tar.gz"
     dest: /tmp
     remote_src: yes
 
@@ -23,7 +23,7 @@
 - name: Get cfssl binary files
   become: true
   get_url:
-    url: "{{ binaries_fs }}/binaries/x86_64/cfssl/{{ item.url }}"
+    url: "{{ binaries_fs }}/binaries/cfssl/{{ item.url }}"
     dest: /usr/local/bin/{{ item.target }}
     mode: '0755'
   with_items:

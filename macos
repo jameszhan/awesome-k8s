@@ -1,0 +1,254 @@
+#!/usr/bin/env ruby
+require 'thor'
+require 'sshkit'
+require 'sshkit/sudo'
+require 'sshkit/dsl'
+
+SSHKit.config.format = :pretty
+SSHKit.config.output_verbosity = :debug
+
+SUDO_USER = ENV['SUDO_USER']
+SUDO_PASS = ENV['SUDO_PASS']
+
+class Runner
+  include Thor::Base
+
+  def self.batch(&block)
+    runner = Runner.new
+    runner.instance_eval(&block)
+    runner.execute
+  end
+
+  def initialize(config = {}, &block)
+    @config = config
+    instance_eval(&block) if block_given?
+  end
+
+  def scripts
+    @scripts ||= []
+  end
+
+  def run(command, config = {})
+    say_status :run, command, config.fetch(:verbose, true)
+    scripts << command
+  end
+
+  def execute
+    command = scripts.join(' && ')
+    return if @config[:'dry-run']
+    @config[:capture] ? `#{command}` : system(command)
+  end
+end
+
+class PasswordInteractionHandler
+
+  def on_data(command, stream_name, data, channel)
+    case data
+      when /password/i
+        channel.send_data("#{SUDO_PASS}\n")
+      else
+        puts "#{command}, #{stream_name}, #{data}, #{channel}"
+        channel.send_data("#{SUDO_PASS}\n")
+    end
+  end
+
+end
+
+class Awesome < Thor
+  include Actions
+  include SSHKit::DSL
+
+  desc 'etcd 192.168.64.7 ubuntu', 'setup etcd cluster for 192.168.64.7'
+  option :name, :type => :string, :required => true
+  option :names, :default => 'etcd01,etcd02,etcd03'
+  option :clusterips, :default => '192.168.64.7,192.168.64.8,192.168.64.9'
+  def etcd(hostip, username='ubuntu', port=22)
+    clusterips = options[:clusterips].split(',')
+    run_locally do
+      execute :cfssl, 'version'
+
+      if test "[ -d /opt/etc/cfssl/etcd ]"
+        puts "\e[0;32m /opt/etc/cfssl/etcd have already exists. \e[0m\n"
+      else
+        execute :mkir, '-p /opt/etc/cfssl/etcd'
+      end
+
+      if test "[ -f /opt/etc/cfssl/etcd/ca-csr.json ]"
+        puts "\e[0;32m //opt/etc/cfssl/etcd/ca-csr.json have already exists. \e[0m\n"
+      else
+        ca_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "etcd-ca",
+          "key": {
+            "algo": "rsa",
+            "size": 2048
+          },
+          "names": [
+            {
+              "C": "CN",
+              "ST": "Guangdong",
+              "L": "Shenzhen",
+              "O": "k8s",
+              "OU": "etcd-ca"
+            }
+          ],
+          "ca": {
+            "expiry": "87600h"
+          }
+        }
+        JSON
+        upload! ca_csr_json, '/opt/etc/cfssl/etcd/ca-csr.json'
+      end
+
+      if test "[ -f /opt/etc/cfssl/etcd/etcd-csr.json ]"
+        puts "\e[0;32m //opt/etc/cfssl/etcd/etcd-csr.json have already exists. \e[0m\n"
+      else
+        etd_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "etcd",
+          "hosts": #{clusterips + ['127.0.0.1']},
+          "key": {
+            "algo": "rsa",
+            "size": 2048
+          },
+          "names": [
+            {
+              "C": "CN",
+              "ST": "Guangdong",
+              "L": "Shenzhen",
+              "O": "k8s",
+              "OU": "etcd"
+            }
+          ]
+        }
+        JSON
+        upload! etd_csr_json, '/opt/etc/cfssl/etcd/etcd-csr.json'
+      end
+
+      if test "[ -f /opt/etc/cfssl/etcd/ca-config.json ]"
+        puts "\e[0;32m //opt/etc/cfssl/etcd/ca-config.json have already exists. \e[0m\n"
+      else
+        ca_config_json = StringIO.new <<~JSON
+        {
+          "signing": {
+            "default": {
+              "expiry": "87600h"
+            },
+            "profiles": {
+              "k8s-etcd": {
+                "usages": ["signing", "key encipherment", "server auth", "client auth"],
+                "expiry": "87600h"
+              }
+            }
+          }
+        }
+        JSON
+        upload! ca_config_json, '/opt/etc/cfssl/etcd/ca-config.json'
+      end
+
+      within '/opt/etc/cfssl/etcd/' do
+        if test "[ -f /opt/etc/cfssl/etcd/ca.pem ]"
+          puts "\e[0;32m ignore: cfssl gencert -initca ca-csr.json | cfssljson -bare ca. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -initca ca-csr.json | cfssljson -bare ca'
+        end
+
+        if test "[ -f /opt/etc/cfssl/etcd/etcd.pem ]"
+          puts "\e[0;32m ignore: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=k8s-etcd etcd-csr.json | cfssljson -bare etcd. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=k8s-etcd etcd-csr.json | cfssljson -bare etcd'
+        end
+      end
+    end
+
+    etcd_name = options[:name]
+    names = options[:names].split(',')
+    initial_cluster = names.each_with_index.map {|el, i| "#{el}=https://#{clusterips[i]}:2380" }.join(',')
+    on "#{username}@#{hostip}", in: :sequence, wait: 5 do
+      if test "[ -f /etc/etcd/etcd.conf ]"
+        puts "\e[0;32m /etc/etcd/etcd.conf has already created. \e[0m\n"
+      else
+        etcd_conf = StringIO.new <<~CONF
+        ETCD_NAME="#{etcd_name}"
+        ETCD_DATA_DIR="/var/lib/etcd/default.etcd"
+        ETCD_LISTEN_PEER_URLS="https://#{hostip}:2380"
+        ETCD_LISTEN_CLIENT_URLS="https://#{hostip}:2379,http://127.0.0.1:2379"
+        ETCD_ADVERTISE_CLIENT_URLS="https://#{hostip}:2379"
+        ETCD_INITIAL_ADVERTISE_PEER_URLS="https://#{hostip}:2380"
+        ETCD_INITIAL_CLUSTER="#{initial_cluster}"
+        
+        ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+        ETCD_INITIAL_CLUSTER_STATE="new"
+        CONF
+
+        unless test "[ -d /etc/etcd ]"
+          sudo :mkdir, '-p /etc/etcd'
+        end
+
+        # puts etcd_conf.read
+        upload! etcd_conf, '/tmp/etcd.conf'
+        sudo :mv, '/tmp/etcd.conf /etc/etcd/'
+      end
+    end
+
+    # on target_host, in: :sequence, wait: 5 do |host|
+    #   if test "[ -d /home/#{username} ]"
+    #     puts "\e[0;32m USER #{username} has already created. \e[0m\n"
+    #   else
+    #     sudo 'useradd -m -s /bin/bash -u 1001 deploy', interaction_handler: pass_cb
+    #     sudo 'usermod -aG sudo deploy', interaction_handler: pass_cb
+    #     sudo 'usermod -aG adm deploy', interaction_handler: pass_cb
+    #     sudo 'usermod -a -G users deploy', interaction_handler: pass_cb
+    #     sudo 'usermod -a -G staff deploy', interaction_handler: pass_cb
+    #   end
+
+    #   if test "[ -f /etc/sudoers.d/#{username} ]"
+    #     puts "\e[0;32m USER #{username} is already NOPASSWD sudo user. \e[0m\n"
+    #   else
+    #     execute "echo '#{username} ALL = (ALL) NOPASSWD: ALL' > /tmp/sudoer_#{username}"
+    #     sudo :mv, "/tmp/sudoer_#{username}", "/etc/sudoers.d/#{username}", interaction_handler: pass_cb
+    #     sudo :chown, "-R root:root /etc/sudoers.d/#{username}", interaction_handler: pass_cb
+    #     # execute "echo 'deploy ALL = (ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/deploy", interaction_handler: pass_cb
+    #   end
+
+    #   if test "[ -d /home/#{username}/.ssh ]"
+    #     puts "\e[0;32m /home/#{username}/.ssh have already exists. \e[0m\n"
+    #   else
+    #     # 本地免密码 SSH 登陆
+    #     puts "\e[0;33m /home/#{username}/.ssh not exists, create it. \e[0m\n"
+
+    #     sudo "mkdir /home/#{username}/.ssh", interaction_handler: pass_cb
+    #     upload! "/home/#{SUDO_USER}/.ssh/id_rsa.pub", '/tmp/id_rsa.pub'
+    #     upload! "/home/#{SUDO_USER}/.ssh/id_rsa", '/tmp/id_rsa'
+    #     upload! "/home/#{SUDO_USER}/.ssh/authorized_keys", '/tmp/authorized_keys'
+    #     # execute "cat /tmp/id_rsa.pub | sudo tee -a /home/#{username}/.ssh/authorized_keys", interaction_handler: pass_cb
+
+    #     sudo :mv, '/tmp/id_rsa.pub', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+    #     sudo :mv, '/tmp/id_rsa', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+    #     sudo :mv, '/tmp/authorized_keys', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+
+    #     sudo :chown, '-R', "#{username}:#{username}", "/home/#{username}/.ssh", interaction_handler: pass_cb
+    #     sudo :chmod, '-R', 'go-rwx', "/home/#{username}/.ssh/id_rsa", interaction_handler: pass_cb
+    #   end
+    # end
+  end
+
+  
+
+  private
+    def generate(template, locals={})
+      context = new_binding(locals)
+      CapturableERB.new(template, nil, "-", "@output_buffer").result(context)
+    end
+    
+    def new_binding(locals)
+      binding.tap do |b|
+        locals.each do |name, value|
+          b.local_variable_set(name, value)
+        end
+      end
+    end
+
+end
+
+Awesome.start(ARGV)
