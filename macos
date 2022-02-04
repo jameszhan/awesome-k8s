@@ -365,48 +365,323 @@ class MacOS < Thor
   desc 'apt 192.168.64.7 ubuntu', 'setup apt source for 192.168.64.7 via user ubuntu'
   def apt(hostip, username='ubuntu', port=22)
     on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
-      if test "[ -f /etc/apt/sources.list_bak ]"
-        puts "/etc/apt/sources.list has already updated"
+      arch = capture(:uname, '-m')
+      if arch == 'x86_64'
+        if test "[ -f /etc/apt/sources.list_bak ]"
+          puts "/etc/apt/sources.list has already updated"
+          execute 'export DEBIAN_FRONTEND=noninteractive'
+          sudo 'apt -y update'
+          sudo 'apt -y upgrade'
+          sudo 'apt -y dist-upgrade'
+          sudo 'apt -y autoclean'
+          sudo 'apt -y full-upgrade'
+          sudo 'apt -y autoremove'
+        else
+          sudo :mv, '/etc/apt/sources.list', '/etc/apt/sources.list_bak'
+  
+          mirrors_url = 'https://mirrors.ustc.edu.cn'
+          # mirrors_url = 'https://mirrors.tuna.tsinghua.edu.cn'  
+          lsb_release_sc = capture(:lsb_release, '-sc')
+  
+          sources_list = StringIO.new <<~SOURCE_LIST
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
+            
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
+            
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
+            
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
+          SOURCE_LIST
+  
+          upload! sources_list, '/tmp/apt-sources.list'
+          execute 'cat /tmp/apt-sources.list | sudo tee /etc/apt/sources.list'
+  
+          execute 'export DEBIAN_FRONTEND=noninteractive'
+          sudo 'apt -y update'
+          sudo 'apt -o Dpkg::Options::="--force-confold" upgrade -q -y'
+          sudo 'apt -o Dpkg::Options::="--force-confold" dist-upgrade -q -y'
+          sudo 'apt -y upgrade'
+          sudo 'apt -y dist-upgrade'
+          sudo 'apt -y autoclean'
+          sudo 'apt -y full-upgrade'
+          sudo 'apt -y autoremove'      
+        end
       else
-        sudo :mv, '/etc/apt/sources.list', '/etc/apt/sources.list_bak'
-
-        # mirrors_url = 'https://mirrors.ustc.edu.cn'
-        mirrors_url = 'https://mirrors.tuna.tsinghua.edu.cn'  
-        lsb_release_sc = capture(:lsb_release, '-sc')
-
-        sources_list = StringIO.new <<~SOURCE_LIST
-          deb #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
-          deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
-          
-          deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
-          deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
-          
-          deb #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
-          deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
-          
-          deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
-          deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
-        SOURCE_LIST
-
-        upload! sources_list, '/tmp/apt-sources.list'
-        execute 'cat /tmp/apt-sources.list | sudo tee /etc/apt/sources.list'
-
+        puts "\e[0;32m IGNORE arch #{arch}. \e[0m\n"
         execute 'export DEBIAN_FRONTEND=noninteractive'
         sudo 'apt -y update'
-        sudo 'apt -o Dpkg::Options::="--force-confold" upgrade -q -y'
-        sudo 'apt -o Dpkg::Options::="--force-confold" dist-upgrade -q -y'
         sudo 'apt -y upgrade'
         sudo 'apt -y dist-upgrade'
         sudo 'apt -y autoclean'
         sudo 'apt -y full-upgrade'
-        sudo 'apt -y autoremove'      
+        sudo 'apt -y autoremove'
       end
 
       execute :echo, 'export LC_ALL=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LC_ALL ]'
       execute :echo, 'export LANG=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LANG ]'
     end
   end
-  
+
+  desc 'master 192.168.64.7 ubuntu', 'setup master node for 192.168.64.7 via user ubuntu'
+  option :binaries_url, :type => :string, :required => true
+  option :clusterips, :default => '192.168.64.7,192.168.64.8,192.168.64.9'
+  def master(hostip, username='ubuntu', port=22)
+    clusterips = options[:clusterips].split(',')
+    run_locally do
+      execute :cfssl, 'version'
+
+      if test "[ -d /opt/etc/cfssl/master ]"
+        puts "\e[0;32m /opt/etc/cfssl/master have already exists. \e[0m\n"
+      else
+        execute :mkdir, '-p /opt/etc/cfssl/master'
+      end
+
+
+      if test "[ -f /opt/etc/cfssl/master/ca-config.json ]"
+        puts "\e[0;32m /opt/etc/cfssl/master/ca-config.json have already exists. \e[0m\n"
+      else
+        ca_config_json = StringIO.new <<~JSON
+        {
+          "signing": {
+            "default": {
+              "expiry": "87600h"
+            },
+            "profiles": {
+              "kubernetes": {
+                "usages": ["signing", "key encipherment", "server auth", "client auth"],
+                "expiry": "87600h"
+              }
+            }
+          }
+        }
+        JSON
+        upload! ca_config_json, '/opt/etc/cfssl/master/ca-config.json'
+      end
+
+      if test "[ -f /opt/etc/cfssl/master/admin-csr.json ]"
+        puts "\e[0;32m /opt/etc/cfssl/master/admin-csr.json have already exists. \e[0m\n"
+      else
+        admin_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "admin",
+          "hosts": [],
+          "key": {
+              "algo": "rsa",
+              "size": 2048
+          },
+          "names": [
+              {
+                  "C": "CN",
+                  "ST": "Guangdong",
+                  "L": "Shenzhen",
+                  "O": "system:masters",
+                  "OU": "system"
+              }
+          ]
+        }
+        JSON
+        upload! admin_csr_json, '/opt/etc/cfssl/master/admin-csr.json'
+      end
+
+      if test "[ -f /opt/etc/cfssl/master/kube-apiserver-csr.json ]"
+        puts "\e[0;32m /opt/etc/cfssl/master/kube-apiserver-csr.json have already exists. \e[0m\n"
+      else
+        kube_apiserver_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "kubernetes",
+          "hosts": [
+              "127.0.0.1",
+              "192.168.64.1",
+              "192.168.64.2",
+              "192.168.64.3",
+              "192.168.64.4",
+              "192.168.64.5",
+              "192.168.64.6",
+              "192.168.64.7",
+              "192.168.64.8",
+              "192.168.64.9",
+              "192.168.64.10",
+              "192.168.64.100",
+              "10.96.0.1",
+              "kubernetes",
+              "kubernetes.default",
+              "kubernetes.default.svc",
+              "kubernetes.default.svc.cluster",
+              "kubernetes.default.svc.cluster.local"
+          ],
+          "key": {
+              "algo": "rsa",
+              "size": 2048
+          },
+          "names": [
+              {
+                  "C": "CN",
+                  "ST": "Guangdong",
+                  "L": "Shenzhen",
+                  "O": "k8s",
+                  "OU": "system"
+              }
+          ]
+        }
+        JSON
+        upload! kube_apiserver_csr_json, '/opt/etc/cfssl/master/kube-apiserver-csr.json'
+      end
+
+      if test "[ -f /opt/etc/cfssl/master/kube-controller-manager-csr.json ]"
+        puts "\e[0;32m /opt/etc/cfssl/master/kube-controller-manager-csr.json have already exists. \e[0m\n"
+      else
+        kube_controller_manager_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "system:kube-controller-manager",
+          "key": {
+              "algo": "rsa",
+              "size": 2048
+          },
+          "hosts": #{clusterips + ['127.0.0.1']},
+          "names": [
+              {
+                  "C": "CN",
+                  "ST": "Guangdong",
+                  "L": "Shenzhen",
+                  "O": "system:kube-controller-manager",
+                  "OU": "system"
+              }
+          ]
+        }
+        JSON
+        upload! kube_controller_manager_csr_json, '/opt/etc/cfssl/master/kube-controller-manager-csr.json'
+      end
+
+      if test "[ -f /opt/etc/cfssl/master/kube-scheduler-csr.json ]"
+        puts "\e[0;32m /opt/etc/cfssl/master/kube-scheduler-csr.json have already exists. \e[0m\n"
+      else
+        kube_scheduler_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "system:kube-scheduler",
+          "hosts": #{clusterips + ['127.0.0.1']},
+          "key": {
+              "algo": "rsa",
+              "size": 2048
+          },
+          "names": [
+              {
+                  "C": "CN",
+                  "ST": "Guangdong",
+                  "L": "Shenzhen",
+                  "O": "system:kube-scheduler",
+                  "OU": "system"
+              }
+          ]
+        }
+        JSON
+        upload! kube_scheduler_csr_json, '/opt/etc/cfssl/master/kube-scheduler-csr.json'
+      end
+
+      within '/opt/etc/cfssl/master' do
+        if test "[ -f /opt/etc/cfssl/master/kube-apiserver.pem ]"
+          puts "\e[0;32m ignore: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-apiserver-csr.json | cfssljson -bare kube-apiserver. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -ca=/opt/etc/cfssl/etcd/ca.pem -ca-key=/opt/etc/cfssl/etcd/ca-key.pem -config=ca-config.json -profile=kubernetes kube-apiserver-csr.json | cfssljson -bare kube-apiserver'
+        end
+
+        if test "[ -f /opt/etc/cfssl/master/admin.pem ]"
+          puts "\e[0;32m ignore: gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes admin-csr.json | cfssljson -bare admin. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -ca=/opt/etc/cfssl/etcd/ca.pem -ca-key=/opt/etc/cfssl/etcd/ca-key.pem -config=ca-config.json -profile=kubernetes admin-csr.json | cfssljson -bare admin'
+        end
+
+        if test "[ -f /opt/etc/cfssl/master/kube-controller-manager.pem ]"
+          puts "\e[0;32m ignore: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -ca=/opt/etc/cfssl/etcd/ca.pem -ca-key=/opt/etc/cfssl/etcd/ca-key.pem -config=ca-config.json -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager'
+        end
+
+        if test "[ -f /opt/etc/cfssl/master/kube-scheduler.pem ]"
+          puts "\e[0;32m ignore: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-scheduler-csr.json | cfssljson -bare kube-scheduler. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -ca=/opt/etc/cfssl/etcd/ca.pem -ca-key=/opt/etc/cfssl/etcd/ca-key.pem -config=ca-config.json -profile=kubernetes kube-scheduler-csr.json | cfssljson -bare kube-scheduler'
+        end
+
+      end
+
+      token_random = capture("head -c 16 /dev/urandom | od -An -t x | tr -d ' '")
+
+      token_csv = StringIO.new <<~JSON
+      #{ token_random },kubelet-bootstrap,10001,"system:kubelet-bootstrap"
+      JSON
+      upload! token_csv, '/opt/etc/cfssl/master/token.csv'
+
+    end
+
+    binaries_url = options[:binaries_url]
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+      if test "[ -d /tmp/kubernetes/server/bin ]"
+        puts "\e[0;32m kubernete binaries has already downloaded. \e[0m\n"
+      else
+        within '/tmp' do
+          execute :wget, "--quiet #{binaries_url}"
+          execute :tar, 'zxvf `ls | grep kubernetes-server-*.tar.gz`'
+        end
+      end
+
+      if test "[ -f /usr/local/bin/kube-apiserver ]"
+        puts "\e[0;32m /usr/local/bin/kube-apiserver has already created. \e[0m\n"
+      else
+        within '/tmp/kubernetes/server/bin' do
+          sudo :mv, "apiextensions-apiserver", "/usr/local/bin"
+          sudo :mv, "kube-aggregator", "/usr/local/bin"
+          sudo :mv, "kube-apiserver", "/usr/local/bin"
+          sudo :mv, "kube-controller-manager", "/usr/local/bin"
+          sudo :mv, "kube-scheduler", "/usr/local/bin"
+        end
+      end
+
+      unless test "[ -d /etc/kubernetes/ssl ]"
+        sudo :mkdir, '-p /etc/kubernetes/ssl'
+      end
+
+      files = %W[
+        admin.csr admin-key.pem admin.pem 
+        kube-apiserver.csr kube-apiserver-key.pem kube-apiserver.pem 
+        kube-controller-manager.csr kube-controller-manager-key.pem kube-controller-manager.pem
+        kube-scheduler.csr kube-scheduler-key.pem kube-scheduler.pem
+      ]
+      files.each do |file|
+        if test "[ -f /etc/kubernetes/ssl/#{file} ]"
+          puts "\e[0;32m /etc/kubernetes/ssl/#{file} has already created. \e[0m\n"
+        else
+          upload! "/opt/etc/cfssl/master/#{file}", "/tmp/#{file}"
+          sudo :mv, "/tmp/#{file} /etc/kubernetes/ssl"
+        end
+      end
+
+      if test "[ -f /etc/kubernetes/token.csv ]"
+        puts "\e[0;32m /etc/kubernetes/token.csv has already created. \e[0m\n"
+      else
+        upload! "/opt/etc/cfssl/master/token.csv", "/tmp/token.csv"
+        sudo :mv, "/tmp/token.csv /etc/kubernetes"
+      end
+
+
+      if test "[ -f /usr/lib/systemd/system/etcd.service ]"
+        puts "\e[0;32m /usr/lib/systemd/system/ectd.service has already created. \e[0m\n"
+      else
+        # etcd_service = StringIO.new <<~JSON
+
+        # JSON
+
+        # upload! etcd_service, '/tmp/etcd.service'
+        # sudo :mv, '/tmp/etcd.service /usr/lib/systemd/system/'
+
+        # sudo :systemctl, 'daemon-reload'
+        # sudo :systemctl, 'enable etcd'
+      end
+    end
+  end
 
   private
     def generate(template, locals={})
