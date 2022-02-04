@@ -58,7 +58,71 @@ class MacOS < Thor
   include Actions
   include SSHKit::DSL
 
-  desc 'setup 192.168.64.7 ubuntu', 'setup for 192.168.64.7 via user ubuntu'
+  desc 'apt 192.168.64.11 ubuntu', 'setup apt source for 192.168.64.11 via user ubuntu'
+  def apt(hostip, username='ubuntu', port=22)
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+      arch = capture(:uname, '-m')
+      if arch == 'x86_64'
+        if test "[ -f /etc/apt/sources.list_bak ]"
+          puts "/etc/apt/sources.list has already updated"
+          execute 'export DEBIAN_FRONTEND=noninteractive'
+          sudo 'apt -y update'
+          sudo 'apt -y upgrade'
+          sudo 'apt -y dist-upgrade'
+          sudo 'apt -y autoclean'
+          sudo 'apt -y full-upgrade'
+          sudo 'apt -y autoremove'
+        else
+          sudo :mv, '/etc/apt/sources.list', '/etc/apt/sources.list_bak'
+  
+          mirrors_url = 'https://mirrors.ustc.edu.cn'
+          # mirrors_url = 'https://mirrors.tuna.tsinghua.edu.cn'  
+          lsb_release_sc = capture(:lsb_release, '-sc')
+  
+          sources_list = StringIO.new <<~SOURCE_LIST
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
+            
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
+            
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
+            
+            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
+            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
+          SOURCE_LIST
+  
+          upload! sources_list, '/tmp/apt-sources.list'
+          execute 'cat /tmp/apt-sources.list | sudo tee /etc/apt/sources.list'
+  
+          execute 'export DEBIAN_FRONTEND=noninteractive'
+          sudo 'apt -y update'
+          sudo 'apt -o Dpkg::Options::="--force-confold" upgrade -q -y'
+          sudo 'apt -o Dpkg::Options::="--force-confold" dist-upgrade -q -y'
+          sudo 'apt -y upgrade'
+          sudo 'apt -y dist-upgrade'
+          sudo 'apt -y autoclean'
+          sudo 'apt -y full-upgrade'
+          sudo 'apt -y autoremove'      
+        end
+      else
+        puts "\e[0;32m IGNORE arch #{arch}. \e[0m\n"
+        execute 'export DEBIAN_FRONTEND=noninteractive'
+        sudo 'apt -y update'
+        sudo 'apt -y upgrade'
+        sudo 'apt -y dist-upgrade'
+        sudo 'apt -y autoclean'
+        sudo 'apt -y full-upgrade'
+        sudo 'apt -y autoremove'
+      end
+
+      execute :echo, 'export LC_ALL=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LC_ALL ]'
+      execute :echo, 'export LANG=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LANG ]'
+    end
+  end
+
+  desc 'setup 192.168.64.11 ubuntu', 'setup for 192.168.64.11 via user ubuntu'
   def setup(hostip, username='ubuntu', port=22)
     on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
       sudo :apt, 'install', '-yq', '--no-install-recommends', 'coreutils procps libseccomp2 net-tools sysstat rsync bash-completion socat'
@@ -157,10 +221,10 @@ class MacOS < Thor
     end
   end
 
-  desc 'etcd 192.168.64.7 ubuntu', 'setup etcd cluster for 192.168.64.7'
+  desc 'etcd 192.168.64.11 ubuntu', 'setup etcd cluster for 192.168.64.11'
   option :name, :type => :string, :required => true
   option :names, :default => 'etcd01,etcd02,etcd03'
-  option :clusterips, :default => '192.168.64.7,192.168.64.8,192.168.64.9'
+  option :clusterips, :default => '192.168.64.11,192.168.64.12,192.168.64.13'
   option :binaries_url, :type => :string, :required => true
   def etcd(hostip, username='ubuntu', port=22)
     clusterips = options[:clusterips].split(',')
@@ -170,7 +234,7 @@ class MacOS < Thor
       if test "[ -d /opt/etc/cfssl/etcd ]"
         puts "\e[0;32m /opt/etc/cfssl/etcd have already exists. \e[0m\n"
       else
-        execute :mkir, '-p /opt/etc/cfssl/etcd'
+        execute :mkdir, '-p /opt/etc/cfssl/etcd'
       end
 
       if test "[ -f /opt/etc/cfssl/etcd/ca-csr.json ]"
@@ -361,73 +425,9 @@ class MacOS < Thor
     end
   end
 
-  desc 'apt 192.168.64.7 ubuntu', 'setup apt source for 192.168.64.7 via user ubuntu'
-  def apt(hostip, username='ubuntu', port=22)
-    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
-      arch = capture(:uname, '-m')
-      if arch == 'x86_64'
-        if test "[ -f /etc/apt/sources.list_bak ]"
-          puts "/etc/apt/sources.list has already updated"
-          execute 'export DEBIAN_FRONTEND=noninteractive'
-          sudo 'apt -y update'
-          sudo 'apt -y upgrade'
-          sudo 'apt -y dist-upgrade'
-          sudo 'apt -y autoclean'
-          sudo 'apt -y full-upgrade'
-          sudo 'apt -y autoremove'
-        else
-          sudo :mv, '/etc/apt/sources.list', '/etc/apt/sources.list_bak'
-  
-          mirrors_url = 'https://mirrors.ustc.edu.cn'
-          # mirrors_url = 'https://mirrors.tuna.tsinghua.edu.cn'  
-          lsb_release_sc = capture(:lsb_release, '-sc')
-  
-          sources_list = StringIO.new <<~SOURCE_LIST
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
-            
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
-            
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
-            
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
-          SOURCE_LIST
-  
-          upload! sources_list, '/tmp/apt-sources.list'
-          execute 'cat /tmp/apt-sources.list | sudo tee /etc/apt/sources.list'
-  
-          execute 'export DEBIAN_FRONTEND=noninteractive'
-          sudo 'apt -y update'
-          sudo 'apt -o Dpkg::Options::="--force-confold" upgrade -q -y'
-          sudo 'apt -o Dpkg::Options::="--force-confold" dist-upgrade -q -y'
-          sudo 'apt -y upgrade'
-          sudo 'apt -y dist-upgrade'
-          sudo 'apt -y autoclean'
-          sudo 'apt -y full-upgrade'
-          sudo 'apt -y autoremove'      
-        end
-      else
-        puts "\e[0;32m IGNORE arch #{arch}. \e[0m\n"
-        execute 'export DEBIAN_FRONTEND=noninteractive'
-        sudo 'apt -y update'
-        sudo 'apt -y upgrade'
-        sudo 'apt -y dist-upgrade'
-        sudo 'apt -y autoclean'
-        sudo 'apt -y full-upgrade'
-        sudo 'apt -y autoremove'
-      end
-
-      execute :echo, 'export LC_ALL=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LC_ALL ]'
-      execute :echo, 'export LANG=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LANG ]'
-    end
-  end
-
-  desc 'master 192.168.64.7 ubuntu', 'setup master node for 192.168.64.7 via user ubuntu'
+  desc 'master 192.168.64.11 ubuntu', 'setup master node for 192.168.64.11 via user ubuntu'
   option :binaries_url, :type => :string, :required => true
-  option :clusterips, :default => '192.168.64.7,192.168.64.8,192.168.64.9'
+  option :clusterips, :default => '192.168.64.11,192.168.64.12,192.168.64.13'
   option :service_cluster_ip_range, :default => '10.96.0.0/12'
   option :cluster_cidr, :default => "10.244.0.0/16"
   def master(hostip, username='ubuntu', port=22)
@@ -506,8 +506,19 @@ class MacOS < Thor
               "192.168.64.8",
               "192.168.64.9",
               "192.168.64.10",
+              "192.168.64.11",
+              "192.168.64.12",
+              "192.168.64.13",
+              "192.168.64.14",
+              "192.168.64.15",
+              "192.168.64.16",
+              "192.168.64.17",
+              "192.168.64.18",
+              "192.168.64.19",
+              "192.168.64.20",
               "192.168.64.100",
               "10.96.0.1",
+              "10.96.0.2",
               "kubernetes",
               "kubernetes.default",
               "kubernetes.default.svc",
@@ -902,14 +913,14 @@ class MacOS < Thor
     end
   end
 
-  desc 'ha 192.168.64.7 ubuntu', 'setup high available for 192.168.64.7 via user ubuntu'
+  desc 'ha 192.168.64.11 ubuntu', 'setup high available for 192.168.64.11 via user ubuntu'
   option :keepalived_state, :type => :string, :required => true, :banner => 'MASTER|BACKUP'
   option :virtual_ip, :type => :string, :required => true
   option :keepalived_priority, :type => :numeric, :required => true, :banner => '200|150|100'
   option :link_interface, :default => 'enp0s1'
   option :virtual_router_id, :type => :numeric, :default => 51
   option :clusternames, :default => 'k8s-master01,k8s-master02,k8s-master03'
-  option :clusterips, :default => '192.168.64.7,192.168.64.8,192.168.64.9'
+  option :clusterips, :default => '192.168.64.11,192.168.64.12,192.168.64.13'
   def ha(hostip, username='ubuntu', port=22)
     serverips = options[:clusterips].split(',')
     servernames = options[:clusternames].split(',')
@@ -1211,24 +1222,46 @@ class MacOS < Thor
         puts "\e[0;32m /usr/local/bin/kube-proxy has already created. \e[0m\n"
       else
         within '/tmp/kubernetes/server/bin' do
-          sudo :mv, "kubelet", "/usr/local/bin"
           sudo :mv, "kube-proxy", "/usr/local/bin"
+        end
+      end
+
+      if test "[ -f /usr/local/bin/kubelet ]"
+        puts "\e[0;32m /usr/local/bin/kubelet has already created. \e[0m\n"
+      else
+        within '/tmp/kubernetes/server/bin' do
+          sudo :mv, "kubelet", "/usr/local/bin"
+        end
+      end
+
+      if test "[ -f /usr/local/bin/kubectl ]"
+        puts "\e[0;32m /usr/local/bin/kubectl has already created. \e[0m\n"
+      else
+        within '/tmp/kubernetes/server/bin' do
           sudo :mv, "kubectl", "/usr/local/bin"
         end
       end
 
       unless test "[ -d /etc/kubernetes/ssl ]"
         sudo 'mkdir -p /etc/kubernetes/ssl'
-        sudo 'mkdir -p /etc/kubernetes/manifests'
-        sudo 'mkdir -p /var/lib/kubelet'
-        sudo 'mkdir -p /var/lib/kube-proxy'
 
-        upload! "/opt/etc/cfssl/etcd/ca.pem", "/tmp"
         upload! "/opt/etc/cfssl/master/token.csv", "/tmp"
-        sudo 'mv /tmp/ca.pem /etc/kubernetes/ssl'
         sudo 'mv /tmp/token.csv /etc/kubernetes'
 
         sudo 'chown -R root:root /etc/kubernetes'
+      end
+
+      unless test "[ -d /etc/kubernetes/manifests ]"
+        sudo 'mkdir -p /etc/kubernetes/manifests'
+        sudo 'mkdir -p /var/lib/kubelet'
+        sudo 'mkdir -p /var/lib/kube-proxy'
+      end
+
+      if test "[ -f /etc/kubernetes/ssl/ca.pem ]"
+        puts "\e[0;32m /etc/kubernetes/ssl/ca.pem has already created. \e[0m\n"
+      else
+        upload! "/opt/etc/cfssl/etcd/ca.pem", "/tmp"
+        sudo 'mv /tmp/ca.pem /etc/kubernetes/ssl'
       end
 
       files = %W[kube-proxy.csr kube-proxy-key.pem kube-proxy.pem]
@@ -1428,7 +1461,7 @@ class MacOS < Thor
   end
 
   # https://get.helm.sh/helm-v3.8.0-linux-amd64.tar.gz
-  desc 'helm 192.168.64.7 ubuntu', 'install helm for 192.168.64.7 via user ubuntu'
+  desc 'helm 192.168.64.11 ubuntu', 'install helm for 192.168.64.11 via user ubuntu'
   option :binaries_url, :type => :string, :required => true, :banner => 'https://get.helm.sh/helm-v3.8.0-linux-arm64.tar.gz'
   def helm(hostip, username='ubuntu', port=22)
     binaries_url = options[:binaries_url]
