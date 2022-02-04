@@ -429,6 +429,8 @@ class MacOS < Thor
   desc 'master 192.168.64.7 ubuntu', 'setup master node for 192.168.64.7 via user ubuntu'
   option :binaries_url, :type => :string, :required => true
   option :clusterips, :default => '192.168.64.7,192.168.64.8,192.168.64.9'
+  option :service_cluster_ip_range, :default => '10.96.0.0/12'
+  option :cluster_cidr, :default => "10.244.0.0/16"
   def master(hostip, username='ubuntu', port=22)
     clusterips = options[:clusterips].split(',')
     run_locally do
@@ -618,6 +620,8 @@ class MacOS < Thor
     end
 
     binaries_url = options[:binaries_url]
+    service_cluster_ip_range = options[:service_cluster_ip_range]
+    cluster_cidr = options[:cluster_cidr]
     on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
       if test "[ -d /tmp/kubernetes/server/bin ]"
         puts "\e[0;32m kubernete binaries has already downloaded. \e[0m\n"
@@ -628,8 +632,8 @@ class MacOS < Thor
         end
       end
 
-      if test "[ -f /usr/local/bin/kube-apiserver ]"
-        puts "\e[0;32m /usr/local/bin/kube-apiserver has already created. \e[0m\n"
+      if test "[ -f /usr/local/bin/kubectl ]"
+        puts "\e[0;32m /usr/local/bin/kubectl has already created. \e[0m\n"
       else
         within '/tmp/kubernetes/server/bin' do
           sudo :mv, "apiextensions-apiserver", "/usr/local/bin"
@@ -637,6 +641,7 @@ class MacOS < Thor
           sudo :mv, "kube-apiserver", "/usr/local/bin"
           sudo :mv, "kube-controller-manager", "/usr/local/bin"
           sudo :mv, "kube-scheduler", "/usr/local/bin"
+          sudo :mv, "kubectl", "/usr/local/bin"
         end
       end
 
@@ -666,20 +671,236 @@ class MacOS < Thor
         sudo :mv, "/tmp/token.csv /etc/kubernetes"
       end
 
-
-      if test "[ -f /usr/lib/systemd/system/etcd.service ]"
-        puts "\e[0;32m /usr/lib/systemd/system/ectd.service has already created. \e[0m\n"
+      if test "[ -f /etc/kubernetes/kube-apiserver.conf ]"
+        puts "\e[0;32m /etc/kubernetes/kube-apiserver.conf has already created. \e[0m\n"
       else
-        # etcd_service = StringIO.new <<~JSON
+        etcd_servers = clusterips.each.map {|cip| "https://#{cip}:2379" }.join(',')
+        kube_apiserver_conf = StringIO.new <<~CONF
+        KUBE_APISERVER_OPTS="--enable-admission-plugins=NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota \
+        --anonymous-auth=false \
+        --bind-address=#{hostip} \
+        --secure-port=6443 \
+        --advertise-address=#{hostip} \
+        --insecure-port=0 \
+        --authorization-mode=Node,RBAC \
+        --runtime-config=api/all=true \
+        --enable-bootstrap-token-auth \
+        --service-cluster-ip-range=#{ service_cluster_ip_range } \
+        --token-auth-file=/etc/kubernetes/token.csv \
+        --service-node-port-range=30000-50000 \
+        --tls-cert-file=/etc/kubernetes/ssl/kube-apiserver.pem  \
+        --tls-private-key-file=/etc/kubernetes/ssl/kube-apiserver-key.pem \
+        --kubelet-client-certificate=/etc/kubernetes/ssl/kube-apiserver.pem \
+        --kubelet-client-key=/etc/kubernetes/ssl/kube-apiserver-key.pem \
+        --service-account-issuer=api \
+        --service-account-key-file=/etc/etcd/ssl/ca-key.pem \
+        --service-account-signing-key-file=/etc/etcd/ssl/ca-key.pem  \
+        --client-ca-file=/etc/etcd/ssl/ca.pem \
+        --etcd-cafile=/etc/etcd/ssl/ca.pem \
+        --etcd-certfile=/etc/etcd/ssl/etcd.pem \
+        --etcd-keyfile=/etc/etcd/ssl/etcd-key.pem \
+        --etcd-servers=#{etcd_servers} \
+        --enable-swagger-ui=true \
+        --allow-privileged=true \
+        --apiserver-count=3 \
+        --audit-log-maxage=30 \
+        --audit-log-maxbackup=3 \
+        --audit-log-maxsize=100 \
+        --audit-log-path=/var/log/kube-apiserver-audit.log \
+        --event-ttl=1h \
+        --alsologtostderr=true \
+        --logtostderr=false \
+        --log-dir=/var/log/kubernetes \
+        --v=4"
+        CONF
 
-        # JSON
-
-        # upload! etcd_service, '/tmp/etcd.service'
-        # sudo :mv, '/tmp/etcd.service /usr/lib/systemd/system/'
-
-        # sudo :systemctl, 'daemon-reload'
-        # sudo :systemctl, 'enable etcd'
+        # puts kube_apiserver_conf.read
+        upload! kube_apiserver_conf, '/tmp/kube-apiserver.conf'
+        sudo :mv, '/tmp/kube-apiserver.conf /etc/kubernetes'
       end
+
+      if test "[ -f /usr/lib/systemd/system/kube-apiserver.service ]"
+        puts "\e[0;32m /usr/lib/systemd/system/kube-apiserver.service has already created. \e[0m\n"
+      else
+        kube_apiserver_service = StringIO.new <<~CONF
+        [Unit]
+        Description=Kubernetes API Server
+        Documentation=https://github.com/kubernetes/kubernetes
+        After=etcd.service
+        Wants=etcd.service
+
+        [Service]
+        EnvironmentFile=-/etc/kubernetes/kube-apiserver.conf
+        ExecStart=/usr/local/bin/kube-apiserver $KUBE_APISERVER_OPTS
+        Restart=on-failure
+        RestartSec=5
+        Type=notify
+        LimitNOFILE=65536
+
+        [Install]
+        WantedBy=multi-user.target
+        CONF
+
+        upload! kube_apiserver_service, '/tmp/kube-apiserver.service'
+        sudo :mv, '/tmp/kube-apiserver.service /usr/lib/systemd/system/'
+
+        sudo :systemctl, 'daemon-reload'
+        sudo :systemctl, 'enable kube-apiserver'
+        sudo :systemctl, 'restart kube-apiserver'
+      end
+
+      if test "[ -f /etc/kubernetes/kube.config ]"
+        puts "\e[0;32m /etc/kubernetes/kube.config has already created. \e[0m\n"
+      else
+        within '/etc/kubernetes' do
+          sudo :kubectl, "config set-cluster kubernetes --certificate-authority=/etc/etcd/ssl/ca.pem --embed-certs=true --server=https://#{hostip}:6443 --kubeconfig=kube.config"
+          sudo :kubectl, "config set-credentials admin --client-certificate=/etc/kubernetes/ssl/admin.pem --client-key=/etc/kubernetes/ssl/admin-key.pem --embed-certs=true --kubeconfig=kube.config"
+          sudo :kubectl, "config set-context kubernetes --cluster=kubernetes --user=admin --kubeconfig=kube.config"
+          sudo :kubectl, "config use-context kubernetes --kubeconfig=kube.config"
+        end
+      end
+
+      if test "[ -f /home/#{username}/.kube/config ]"
+        puts "\e[0;32m /home/#{username}/.kube/config has already created. \e[0m\n"
+      else
+        unless test "[ -d /home/#{username}/.kube ]"
+          execute :mkdir, "/home/#{username}/.kube"
+        end
+
+        sudo :cp, "/etc/kubernetes/kube.config", "/home/#{username}/.kube/config"
+        sudo :chown, "-R #{username}:#{username} /home/#{username}/.kube"
+      end
+
+      if test "[ -f /etc/kubernetes/kube-controller-manager.kubeconfig ]"
+        puts "\e[0;32m /etc/kubernetes/kube-controller-manager.kubeconfig has already created. \e[0m\n"
+      else
+        within '/etc/kubernetes' do
+          sudo :kubectl, "config set-cluster kubernetes --certificate-authority=/etc/etcd/ssl/ca.pem --embed-certs=true --server=https://#{hostip}:6443 --kubeconfig=kube-controller-manager.kubeconfig"
+          sudo :kubectl, "config set-credentials system:kube-controller-manager --client-certificate=/etc/kubernetes/ssl/kube-controller-manager.pem --client-key=/etc/kubernetes/ssl/kube-controller-manager-key.pem --embed-certs=true --kubeconfig=kube-controller-manager.kubeconfig"
+          sudo :kubectl, "config set-context system:kube-controller-manager --cluster=kubernetes --user=system:kube-controller-manager --kubeconfig=kube-controller-manager.kubeconfig"
+          sudo :kubectl, "config use-context system:kube-controller-manager --kubeconfig=kube-controller-manager.kubeconfig"
+        end
+      end
+
+      if test "[ -f /etc/kubernetes/kube-controller-manager.conf ]"
+        puts "\e[0;32m /etc/kubernetes/kube-controller-manager.conf has already created. \e[0m\n"
+      else
+        kube_controller_manager_conf = StringIO.new <<~CONF
+        KUBE_CONTROLLER_MANAGER_OPTS="\
+        --secure-port=10257 \
+        --bind-address=0.0.0.0 \
+        --kubeconfig=/etc/kubernetes/kube-controller-manager.kubeconfig \
+        --service-cluster-ip-range=#{ service_cluster_ip_range } \
+        --cluster-name=kubernetes \
+        --cluster-signing-cert-file=/etc/etcd/ssl/ca.pem \
+        --cluster-signing-key-file=/etc/etcd/ssl/ca-key.pem \
+        --root-ca-file=/etc/etcd/ssl/ca.pem \
+        --service-account-private-key-file=/etc/etcd/ssl/ca-key.pem \
+        --allocate-node-cidrs=true \
+        --cluster-cidr=#{ cluster_cidr } \
+        --cluster-signing-duration=87600h \
+        --leader-elect=true \
+        --feature-gates=RotateKubeletServerCertificate=true \
+        --controllers=*,bootstrapsigner,tokencleaner \
+        --horizontal-pod-autoscaler-sync-period=15s \
+        --tls-cert-file=/etc/kubernetes/ssl/kube-controller-manager.pem \
+        --tls-private-key-file=/etc/kubernetes/ssl/kube-controller-manager-key.pem \
+        --use-service-account-credentials=true \
+        --alsologtostderr=true \
+        --logtostderr=false \
+        --log-dir=/var/log/kubernetes \
+        --v=2"
+        CONF
+
+        # puts kube_controller_manager_conf.read
+        upload! kube_controller_manager_conf, '/tmp/kube-controller-manager.conf'
+        sudo :mv, '/tmp/kube-controller-manager.conf /etc/kubernetes'
+      end
+
+      if test "[ -f /usr/lib/systemd/system/kube-controller-manager.service ]"
+        puts "\e[0;32m /usr/lib/systemd/system/kube-controller-manager.service has already created. \e[0m\n"
+      else
+        kube_controller_manager_service = StringIO.new <<~CONF
+        [Unit]
+        Description=Kubernetes Controller Manager
+        Documentation=https://github.com/kubernetes/kubernetes
+        
+        [Service]
+        EnvironmentFile=-/etc/kubernetes/kube-controller-manager.conf
+        ExecStart=/usr/local/bin/kube-controller-manager $KUBE_CONTROLLER_MANAGER_OPTS
+        Restart=on-failure
+        RestartSec=5
+        
+        [Install]
+        WantedBy=multi-user.target
+        CONF
+
+        upload! kube_controller_manager_service, '/tmp/kube-controller-manager.service'
+        sudo :mv, '/tmp/kube-controller-manager.service /usr/lib/systemd/system/'
+
+        sudo :systemctl, 'daemon-reload'
+        sudo :systemctl, 'enable kube-controller-manager'
+        sudo :systemctl, 'restart kube-controller-manager'
+      end
+
+      if test "[ -f /etc/kubernetes/kube-scheduler.kubeconfig ]"
+        puts "\e[0;32m /etc/kubernetes/kube-scheduler.kubeconfig has already created. \e[0m\n"
+      else
+        within '/etc/kubernetes' do
+          sudo :kubectl, "config set-cluster kubernetes --certificate-authority=/etc/etcd/ssl/ca.pem --embed-certs=true --server=https://#{hostip}:6443 --kubeconfig=kube-scheduler.kubeconfig"
+          sudo :kubectl, "config set-credentials system:kube-scheduler --client-certificate=/etc/kubernetes/ssl/kube-scheduler.pem --client-key=/etc/kubernetes/ssl/kube-scheduler-key.pem --embed-certs=true --kubeconfig=kube-scheduler.kubeconfig"
+          sudo :kubectl, "config set-context system:kube-scheduler --cluster=kubernetes --user=system:kube-scheduler --kubeconfig=kube-scheduler.kubeconfig"
+          sudo :kubectl, "config use-context system:kube-scheduler --kubeconfig=kube-scheduler.kubeconfig"
+        end
+      end
+
+      if test "[ -f /etc/kubernetes/kube-scheduler.conf ]"
+        puts "\e[0;32m /etc/kubernetes/kube-scheduler.conf has already created. \e[0m\n"
+      else
+        kube_scheduler_conf = StringIO.new <<~CONF
+        KUBE_SCHEDULER_OPTS="--address=127.0.0.1 \
+        --kubeconfig=/etc/kubernetes/kube-scheduler.kubeconfig \
+        --leader-elect=true \
+        --alsologtostderr=true \
+        --logtostderr=false \
+        --log-dir=/var/log/kubernetes \
+        --v=2"
+        CONF
+
+        # puts kube_scheduler_conf.read
+        upload! kube_scheduler_conf, '/tmp/kube-scheduler.conf'
+        sudo :mv, '/tmp/kube-scheduler.conf /etc/kubernetes'
+      end
+
+      if test "[ -f /usr/lib/systemd/system/kube-scheduler.service ]"
+        puts "\e[0;32m /usr/lib/systemd/system/kube-scheduler.service has already created. \e[0m\n"
+      else
+        kube_scheduler_service = StringIO.new <<~CONF
+        [Unit]
+        Description=Kubernetes Scheduler
+        Documentation=https://github.com/kubernetes/kubernetes
+        
+        [Service]
+        EnvironmentFile=-/etc/kubernetes/kube-scheduler.conf
+        ExecStart=/usr/local/bin/kube-scheduler $KUBE_SCHEDULER_OPTS
+        Restart=on-failure
+        RestartSec=5
+        
+        [Install]
+        WantedBy=multi-user.target
+        CONF
+
+        upload! kube_scheduler_service, '/tmp/kube-scheduler.service'
+        sudo :mv, '/tmp/kube-scheduler.service /usr/lib/systemd/system/'
+
+        sudo :systemctl, 'daemon-reload'
+        sudo :systemctl, 'enable kube-scheduler.service'
+        sudo :systemctl, 'restart kube-scheduler.service'
+      end
+
+      # execute :kubectl, "cluster-info"
+      # execute :kubectl, "get componentstatuses"
+      # execute :kubectl, "get all --all-namespaces"
     end
   end
 

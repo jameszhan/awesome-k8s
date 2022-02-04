@@ -122,4 +122,10 @@ $ wget https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kuberne
 
 ```bash
 $ ./macos master 192.168.64.7 ubuntu --clusterips=192.168.64.7,192.168.64.8,192.168.64.9 --binaries-url=https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-arm64.tar.gz
+$ ./macos master 192.168.64.8 ubuntu --clusterips=192.168.64.7,192.168.64.8,192.168.64.9 --binaries-url=https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-arm64.tar.gz
+$ ./macos master 192.168.64.9 ubuntu --clusterips=192.168.64.7,192.168.64.8,192.168.64.9 --binaries-url=https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-arm64.tar.gz
+
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.7:6443/version
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.8:6443/version
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.9:6443/version
 ```
