@@ -106,8 +106,8 @@ class MacOS < Thor
       end
       
       unless test "[ -f /etc/modules-load.d/k8s.conf ]"
-        sudo 'apt -y update'
-        sudo 'apt -y install ipvsadm ipset conntrack'
+        sudo 'apt -yq update'
+        sudo 'apt -yq install ipvsadm ipset conntrack'
 
         k8s_mod_cfg = StringIO.new <<~K8S_MOD
           overlay
@@ -359,7 +359,6 @@ class MacOS < Thor
 
       sudo :systemctl, 'restart etcd'
     end
-
   end
 
   desc 'apt 192.168.64.7 ubuntu', 'setup apt source for 192.168.64.7 via user ubuntu'
@@ -616,7 +615,6 @@ class MacOS < Thor
       #{ token_random },kubelet-bootstrap,10001,"system:kubelet-bootstrap"
       JSON
       upload! token_csv, '/opt/etc/cfssl/master/token.csv'
-
     end
 
     binaries_url = options[:binaries_url]
@@ -927,8 +925,8 @@ class MacOS < Thor
       if test "[ -f /etc/haproxy/haproxy.cfg ]"
         puts "\e[0;32m /etc/haproxy/haproxy.cfg has already created. \e[0m\n"
       else
-        sudo 'apt -y update'
-        sudo 'apt -y install haproxy'
+        sudo 'apt -yq update'
+        sudo 'apt -yq install haproxy'
 
         haproxy_cfg = StringIO.new <<~CFG
         global
@@ -980,8 +978,8 @@ class MacOS < Thor
       if test "[ -f /etc/keepalived/keepalived.conf ]"
         puts "\e[0;32m /etc/keepalived/keepalived.conf has already created. \e[0m\n"
       else
-        sudo 'apt -y update'
-        sudo 'apt -y install keepalived'
+        sudo 'apt -yq update'
+        sudo 'apt -yq install keepalived'
 
         check_apiserver_sh = StringIO.new <<~SCRIPT
         #!/usr/bin/env bash
@@ -1057,6 +1055,405 @@ class MacOS < Thor
         sudo :chown, 'root:root /etc/keepalived/keepalived.conf'
         
         sudo :systemctl, 'restart keepalived.service'
+      end
+    end
+  end
+
+  desc 'docker 192.168.64.5 ubuntu', 'setup docker for 192.168.64.5 via user ubuntu'
+  def docker(hostip, username='ubuntu', port=22)
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+      unless test('type docker')
+        # sudo 'apt -yq remove docker docker-engine docker.io containerd runc'
+        sudo 'apt -yq update'
+        sudo 'apt -yq install ca-certificates curl gnupg lsb-release'
+
+        if test "[ -f /usr/share/keyrings/docker-archive-keyring.gpg ]"
+          puts "\e[0;32m /usr/share/keyrings/docker-archive-keyring.gpg has already created. \e[0m\n"
+        else
+          execute "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg"
+        end
+
+        if test "[ -f /etc/apt/sources.list.d/docker.list ]"
+          puts "\e[0;32m /etc/apt/sources.list.d/docker.list has already created. \e[0m\n"
+        else
+          arch = capture(:dpkg, '--print-architecture')
+          lsb_release_sc = capture(:lsb_release, '-sc')
+          execute <<-SCRIPT
+            echo "deb [arch=#{arch} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
+            #{lsb_release_sc} stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          SCRIPT
+        end
+
+        sudo 'apt -yq update'
+        sudo 'apt -yq install docker-ce docker-ce-cli containerd.io'
+
+        unless test "[ -f /etc/docker/daemon.json ]"
+          daemon_json = StringIO.new <<~JSON
+          {
+            "data-root": "/var/lib/docker",
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "200m",
+              "max-file": "5"
+            },
+            "default-ulimits": {
+              "nofile": {
+                "Name": "nofile",
+                "Hard": 655360,
+                "Soft": 655360
+              },
+              "nproc": {
+                "Name": "nproc",
+                "Hard": 655360,
+                "Soft": 655360
+              }
+            },
+            "live-restore": true,
+            "oom-score-adjust": -1000,
+            "max-concurrent-downloads": 10,
+            "max-concurrent-uploads": 10,
+            "storage-driver": "overlay2",
+            "storage-opts": [
+              "overlay2.override_kernel_check=true"
+            ],
+            "exec-opts": [
+              "native.cgroupdriver=systemd"
+            ],
+            "registry-mirrors": [
+              "https://yssx4sxy.mirror.aliyuncs.com/"
+            ],
+            "insecure-registries": [
+              "harbor.default.svc.cluster.local"
+            ]
+          }
+          JSON
+          upload! daemon_json, '/tmp/daemon.json'
+          sudo 'mkdir /etc/docker' unless test "[ -d /etc/docker ]"
+          execute 'cat /tmp/daemon.json | sudo tee /etc/docker/daemon.json > /dev/null'
+        end
+        
+        sudo "usermod -aG docker #{username}"
+
+        sudo :systemctl, 'restart docker'
+      else
+        puts "\e[0;32m docker have already installed. \e[0m\n"    
+      end
+    end
+  end
+
+  desc 'worker 192.168.64.5 ubuntu', 'setup worker for 192.168.64.5 via user ubuntu'
+  option :hostname, :type => :string, :required => true, :banner => 'k8s-worker01'
+  option :binaries_url, :type => :string, :required => true
+  option :dns_ip, :default => '192.168.1.130'
+  option :cluster_cidr, :default => "10.244.0.0/16"
+  option :kube_proxy_mode, :default => 'iptables'
+  option :master_addr, :default => "192.168.64.100:8443" 
+  def worker(hostip, username='ubuntu', port=22)
+    run_locally do
+      execute :cfssl, 'version'
+
+      if test "[ -d /opt/etc/cfssl/worker ]"
+        puts "\e[0;32m /opt/etc/cfssl/worker have already exists. \e[0m\n"
+      else
+        execute :mkdir, '-p /opt/etc/cfssl/worker'
+      end
+
+      within '/opt/etc/cfssl/worker' do
+        if test "[ -f /opt/etc/cfssl/worker/kube-proxy-csr.json ]"
+          puts "\e[0;32m /opt/etc/cfssl/worker/kube-proxy-csr.json have already exists. \e[0m\n"
+        else
+          kube_proxy_csr_json = StringIO.new <<~JSON
+          {
+            "CN": "system:kube-proxy",
+            "key": {
+              "algo": "rsa",
+              "size": 2048
+            },
+            "names": [
+              {
+                "C": "CN",
+                "ST": "Guangdong",
+                "L": "Shenzhen",
+                "O": "system:kube-proxy",
+                "OU": "system"
+              }
+            ]
+          }
+          JSON
+          upload! kube_proxy_csr_json, '/opt/etc/cfssl/worker/kube-proxy-csr.json'
+        end
+
+        if test "[ -f /opt/etc/cfssl/worker/kube-proxy.pem ]"
+          puts "\e[0;32m ignore: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-proxy-csr.json | cfssljson -bare kube-proxy. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -ca=/opt/etc/cfssl/etcd/ca.pem -ca-key=/opt/etc/cfssl/etcd/ca-key.pem -config=/opt/etc/cfssl/master/ca-config.json -profile=kubernetes kube-proxy-csr.json | cfssljson -bare kube-proxy'
+        end
+      end
+    end
+
+    binaries_url = options[:binaries_url]
+    core_dns_ip = options[:dns_ip]
+    cluster_cidr = options[:cluster_cidr]
+    kube_proxy_mode = options[:kube_proxy_mode]
+    master_addr = options[:master_addr]
+    hostname = options[:hostname]
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+      if test "[ -d /tmp/kubernetes/server/bin ]"
+        puts "\e[0;32m kubernete binaries has already downloaded. \e[0m\n"
+      else
+        within '/tmp' do
+          execute :wget, "--quiet #{binaries_url}"
+          execute :tar, 'zxvf `ls | grep kubernetes-server-*.tar.gz`'
+        end
+      end
+
+      if test "[ -f /usr/local/bin/kube-proxy ]"
+        puts "\e[0;32m /usr/local/bin/kube-proxy has already created. \e[0m\n"
+      else
+        within '/tmp/kubernetes/server/bin' do
+          sudo :mv, "kubelet", "/usr/local/bin"
+          sudo :mv, "kube-proxy", "/usr/local/bin"
+          sudo :mv, "kubectl", "/usr/local/bin"
+        end
+      end
+
+      unless test "[ -d /etc/kubernetes/ssl ]"
+        sudo 'mkdir -p /etc/kubernetes/ssl'
+        sudo 'mkdir -p /etc/kubernetes/manifests'
+        sudo 'mkdir -p /var/lib/kubelet'
+        sudo 'mkdir -p /var/lib/kube-proxy'
+
+        upload! "/opt/etc/cfssl/etcd/ca.pem", "/tmp"
+        upload! "/opt/etc/cfssl/master/token.csv", "/tmp"
+        sudo 'mv /tmp/ca.pem /etc/kubernetes/ssl'
+        sudo 'mv /tmp/token.csv /etc/kubernetes'
+
+        sudo 'chown -R root:root /etc/kubernetes'
+      end
+
+      files = %W[kube-proxy.csr kube-proxy-key.pem kube-proxy.pem]
+      files.each do |file|
+        if test "[ -f /etc/kubernetes/ssl/#{file} ]"
+          puts "\e[0;32m /etc/kubernetes/ssl/#{file} has already created. \e[0m\n"
+        else
+          upload! "/opt/etc/cfssl/worker/#{file}", "/tmp/#{file}"
+          sudo :mv, "/tmp/#{file} /etc/kubernetes/ssl"
+        end
+      end
+
+      if test "[ -f /etc/kubernetes/kubelet-bootstrap.kubeconfig ]"
+        puts "\e[0;32m /etc/kubernetes/kubelet-bootstrap.kubeconfig has already created. \e[0m\n"
+      else
+        within '/etc/kubernetes' do
+          token = capture(%Q|awk -F "," '{print $1}' /etc/kubernetes/token.csv|)
+          sudo :kubectl, "config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://#{master_addr} --kubeconfig=kubelet-bootstrap.kubeconfig"
+          sudo :kubectl, "config set-credentials kubelet-bootstrap --token=#{token} --kubeconfig=kubelet-bootstrap.kubeconfig"
+          sudo :kubectl, "config set-context default --cluster=kubernetes --user=kubelet-bootstrap --kubeconfig=kubelet-bootstrap.kubeconfig"
+          sudo :kubectl, "config use-context default --kubeconfig=kubelet-bootstrap.kubeconfig"
+        end
+      end
+
+      if test "[ -f /etc/kubernetes/kube-proxy.kubeconfig ]"
+        puts "\e[0;32m /etc/kubernetes/kube-proxy.kubeconfig has already created. \e[0m\n"
+      else
+        within '/etc/kubernetes' do
+          sudo :kubectl, "config set-cluster kubernetes --certificate-authority=/etc/kubernetes/ssl/ca.pem --embed-certs=true --server=https://#{master_addr} --kubeconfig=kube-proxy.kubeconfig"
+          sudo :kubectl, "config set-credentials system:kube-proxy --client-certificate=/etc/kubernetes/ssl/kube-proxy.pem --client-key=/etc/kubernetes/ssl/kube-proxy-key.pem --embed-certs=true --kubeconfig=kube-proxy.kubeconfig"
+          sudo :kubectl, "config set-context default --cluster=kubernetes --user=system:kube-proxy --kubeconfig=kube-proxy.kubeconfig"
+          sudo :kubectl, "config use-context default --kubeconfig=kube-proxy.kubeconfig"
+        end
+      end
+      
+      # https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/
+      unless test "[ -f /etc/kubernetes/kubelet.yaml ]"
+        kubelet_yaml = StringIO.new <<~YAML
+          apiVersion: kubelet.config.k8s.io/v1beta1
+          kind: KubeletConfiguration
+
+          authentication:
+            anonymous:
+              enabled: false
+            webhook:
+              cacheTTL: 2m
+              enabled: true
+            x509:
+              clientCAFile: /etc/kubernetes/ssl/ca.pem
+          
+          authorization:
+            mode: Webhook
+            webhook:
+              cacheAuthorizedTTL: 0s
+              cacheUnauthorizedTTL: 0s
+
+          # cgroupDriver: cgroupfs
+          cgroupDriver: systemd
+
+          clusterDomain: cluster.local
+          clusterDNS:
+            - #{core_dns_ip}
+          
+          staticPodPath: /etc/kubernetes/manifests
+
+          syncFrequency: 1m
+          fileCheckFrequency: 20s
+          httpCheckFrequency: 20s
+          
+          address: 0.0.0.0
+          port: 10250
+
+          healthzPort: 10248
+          healthzBindAddress: 127.0.0.1
+          
+          # rotateCertificates: false
+          rotateCertificates: true
+          
+          streamingConnectionIdleTimeout: 4h
+          nodeStatusUpdateFrequency: 10s
+          nodeStatusReportFrequency: 5m
+          imageMinimumGCAge: 2m
+          volumeStatsAggPeriod: 1m
+          
+          cpuManagerReconcilePeriod: 10s
+          runtimeRequestTimeout: 2m
+          
+          resolvConf: /run/systemd/resolve/resolv.conf
+          
+          evictionPressureTransitionPeriod: 5m
+          
+          logging:
+            flushFrequency: 0
+            options:
+              json:
+                infoBufferSize: "0"
+            verbosity: 0
+          
+          shutdownGracePeriod: 0s
+          shutdownGracePeriodCriticalPods: 0s
+        YAML
+
+        upload! kubelet_yaml, '/tmp/kubelet.yaml'
+        execute 'cat /tmp/kubelet.yaml | sudo tee /etc/kubernetes/kubelet.yaml > /dev/null'
+      end
+
+      # https://kubernetes.io/docs/reference/config-api/kube-proxy-config.v1alpha1/
+      unless test "[ -f /etc/kubernetes/kube-proxy.yaml ]"
+        kube_proxy_yaml = StringIO.new <<~YAML
+          apiVersion: kubeproxy.config.k8s.io/v1alpha1
+          kind: KubeProxyConfiguration
+
+          bindAddress: 0.0.0.0
+          clientConnection:
+            kubeconfig: /etc/kubernetes/kube-proxy.kubeconfig
+          clusterCIDR: #{cluster_cidr}
+
+          healthzBindAddress: 0.0.0.0:10256
+          metricsBindAddress: 127.0.0.1:10249
+          hostnameOverride: "#{hostname}"
+          mode: #{kube_proxy_mode}
+        YAML
+
+        upload! kube_proxy_yaml, '/tmp/kube-proxy.yaml'
+        execute 'cat /tmp/kube-proxy.yaml | sudo tee /etc/kubernetes/kube-proxy.yaml > /dev/null'
+      end
+
+      unless test "[ -f /lib/systemd/system/kubelet.service ]"
+        kubelet_svc = StringIO.new <<~INI
+          [Unit]
+          Description=Kubernetes Kubelet
+          Documentation=https://github.com/kubernetes/kubernetes
+          After=docker.service
+          Requires=docker.service
+          
+          [Service]
+          WorkingDirectory=/var/lib/kubelet
+          ExecStart=/usr/local/bin/kubelet \\
+            --hostname-override=#{hostname} \\
+            --bootstrap-kubeconfig=/etc/kubernetes/kubelet-bootstrap.kubeconfig \\
+            --kubeconfig=/etc/kubernetes/kubelet.kubeconfig \\
+            --config=/etc/kubernetes/kubelet.yaml \\
+            --network-plugin=cni \\
+            --cert-dir=/etc/kubernetes/ssl \\
+            --pod-infra-container-image=registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.6 \\
+            --alsologtostderr=true \\
+            --logtostderr=false \\
+            --log-dir=/var/log/kubernetes \\
+            --v=2
+          
+          Restart=on-failure
+          RestartSec=5
+          
+          [Install]
+          WantedBy=multi-user.target
+        INI
+
+        upload! kubelet_svc, '/tmp/kubelet.service'
+        execute 'cat /tmp/kubelet.service | sudo tee /lib/systemd/system/kubelet.service > /dev/null'
+
+        sudo :systemctl, 'daemon-reload'
+        sudo :systemctl, 'enable kubelet'
+        sudo :systemctl, 'restart kubelet'
+      end
+      
+      unless test "[ -f /lib/systemd/system/kube-proxy.service ]"
+        kubeproxy_svc = StringIO.new <<~INI
+          [Unit]
+          Description=Kubernetes Kube-Proxy Server
+          Documentation=https://github.com/kubernetes/kubernetes
+          After=network.target
+          
+          [Service]
+          WorkingDirectory=/var/lib/kube-proxy
+          ExecStart=/usr/local/bin/kube-proxy \\
+            --config=/etc/kubernetes/kube-proxy.yaml \\
+            --alsologtostderr=true \\
+            --logtostderr=false \\
+            --log-dir=/var/log/kubernetes \\
+            --v=2
+          Restart=on-failure
+          RestartSec=5
+          LimitNOFILE=65536
+          
+          [Install]
+          WantedBy=multi-user.target
+        INI
+
+        upload! kubeproxy_svc, '/tmp/kube-proxy.service'
+        execute 'cat /tmp/kube-proxy.service | sudo tee /lib/systemd/system/kube-proxy.service > /dev/null'
+
+        sudo :systemctl, 'daemon-reload'
+        sudo :systemctl, 'enable kube-proxy'
+        sudo :systemctl, 'restart kube-proxy'
+      end
+    end
+  end
+
+  # https://get.helm.sh/helm-v3.8.0-linux-amd64.tar.gz
+  desc 'helm 192.168.64.7 ubuntu', 'install helm for 192.168.64.7 via user ubuntu'
+  option :binaries_url, :type => :string, :required => true, :banner => 'https://get.helm.sh/helm-v3.8.0-linux-arm64.tar.gz'
+  def helm(hostip, username='ubuntu', port=22)
+    binaries_url = options[:binaries_url]
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+      arch = capture(:uname, '-m')
+      if arch == 'aarch64'
+        helm_bin_dir = '/tmp/linux-arm64'
+      else
+        helm_bin_dir = '/tmp/linux-amd64'
+      end
+      if test "[ -d #{helm_bin_dir} ]"
+        puts "\e[0;32m helm binaries has already downloaded. \e[0m\n"
+      else
+        within '/tmp' do
+          execute :wget, "--quiet #{binaries_url}"
+          execute :tar, 'zxvf `ls | grep helm-v*-linux-*.tar.gz`'
+        end
+      end
+
+      if test "[ -f /usr/local/bin/helm ]"
+        puts "\e[0;32m /usr/local/bin/helm has already created. \e[0m\n"
+      else
+        within helm_bin_dir do
+          sudo :mv, "helm", "/usr/local/bin"
+        end
       end
     end
   end
