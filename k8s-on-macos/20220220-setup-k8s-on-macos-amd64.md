@@ -307,22 +307,7 @@ $ curl -i -k https://www.bing.com
 
 #### `multipass`管理
 
-```bash
-# to destroy all data, too
-$ brew uninstall --zap multipass
-```
 
-```bash
-$ multipass help get
-
-$ multipass get client.gui.autostart
-$ multipass get client.gui.hotkey
-$ multipass get client.primary-name
-
-$ sudo multipass get local.bridged-network
-$ sudo multipass get local.privileged-mounts
-$ sudo multipass get local.driver
-```
 
 ### 安装`kubectl`
 

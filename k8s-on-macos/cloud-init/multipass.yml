@@ -1,0 +1,7 @@
+users:
+  - name: ubuntu
+    groups: [adm, admin, sudo, staff, users]
+    sudo: ["ALL = (ALL) NOPASSWD: ALL"]
+    shell: /bin/bash
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICKlyozoHszgLnnamHPPPyfivgCuv39aItv9eGkgdE8F zizhizhan@gmail.com

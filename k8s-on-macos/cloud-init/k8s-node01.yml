@@ -1,0 +1,17 @@
+users:
+  - name: ubuntu
+    groups: [adm, admin, sudo, staff, users]
+    sudo: ["ALL = (ALL) NOPASSWD: ALL"]
+    shell: /bin/bash
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICKlyozoHszgLnnamHPPPyfivgCuv39aItv9eGkgdE8F zizhizhan@gmail.com
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s1:
+      addresses: [192.168.64.11/24]
+      gateway4: 192.168.64.1
+      dhcp4: no
+      nameservers:
+        addresses: [223.5.5.5, 8.8.8.8]
