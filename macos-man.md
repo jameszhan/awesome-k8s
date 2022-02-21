@@ -33,9 +33,12 @@ YAML
 
 ```bash
 $ multipass find
-$ multipass launch --name=k8s-master01 --cloud-init=/opt/etc/cloud-init/multipass.yaml focal
-$ multipass launch --name=k8s-master02 --cloud-init=/opt/etc/cloud-init/multipass.yaml focal
-$ multipass launch --name=k8s-master03 --cloud-init=/opt/etc/cloud-init/multipass.yaml focal
+
+# multipass launch --name=k8s-master01 --cloud-init=/opt/etc/cloud-init/multipass.yaml focal
+$ multipass launch --name=k8s-master01 --cpus=2 --mem=2G --disk=32G --cloud-init=/opt/etc/cloud-init/k8s-master01.yaml focal
+$ multipass launch --name=k8s-master02 --cpus=2 --mem=2G --disk=32G --cloud-init=/opt/etc/cloud-init/k8s-master02.yaml focal
+$ multipass launch --name=k8s-master03 --cpus=2 --mem=2G --disk=32G --cloud-init=/opt/etc/cloud-init/k8s-master03.yaml focal
+
 $ multipass list
 
 $ ssh ubuntu@`multipass list | grep master01 | awk '{print $3}'`
@@ -44,6 +47,24 @@ $ ssh ubuntu@`multipass list | grep master03 | awk '{print $3}'`
 ```
 
 ## 安装`k8s`
+
+## 初始化必要设置
+
+```bash
+$ ./macos apt 192.168.64.11 ubuntu
+$ ./macos apt 192.168.64.12 ubuntu
+$ ./macos apt 192.168.64.13 ubuntu
+
+$ ./macos setup 192.168.64.11 ubuntu
+$ ./macos setup 192.168.64.12 ubuntu
+$ ./macos setup 192.168.64.13 ubuntu
+```
+
+> 进行下一步前，最好先重启虚拟机
+
+```bash
+$ multipass list | grep k8s-master | awk '{print $1}' | xargs multipass restart
+```
 
 ### 安装`etcd`
 
@@ -56,5 +77,168 @@ $ gem install sshkit-sudo
 $ gem install ed25519
 $ gem install bcrypt_pbkdf
 
-$ ./macos etcd 192.168.64.7 ubuntu --name=etcd01 --clusterips=192.168.64.7,192.168.64.8,192.168.64.9
+$ ./macos etcd 192.168.64.11 ubuntu --name=etcd01 --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/etcd/etcd-v3.5.1-linux-arm64.tar.gz
+$ ./macos etcd 192.168.64.12 ubuntu --name=etcd02 --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/etcd/etcd-v3.5.1-linux-arm64.tar.gz
+$ ./macos etcd 192.168.64.13 ubuntu --name=etcd03 --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/etcd/etcd-v3.5.1-linux-arm64.tar.gz
+```
+
+### `etcd`服务测试
+
+```bash
+$ ETCDCTL_API=3 etcdctl --write-out=table \
+  --cacert=/opt/etc/cfssl/etcd/ca.pem \
+  --cert=/opt/etc/cfssl/etcd/etcd.pem \
+  --key=/opt/etc/cfssl/etcd/etcd-key.pem \
+  --endpoints=https://192.168.64.11:2379,https://192.168.64.12:2379,https://192.168.64.13:2379 endpoint health
+
+$ ETCDCTL_API=3 etcdctl --write-out=table \
+  --cacert=/opt/etc/cfssl/etcd/ca.pem \
+  --cert=/opt/etc/cfssl/etcd/etcd.pem \
+  --key=/opt/etc/cfssl/etcd/etcd-key.pem \
+  --endpoints=https://192.168.64.11:2379,https://192.168.64.12:2379,https://192.168.64.13:2379 endpoint status
+
+$ ETCDCTL_API=3 etcdctl --write-out=table \
+  --cacert=/opt/etc/cfssl/etcd/ca.pem \
+  --cert=/opt/etc/cfssl/etcd/etcd.pem \
+  --key=/opt/etc/cfssl/etcd/etcd-key.pem \
+  --endpoints=https://192.168.64.11:2379,https://192.168.64.12:2379,https://192.168.64.13:2379 member list
+
+$ ETCDCTL_API=3 etcdctl --write-out=json \
+  --cacert=/opt/etc/cfssl/etcd/ca.pem \
+  --cert=/opt/etc/cfssl/etcd/etcd.pem \
+  --key=/opt/etc/cfssl/etcd/etcd-key.pem \
+  --endpoints=https://192.168.64.11:2379,https://192.168.64.12:2379,https://192.168.64.13:2379 auth status
+
+$ ETCDCTL_API=3 etcdctl --write-out=json \
+  --cacert=/opt/etc/cfssl/etcd/ca.pem \
+  --cert=/opt/etc/cfssl/etcd/etcd.pem \
+  --key=/opt/etc/cfssl/etcd/etcd-key.pem \
+  --endpoints=https://192.168.64.11:2379,https://192.168.64.12:2379,https://192.168.64.13:2379 \
+  get '' --prefix | jq .
+
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/etcd/etcd.pem --key /opt/etc/cfssl/etcd/etcd-key.pem https://192.168.64.11:2379/version
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/etcd/etcd.pem --key /opt/etc/cfssl/etcd/etcd-key.pem https://192.168.64.12:2379/health
+```
+
+### 安装`k8s master`
+
+```bash
+$ curl -L -s https://dl.k8s.io/release/stable.txt
+```
+
+> 下载不同版本的`K8S`安装文件，参考: [get-kube-binaries.sh](https://github.com/kubernetes/kubernetes/blob/master/cluster/get-kube-binaries.sh)
+
+```bash
+$ wget https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-amd64.tar.gz
+$ wget https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-arm64.tar.gz
+```
+
+```bash
+# ./macos master 192.168.64.11 ubuntu --clusterips=192.168.64.7,192.168.64.8,192.168.64.9 --binaries-url=https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-arm64.tar.gz
+$ ./macos master 192.168.64.11 ubuntu --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.11:6443/version
+
+$ ./macos master 192.168.64.12 ubuntu --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.12:6443/version
+
+$ ./macos master 192.168.64.13 ubuntu --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.13:6443/version
+```
+
+### 配置`HA`
+
+```bash
+$ ./macos ha 192.168.64.11 ubuntu --virtual-ip=192.168.64.100 --keepalived-state=MASTER --keepalived-priority=200 --link-interface=enp0s1 --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --clusternames=k8s-master01,k8s-master02,k8s-master03
+$ curl -i http://192.168.64.11:33305/monitor
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.11:8443/version
+
+$ ./macos ha 192.168.64.12 ubuntu --virtual-ip=192.168.64.100 --keepalived-state=BACKUP --keepalived-priority=150
+$ curl -i http://192.168.64.12:33305/monitor
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.12:8443/version
+
+$ ./macos ha 192.168.64.13 ubuntu --virtual-ip=192.168.64.100 --keepalived-state=BACKUP --keepalived-priority=100
+$ curl -i http://192.168.64.13:33305/monitor
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.13:8443/version
+
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.100:8443/version
+```
+
+### 安装`k8s worker`
+
+```bash
+$ hostnamectl status
+$ sudo hostnamectl set-hostname k8s-worker01
+
+$ ./macos setup 192.168.64.5 ubuntu
+$ ./macos docker 192.168.64.5 ubuntu
+# ./macos worker 192.168.64.5 ubuntu --hostname=k8s-worker01 --master-addr=192.168.64.100:8443 --dns-ip=10.96.0.2 --kube-proxy-mode=ipvs --binaries-url=https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-arm64.tar.gz
+$ ./macos worker 192.168.64.5 ubuntu --hostname=k8s-worker01 --master-addr=192.168.64.100:8443 --dns-ip=10.96.0.2 --kube-proxy-mode=ipvs --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
+```
+
+### 一次性工作
+
+```bash
+$ kubectl create clusterrolebinding kubelet-bootstrap --clusterrole=system:node-bootstrapper --user=kubelet-bootstrap
+$ kubectl create clusterrolebinding kubernetes-admin --clusterrole=cluster-admin --user=kubernetes
+```
+
+### 接受新加入节点申请
+
+```bash
+$ kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate approve
+$ kubectl get nodes
+```
+
+> 如果找不到，可以重启master服务，并且配置上对应的/etc/hosts。
+
+
+### 部署`CNI`插件
+
+#### Calico
+
+```bash
+$ kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+$ kubectl set env daemonset/calico-node -n kube-system CALICO_IPV4POOL_CIDR="10.244.0.0/16"
+```
+
+### 安装`Helm`
+
+```bash
+# ./macos helm 192.168.64.11 ubuntu --binaries-url=https://get.helm.sh/helm-v3.8.0-linux-arm64.tar.gz
+$ ./macos helm 192.168.64.11 ubuntu --binaries-url=http://192.168.1.6:8888/binaries/helm/helm-v3.8.0-linux-arm64.tar.gz
+```
+
+### 部署`CoreDNS`
+
+```bash
+$ helm repo add coredns https://coredns.github.io/helm
+$ helm repo update
+$ helm search repo coredns
+
+$ helm -n kube-system install coredns coredns/coredns --set service.clusterIP=10.96.0.2
+```
+
+### 测试集群工作
+```bash
+$ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
+```
+
+```bash
+$ curl -i -k https://kubernetes
+$ curl -i -k https://www.bing.com
+```
+
+## 新增`master`节点为`worker`节点
+
+```bash
+$ ./macos docker 192.168.64.13 ubuntu
+$ ./macos docker 192.168.64.12 ubuntu
+
+$ ./macos worker 192.168.64.13 ubuntu --hostname=k8s-master03 --master-addr=192.168.64.100:8443 --dns-ip=10.96.0.2 --kube-proxy-mode=ipvs --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
+$ ./macos worker 192.168.64.12 ubuntu --hostname=k8s-master02 --master-addr=192.168.64.100:8443 --dns-ip=10.96.0.2 --kube-proxy-mode=ipvs --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
+```
+
+```bash
+$ kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate approve
+$ kubectl get nodes
 ```
