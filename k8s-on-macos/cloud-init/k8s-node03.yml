@@ -5,7 +5,7 @@ users:
     shell: /bin/bash
     ssh-authorized-keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICKlyozoHszgLnnamHPPPyfivgCuv39aItv9eGkgdE8F zizhizhan@gmail.com
-fqdn: k8s-node01.local
+fqdn: k8s-node03.local
 write_files:
   - path: /etc/cloud/templates/hosts.debian.tmpl
     content: |

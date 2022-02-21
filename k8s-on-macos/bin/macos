@@ -73,28 +73,28 @@ class MacOS < Thor
           sudo 'apt -y full-upgrade'
           sudo 'apt -y autoremove'
         else
-          sudo :mv, '/etc/apt/sources.list', '/etc/apt/sources.list_bak'
+          # sudo :mv, '/etc/apt/sources.list', '/etc/apt/sources.list_bak'
   
-          mirrors_url = 'https://mirrors.ustc.edu.cn'
-          # mirrors_url = 'https://mirrors.tuna.tsinghua.edu.cn'  
-          lsb_release_sc = capture(:lsb_release, '-sc')
+          # mirrors_url = 'https://mirrors.ustc.edu.cn'
+          # # mirrors_url = 'https://mirrors.tuna.tsinghua.edu.cn'  
+          # lsb_release_sc = capture(:lsb_release, '-sc')
   
-          sources_list = StringIO.new <<~SOURCE_LIST
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
+          # sources_list = StringIO.new <<~SOURCE_LIST
+          #   deb #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
+          #   deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
             
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
+          #   deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
+          #   deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
             
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
+          #   deb #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
+          #   deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
             
-            deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
-            deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
-          SOURCE_LIST
+          #   deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
+          #   deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
+          # SOURCE_LIST
   
-          upload! sources_list, '/tmp/apt-sources.list'
-          execute 'cat /tmp/apt-sources.list | sudo tee /etc/apt/sources.list'
+          # upload! sources_list, '/tmp/apt-sources.list'
+          # execute 'cat /tmp/apt-sources.list | sudo tee /etc/apt/sources.list'
   
           execute 'export DEBIAN_FRONTEND=noninteractive'
           sudo 'apt -y update'
@@ -516,6 +516,16 @@ class MacOS < Thor
               "192.168.64.18",
               "192.168.64.19",
               "192.168.64.20",
+              "192.168.64.21",
+              "192.168.64.22",
+              "192.168.64.23",
+              "192.168.64.24",
+              "192.168.64.25",
+              "192.168.64.26",
+              "192.168.64.27",
+              "192.168.64.28",
+              "192.168.64.29",
+              "192.168.64.30",
               "192.168.64.100",
               "10.96.0.1",
               "10.96.0.2",

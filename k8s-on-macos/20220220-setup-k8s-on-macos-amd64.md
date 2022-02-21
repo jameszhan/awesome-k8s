@@ -1,10 +1,10 @@
-# 快速部署高可用`K8S`本地环境
+# `macOS`本地部署`k8s`集群
 
 ## 环境说明
 
 | 组件                     | 版本                  | 用途                        | 安装位置                                         |
 | ----------------------- | --------------------- | -------------------------- | ----------------------------------------------- |
-| macOS                   | macOS Monterey 12.2.1 | 宿主机操作系统                | -                                               |
+| macOS                   | macOS Monterey 12.1 | 宿主机操作系统                | -                                               |
 | Homebrew                | 3.3.15                | 包管理工具                   | macOS                                           |
 | Multipass               | 1.8.1+mac             | 快速创建`Ubuntu`虚拟机实例     | macOS                                           |
 | Ubuntu Server           | Ubuntu 20.04.4 LTS    | 虚拟机操作系统                 | macOS                                           |
@@ -119,7 +119,7 @@ $ gem install bcrypt_pbkdf
 #### 安装`macos`
 
 ```bash
-$ curl -o macos https://raw.githubusercontent.com/jameszhan/awesome-k8s/main/macos
+$ curl -o macos https://raw.githubusercontent.com/jameszhan/awesome-k8s/main/k8s-on-macos/bin/macos
 $ chmod +x macos
 $ ./macos
 ```

@@ -1,10 +1,43 @@
-# macOS 配置集群
+# `macOS`本地部署`k8s`集群
 
-## 准备虚拟机
+## 环境说明
 
-### 准备工作
+| 组件                     | 版本                  | 用途                        | 安装位置                                         |
+| ----------------------- | --------------------- | -------------------------- | ----------------------------------------------- |
+| macOS                   | macOS Monterey 12.1   | 宿主机操作系统                | -                                               |
+| Homebrew                | 3.3.14                | 包管理工具                   | macOS                                           |
+| Multipass               | 1.8.1+mac             | 快速创建`Ubuntu`虚拟机实例     | macOS                                           |
+| Ubuntu Server           | Ubuntu 20.04.4 LTS    | 虚拟机操作系统                 | macOS                                           |
+| Ruby                    | ruby 3.1.0p0          | 用于执行`macos`命令行工具      | macOS                                           |
+| CFSSL                   | 1.6.1                 | 生成`k8s`集群相关证书          | macOS                                           |
+| Helm                    | v3.8.0                | kubernetes package manager   | macOS                                           |
+| etcd                    | 3.5.2                 | `k8s`集群数据管理              | k8s-node01/k8s-node02/k8s-node03                |
+| kube-apiserver          | v1.23.4               | `k8s master`服务             | k8s-node01/k8s-node02/k8s-node03                |
+| kube-controller-manager | v1.23.4               | `k8s master`服务             | k8s-node01/k8s-node02/k8s-node03                |
+| kube-scheduler          | v1.23.4               | `k8s master`服务             | k8s-node01/k8s-node02/k8s-node03                |
+| kubectl                 | v1.23.4               | `k8s`命令行工具               | macOS/k8s-node01/k8s-node02/k8s-node03          |
+| HAProxy                 | 2.0.13-2ubuntu0.3     | 负载均衡服务                  | k8s-node01/k8s-node02/k8s-node03                |
+| Keepalived              | v2.0.19               | 高可用服务                    | k8s-node01/k8s-node02/k8s-node03                |
+| Docker                  | 20.10.12              | `CRI`服务                    | k8s-node01/k8s-node02/k8s-node03/k8s-node04/... |
+| kubelet                 | v1.23.4               | `k8s worker`服务             | k8s-node01/k8s-node02/k8s-node03/k8s-node04/... |
+| kube-proxy              | v1.23.4               | `k8s worker`服务             | k8s-node01/k8s-node02/k8s-node03/k8s-node04/... |
+| Calico                  | v3.22.0               | `CNI vRouter`服务            | k8s-node01/k8s-node02/k8s-node03/k8s-node04/... |
+| CoreDNS                 | 1.16.7                | `k8s DNS`服务                | k8s cluster                                     |
 
-#### 安装`multipass`
+
+## 准备工作
+
+### 安装相关软件
+
+#### 安装`Homebrew`
+
+```bash
+$ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+详细安装过程可以参考[Install Homebrew](https://brew.sh/)。
+
+#### 安装`Multipass`
 
 ```bash
 $ brew install --cask multipass
@@ -13,155 +46,251 @@ multipass   1.8.1+mac
 multipassd  1.8.1+mac
 ```
 
-#### 配置`cloud-init`
+详细安装过程可以参考[Install Multipass](https://multipass.run/)。
+
+#### 安装`CFSSL`
 
 ```bash
-$ ssh-keygen -t ed25519 -C "zizhizhan@gmail.com"
-$ ssh -T git@github.com
-$ cat <<YAML >> /opt/etc/cloud-init/multipass.yaml
-users:
-  - name: ubuntu
-    groups: [adm]
-    sudo: ["ALL = (ALL) NOPASSWD: ALL"]
-    shell: /bin/bash
-    ssh-authorized-keys:
-      - ssh-ed25519 AAAAC3EXAMPLE... zizhizhan@gmail.com
-YAML
+$ brew install cfssl
+$ cfssl version
+Version: 1.6.1
+Runtime: go1.17.2
 ```
+
+#### 安装`Ruby`(可选)
+
+```bash
+$ brew install ruby
+$ ruby --version
+ruby 3.1.0p0 (2021-12-25 revision fb4df44d16) [x86_64-darwin21]
+$ gem update --system
+$ gem update
+$ gem --version
+3.3.7
+```
+
+> `macOS`默认自带了`ruby`，不过在执行`gem`命令时候，需要使用`sudo`。
 
 ### 安装虚拟机
 
+生成密钥文件
+
 ```bash
-$ multipass find
-
-# multipass launch --name=k8s-master01 --cloud-init=/opt/etc/cloud-init/multipass.yaml focal
-$ multipass launch --name=k8s-master01 --cpus=2 --mem=2G --disk=32G --cloud-init=/opt/etc/cloud-init/k8s-master01.yaml focal
-$ multipass launch --name=k8s-master02 --cpus=2 --mem=2G --disk=32G --cloud-init=/opt/etc/cloud-init/k8s-master02.yaml focal
-$ multipass launch --name=k8s-master03 --cpus=2 --mem=2G --disk=32G --cloud-init=/opt/etc/cloud-init/k8s-master03.yaml focal
-
-$ multipass list
-
-$ ssh ubuntu@`multipass list | grep master01 | awk '{print $3}'`
-$ ssh ubuntu@`multipass list | grep master02 | awk '{print $3}'`
-$ ssh ubuntu@`multipass list | grep master03 | awk '{print $3}'`
+$ ssh-keygen -t ed25519 -C "zizhizhan@gmail.com"
 ```
 
-## 安装`k8s`
+#### k8s-node01
 
-## 初始化必要设置
+准备`cloud-init`文件
 
 ```bash
-$ ./macos apt 192.168.64.11 ubuntu
-$ ./macos apt 192.168.64.12 ubuntu
-$ ./macos apt 192.168.64.13 ubuntu
+$ cat <<YAML >> /opt/etc/cloud-init/k8s-node01.yml
+users:
+  - name: ubuntu
+    groups: [adm, admin, sudo, staff, users]
+    sudo: ["ALL = (ALL) NOPASSWD: ALL"]
+    shell: /bin/bash
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3Nz...... zizhizhan@gmail.com
+fqdn: k8s-node01.local
+write_files:
+  - path: /etc/cloud/templates/hosts.debian.tmpl
+    content: |
+      192.168.64.21    k8s-node01
+      192.168.64.22    k8s-node02
+      192.168.64.23    k8s-node03
+    append: true
+YAML
+```
 
-$ ./macos setup 192.168.64.11 ubuntu
-$ ./macos setup 192.168.64.12 ubuntu
-$ ./macos setup 192.168.64.13 ubuntu
+安装虚拟机
+
+```bash
+$ multipass launch --name=k8s-node01 --cpus=2 --mem=2G --disk=32G --cloud-init=/opt/etc/cloud-init/k8s-node01.yml focal
+$ ssh ubuntu@`multipass list | grep k8s-node01 | awk '{print $3}'`
+```
+
+
+#### k8s-node02
+
+准备`cloud-init`文件
+
+```bash
+$ cat <<YAML >> /opt/etc/cloud-init/k8s-node02.yml
+users:
+  - name: ubuntu
+    groups: [adm, admin, sudo, staff, users]
+    sudo: ["ALL = (ALL) NOPASSWD: ALL"]
+    shell: /bin/bash
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3Nz...... zizhizhan@gmail.com
+fqdn: k8s-node02.local
+write_files:
+  - path: /etc/cloud/templates/hosts.debian.tmpl
+    content: |
+      192.168.64.21    k8s-node01
+      192.168.64.22    k8s-node02
+      192.168.64.23    k8s-node03
+    append: true
+YAML
+```
+
+安装虚拟机
+
+```bash
+$ multipass launch --name=k8s-node02 --cpus=2 --mem=2G --disk=32G --cloud-init=/opt/etc/cloud-init/k8s-node02.yml focal
+$ ssh ubuntu@`multipass list | grep k8s-node02 | awk '{print $3}'`
+```
+
+#### k8s-node03
+
+准备`cloud-init`文件
+
+```bash
+$ cat <<YAML >> /opt/etc/cloud-init/k8s-node03.yml
+users:
+  - name: ubuntu
+    groups: [adm, admin, sudo, staff, users]
+    sudo: ["ALL = (ALL) NOPASSWD: ALL"]
+    shell: /bin/bash
+    ssh-authorized-keys:
+      - ssh-ed25519 AAAAC3Nz...... zizhizhan@gmail.com
+fqdn: k8s-node03.local
+write_files:
+  - path: /etc/cloud/templates/hosts.debian.tmpl
+    content: |
+      192.168.64.21    k8s-node01
+      192.168.64.22    k8s-node02
+      192.168.64.23    k8s-node03
+    append: true
+YAML
+```
+
+安装虚拟机
+
+```bash
+$ multipass launch --name=k8s-node03 --cpus=2 --mem=2G --disk=32G --cloud-init=/opt/etc/cloud-init/k8s-node03.yml focal
+$ ssh ubuntu@`multipass list | grep k8s-node03 | awk '{print $3}'`
+```
+
+### 安装`macos`工具
+
+#### 安装必要工具
+
+```bash
+$ gem install thor
+$ gem install sshkit
+$ gem install sshkit-sudo
+$ gem install ed25519
+$ gem install bcrypt_pbkdf
+```
+
+> 使用系统自带的`Ruby`，记得前面加`sudo`。
+
+#### 安装`macos`
+
+```bash
+$ curl -o macos https://raw.githubusercontent.com/jameszhan/awesome-k8s/main/k8s-on-macos/bin/macos
+$ chmod +x macos
+$ ./macos
+```
+
+## 安装集群
+
+### 初始化必要设置
+
+```bash
+$ ./macos setup 192.168.64.21 ubuntu
+$ ./macos setup 192.168.64.22 ubuntu
+$ ./macos setup 192.168.64.23 ubuntu
 ```
 
 > 进行下一步前，最好先重启虚拟机
 
 ```bash
-$ multipass list | grep k8s-master | awk '{print $1}' | xargs multipass restart
+$ multipass list | grep k8s-node | awk '{print $1}' | xargs multipass restart
 ```
 
-### 安装`etcd`
+### 安装[etcd](https://github.com/etcd-io/etcd/releases)集群
+
+#### 执行安装脚本
 
 ```bash
-$ brew install cfssl
-$ cfssl version
+$ ./macos etcd 192.168.64.21 ubuntu --name=etcd01 --clusterips=192.168.64.21,192.168.64.22,192.168.64.23 --binaries-url=http://192.168.1.6:8888/binaries/etcd/etcd-v3.5.1-linux-arm64.tar.gz
+$ multipass exec k8s-node01 /usr/local/bin/etcdctl version
 
-$ gem install sshkit
-$ gem install sshkit-sudo
-$ gem install ed25519
-$ gem install bcrypt_pbkdf
+$ ./macos etcd 192.168.64.22 ubuntu --name=etcd02 --clusterips=192.168.64.21,192.168.64.22,192.168.64.23 --binaries-url=http://192.168.1.6:8888/binaries/etcd/etcd-v3.5.1-linux-arm64.tar.gz
+$ multipass exec k8s-node02 /usr/local/bin/etcdctl version
 
-$ ./macos etcd 192.168.64.11 ubuntu --name=etcd01 --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/etcd/etcd-v3.5.1-linux-arm64.tar.gz
-$ ./macos etcd 192.168.64.12 ubuntu --name=etcd02 --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/etcd/etcd-v3.5.1-linux-arm64.tar.gz
-$ ./macos etcd 192.168.64.13 ubuntu --name=etcd03 --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/etcd/etcd-v3.5.1-linux-arm64.tar.gz
+$ ./macos etcd 192.168.64.23 ubuntu --name=etcd03 --clusterips=192.168.64.21,192.168.64.22,192.168.64.23 --binaries-url=http://192.168.1.6:8888/binaries/etcd/etcd-v3.5.1-linux-arm64.tar.gz
+$ multipass exec k8s-node03 /usr/local/bin/etcdctl version
 ```
 
-### `etcd`服务测试
+#### 测试`etcd`集群
 
 ```bash
 $ ETCDCTL_API=3 etcdctl --write-out=table \
   --cacert=/opt/etc/cfssl/etcd/ca.pem \
   --cert=/opt/etc/cfssl/etcd/etcd.pem \
   --key=/opt/etc/cfssl/etcd/etcd-key.pem \
-  --endpoints=https://192.168.64.11:2379,https://192.168.64.12:2379,https://192.168.64.13:2379 endpoint health
+  --endpoints=https://192.168.64.21:2379,https://192.168.64.22:2379,https://192.168.64.23:2379 endpoint health
 
 $ ETCDCTL_API=3 etcdctl --write-out=table \
   --cacert=/opt/etc/cfssl/etcd/ca.pem \
   --cert=/opt/etc/cfssl/etcd/etcd.pem \
   --key=/opt/etc/cfssl/etcd/etcd-key.pem \
-  --endpoints=https://192.168.64.11:2379,https://192.168.64.12:2379,https://192.168.64.13:2379 endpoint status
+  --endpoints=https://192.168.64.21:2379,https://192.168.64.22:2379,https://192.168.64.23:2379 endpoint status
 
 $ ETCDCTL_API=3 etcdctl --write-out=table \
   --cacert=/opt/etc/cfssl/etcd/ca.pem \
   --cert=/opt/etc/cfssl/etcd/etcd.pem \
   --key=/opt/etc/cfssl/etcd/etcd-key.pem \
-  --endpoints=https://192.168.64.11:2379,https://192.168.64.12:2379,https://192.168.64.13:2379 member list
+  --endpoints=https://192.168.64.21:2379,https://192.168.64.22:2379,https://192.168.64.23:2379 member list
 
 $ ETCDCTL_API=3 etcdctl --write-out=json \
   --cacert=/opt/etc/cfssl/etcd/ca.pem \
   --cert=/opt/etc/cfssl/etcd/etcd.pem \
   --key=/opt/etc/cfssl/etcd/etcd-key.pem \
-  --endpoints=https://192.168.64.11:2379,https://192.168.64.12:2379,https://192.168.64.13:2379 auth status
+  --endpoints=https://192.168.64.21:2379,https://192.168.64.22:2379,https://192.168.64.23:2379 get '' --prefix | jq .
 
-$ ETCDCTL_API=3 etcdctl --write-out=json \
-  --cacert=/opt/etc/cfssl/etcd/ca.pem \
-  --cert=/opt/etc/cfssl/etcd/etcd.pem \
-  --key=/opt/etc/cfssl/etcd/etcd-key.pem \
-  --endpoints=https://192.168.64.11:2379,https://192.168.64.12:2379,https://192.168.64.13:2379 \
-  get '' --prefix | jq .
-
-$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/etcd/etcd.pem --key /opt/etc/cfssl/etcd/etcd-key.pem https://192.168.64.11:2379/version
-$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/etcd/etcd.pem --key /opt/etc/cfssl/etcd/etcd-key.pem https://192.168.64.12:2379/health
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/etcd/etcd.pem --key /opt/etc/cfssl/etcd/etcd-key.pem https://192.168.64.21:2379/version
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/etcd/etcd.pem --key /opt/etc/cfssl/etcd/etcd-key.pem https://192.168.64.22:2379/health
 ```
 
-### 安装`k8s master`
+### 安装`k8s-master`
+
+#### 执行安装脚本
 
 ```bash
-$ curl -L -s https://dl.k8s.io/release/stable.txt
+$ ./macos master 192.168.64.21 ubuntu --clusterips=192.168.64.21,192.168.64.22,192.168.64.23 --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.21:6443/version
+
+$ ./macos master 192.168.64.22 ubuntu --clusterips=192.168.64.21,192.168.64.22,192.168.64.23 --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.22:6443/version
+
+$ ./macos master 192.168.64.23 ubuntu --clusterips=192.168.64.21,192.168.64.22,192.168.64.23 --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.23:6443/version
 ```
 
-> 下载不同版本的`K8S`安装文件，参考: [get-kube-binaries.sh](https://github.com/kubernetes/kubernetes/blob/master/cluster/get-kube-binaries.sh)
+#### 配置`HA`
 
 ```bash
-$ wget https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-amd64.tar.gz
-$ wget https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-arm64.tar.gz
-```
+$ ./macos ha 192.168.64.21 ubuntu --virtual-ip=192.168.64.100 --keepalived-state=MASTER --keepalived-priority=200 --link-interface=enp0s1 --clusterips=192.168.64.21,192.168.64.22,192.168.64.23 --clusternames=k8s-node01,k8s-node02,k8s-node03
+$ curl -i http://192.168.64.21:33305/monitor
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.21:8443/version
 
-```bash
-# ./macos master 192.168.64.11 ubuntu --clusterips=192.168.64.7,192.168.64.8,192.168.64.9 --binaries-url=https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-arm64.tar.gz
-$ ./macos master 192.168.64.11 ubuntu --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
-$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.11:6443/version
+$ ./macos ha 192.168.64.22 ubuntu --virtual-ip=192.168.64.100 --keepalived-state=BACKUP --keepalived-priority=150 --link-interface=enp0s1 --clusterips=192.168.64.21,192.168.64.22,192.168.64.23 --clusternames=k8s-node01,k8s-node02,k8s-node03
+$ curl -i http://192.168.64.22:33305/monitor
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.22:8443/version
 
-$ ./macos master 192.168.64.12 ubuntu --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
-$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.12:6443/version
-
-$ ./macos master 192.168.64.13 ubuntu --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --binaries-url=http://192.168.1.6:8888/binaries/kubernetes/kubernetes-server-v1.23.3-linux-arm64.tar.gz
-$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.13:6443/version
-```
-
-### 配置`HA`
-
-```bash
-$ ./macos ha 192.168.64.11 ubuntu --virtual-ip=192.168.64.100 --keepalived-state=MASTER --keepalived-priority=200 --link-interface=enp0s1 --clusterips=192.168.64.11,192.168.64.12,192.168.64.13 --clusternames=k8s-master01,k8s-master02,k8s-master03
-$ curl -i http://192.168.64.11:33305/monitor
-$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.11:8443/version
-
-$ ./macos ha 192.168.64.12 ubuntu --virtual-ip=192.168.64.100 --keepalived-state=BACKUP --keepalived-priority=150
-$ curl -i http://192.168.64.12:33305/monitor
-$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.12:8443/version
-
-$ ./macos ha 192.168.64.13 ubuntu --virtual-ip=192.168.64.100 --keepalived-state=BACKUP --keepalived-priority=100
-$ curl -i http://192.168.64.13:33305/monitor
-$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.13:8443/version
+$ ./macos ha 192.168.64.23 ubuntu --virtual-ip=192.168.64.100 --keepalived-state=BACKUP --keepalived-priority=100 --link-interface=enp0s1 --clusterips=192.168.64.21,192.168.64.22,192.168.64.23 --clusternames=k8s-node01,k8s-node02,k8s-node03
+$ curl -i http://192.168.64.23:33305/monitor
+$ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.23:8443/version
 
 $ curl -i --cacert /opt/etc/cfssl/etcd/ca.pem --cert /opt/etc/cfssl/master/admin.pem --key /opt/etc/cfssl/master/admin-key.pem https://192.168.64.100:8443/version
 ```
+
+### 管理集群
 
 ### 安装`k8s worker`
 
