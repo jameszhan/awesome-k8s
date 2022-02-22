@@ -303,17 +303,3 @@ $ kubectl run cirros-$RANDOM --rm -it --image=cirros -- sh
 $ curl -i -k https://kubernetes
 $ curl -i -k https://www.bing.com
 ```
-
-
-#### `multipass`管理
-
-
-
-### 安装`kubectl`
-
-```bash
-# Intel
-$ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/amd64/kubectl"
-# Apple Silicon
-$ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/arm64/kubectl"
-```

@@ -1,6 +1,6 @@
 
 
-### `k8s`二进制文件
+#### `k8s`二进制文件
 
 查看最新`k8s`发布版本
 
@@ -13,4 +13,20 @@ $ curl -L -s https://dl.k8s.io/release/stable.txt
 ```bash
 $ wget https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-amd64.tar.gz
 $ wget https://storage.googleapis.com/kubernetes-release/release/v1.23.3/kubernetes-server-linux-arm64.tar.gz
+```
+
+#### `kubectl`
+
+```bash
+# Intel
+$ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/amd64/kubectl"
+
+# Apple Silicon
+$ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/arm64/kubectl"
+```
+
+#### `Helm`
+
+```bash
+$ curl -LO https://get.helm.sh/helm-v3.8.0-linux-arm64.tar.gz
 ```
