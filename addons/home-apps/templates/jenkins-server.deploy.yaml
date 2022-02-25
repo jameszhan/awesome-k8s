@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: jenkins-server
+  namespace: geek-apps
+subsets:
+  - addresses:
+      - ip: 192.168.1.57
+    ports:
+      - port: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-server
+  namespace: geek-apps
+spec:
+  clusterIP: None
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jenkins-server-ingress
+  namespace: geek-apps
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+      - jenkins.zizhizhan.com
+    secretName: star.zizhizhan.com-tls
+  rules:
+  - host: jenkins.zizhizhan.com
+    http:
+      paths:
+      - pathType: ImplementationSpecific
+        path: /
+        backend:
+          service:
+            name: jenkins-server
+            port:
+              number: 8080
