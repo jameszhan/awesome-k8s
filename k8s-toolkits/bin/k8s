@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+require 'thor'
+require 'sshkit'
+require 'sshkit/sudo'
+require 'sshkit/dsl'
+
+class K8S < Thor
+  include Actions
+  include SSHKit::DSL
+
+  desc 'apt 192.168.1.101 deploy', 'check tool versions for 192.168.1.101 via user deploy'
+  def versions(hostip, username='deploy', port=22)
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+      say_status "Check "
+      
+    end
+  end
+end
+
+K8S.start(ARGV)
