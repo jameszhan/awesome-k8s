@@ -32,13 +32,13 @@ class K8S < Thor
       end
 
       # if [[ -x "$(command -v kubectl)" ]]
-      if test '[ -x "$(command -v kubectl)" ]'
-        puts "\e[0;38m kubectl:\t#{capture("kubectl version")} \e[0m\n"
-      end
+      # if test '[ -x "$(command -v kubectl)" ]'
+      #   puts "\e[0;38m kubectl:\t#{capture("kubectl version")} \e[0m\n"
+      # end
 
-      if test '[ -x "$(command -v kubeadm)" ]'
-        puts "\e[0;38m kubeadm:\t#{capture("kubeadm version")} \e[0m\n"
-      end
+      # if test '[ -x "$(command -v kubeadm)" ]'
+      #   puts "\e[0;38m kubeadm:\t#{capture("kubeadm version")} \e[0m\n"
+      # end
 
       if test '[ -x "$(command -v etcd)" ]'
         puts "\e[0;36m etcd:\t#{capture("etcd --version")} \e[0m\n"
@@ -52,58 +52,78 @@ class K8S < Thor
         puts "\e[0;36m etcdutl:\t#{capture("etcdutl version")} \e[0m\n"
       end
     end
+  end
   
-    desc 'upgrade 192.168.1.101', 'upgrade tool versions for 192.168.1.101 via user deploy'
-    def upgrade(hostip, username='deploy', port=22)
-      on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
-        arch = capture(:uname, '-m')
-        if arch == 'x86_64'
-          puts arch
-        else
-          puts arch
+  desc 'upgrade 192.168.1.101', 'upgrade tool versions for 192.168.1.101 via user deploy'
+  option :version, :type => :string, :required => true
+  def upgrade(hostip, username='deploy', port=22)
+    version = options[:version]
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+      uname_m = capture(:uname, '-m')
+      if uname_m == 'x86_64'
+        arch = 'amd64'
+      elsif uname_m == 'aarch64'
+        arch = 'arm64'
+      else
+        puts "\e[0;31m unexpected arch #{uname_m}. \e[0m\n"
+        return
+      end
+
+      binaries_url = "https://storage.googleapis.com/kubernetes-release/release/#{version}/kubernetes-server-linux-#{arch}.tar.gz"
+      if test "[ -f /tmp/kubernetes-server-linux-#{arch}.tar.gz ]"
+        puts "\e[0;32m kubernetes-server-linux-#{arch}.tar.gz has already downloaded \e[0m\n"
+      else
+        within '/tmp' do
+          execute :wget, "--quiet #{binaries_url}"
         end
+      end
+
+      if test "[ -d /tmp/kubernetes/server/bin ]"
+        puts "\e[0;32m kubernete binaries directory has already exists. \e[0m\n"
+      else
+        within '/tmp' do
+          execute :tar, "zxvf kubernetes-server-linux-#{arch}.tar.gz"
+        end
+      end
+
+      within '/tmp/kubernetes/server/bin' do
         if test '[ -x "$(command -v kube-apiserver)" ]'
-          puts "\e[0;33m kube-apiserver:\t#{capture("kube-apiserver --version")} \e[0m\n"
+          puts "\e[0;33m upgrade kube-apiserver from #{capture("kube-apiserver --version")} to #{version} \e[0m\n"
+          sudo :cp, "-f kube-apiserver /usr/local/bin"
         end
 
         if test '[ -x "$(command -v kube-controller-manager)" ]'
-          puts "\e[0;33m kube-controller-manager:\t#{capture("kube-controller-manager --version")} \e[0m\n"
+          puts "\e[0;33m upgrade kube-controller-manager from #{capture("kube-controller-manager --version")} to #{version} \e[0m\n"
+          sudo :cp, "-f kube-controller-manager /usr/local/bin"
         end
 
         if test '[ -x "$(command -v kube-scheduler)" ]'
-          puts "\e[0;33m kube-scheduler:\t#{capture("kube-scheduler --version")} \e[0m\n"
+          puts "\e[0;33m upgrade kube-scheduler from #{capture("kube-scheduler --version")} to #{version} \e[0m\n"
+          sudo :cp, "-f kube-scheduler /usr/local/bin"
         end
 
         if test '[ -x "$(command -v kubelet)" ]'
-          puts "\e[0;32m kubelet:\t#{capture("kubelet --version")} \e[0m\n"
+          puts "\e[0;32m upgrade kubelet from #{capture("kubelet --version")} to #{version} \e[0m\n"
+          sudo :cp, "-f kubelet /usr/local/bin"
         end
-
+  
         if test '[ -x "$(command -v kube-proxy)" ]'
-          puts "\e[0;32m kube-proxy:\t#{capture("kube-proxy --version")} \e[0m\n"
+          puts "\e[0;32m upgrade kube-proxy from #{capture("kube-proxy --version")} to #{version} \e[0m\n"
+          sudo :cp, "-f kube-proxy /usr/local/bin"
         end
 
-        # if [[ -x "$(command -v kubectl)" ]]
-        if test '[ -x "$(command -v kubectl)" ]'
-          puts "\e[0;38m kubectl:\t#{capture("kubectl version")} \e[0m\n"
-        end
+        # if test '[ -x "$(command -v kubectl)" ]'
+        #   puts "\e[0;38m upgrade kubectl from #{capture("kubectl version")} to #{version}\e[0m\n"
+        #   sudo :cp, "-f kubectl /usr/local/bin"
+        # end
 
-        if test '[ -x "$(command -v kubeadm)" ]'
-          puts "\e[0;38m kubeadm:\t#{capture("kubeadm version")} \e[0m\n"
-        end
-
-        if test '[ -x "$(command -v etcd)" ]'
-          puts "\e[0;36m etcd:\t#{capture("etcd --version")} \e[0m\n"
-        end
-
-        if test '[ -x "$(command -v etcdctl)" ]'
-          puts "\e[0;36m etcdctl:\t#{capture("etcdctl version")} \e[0m\n"
-        end
-
-        if test '[ -x "$(command -v etcdutl)" ]'
-          puts "\e[0;36m etcdutl:\t#{capture("etcdutl version")} \e[0m\n"
-        end
+        # if test '[ -x "$(command -v kubeadm)" ]'
+        #   puts "\e[0;38m upgrade kubeadm from #{capture("kubeadm version")} to #{version}\e[0m\n"
+        #   sudo :cp, "-f kubeadm /usr/local/bin"
+        # end
       end
     end
+  end
 
 end
 
