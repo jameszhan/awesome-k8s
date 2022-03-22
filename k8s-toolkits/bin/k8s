@@ -8,13 +8,103 @@ class K8S < Thor
   include Actions
   include SSHKit::DSL
 
-  desc 'apt 192.168.1.101 deploy', 'check tool versions for 192.168.1.101 via user deploy'
+  desc 'versions 192.168.1.101', 'check tool versions for 192.168.1.101 via user deploy'
   def versions(hostip, username='deploy', port=22)
     on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
-      say_status "Check "
-      
+      if test '[ -x "$(command -v kube-apiserver)" ]'
+        puts "\e[0;33m kube-apiserver:\t#{capture("kube-apiserver --version")} \e[0m\n"
+      end
+
+      if test '[ -x "$(command -v kube-controller-manager)" ]'
+        puts "\e[0;33m kube-controller-manager:\t#{capture("kube-controller-manager --version")} \e[0m\n"
+      end
+
+      if test '[ -x "$(command -v kube-scheduler)" ]'
+        puts "\e[0;33m kube-scheduler:\t#{capture("kube-scheduler --version")} \e[0m\n"
+      end
+
+      if test '[ -x "$(command -v kubelet)" ]'
+        puts "\e[0;32m kubelet:\t#{capture("kubelet --version")} \e[0m\n"
+      end
+
+      if test '[ -x "$(command -v kube-proxy)" ]'
+        puts "\e[0;32m kube-proxy:\t#{capture("kube-proxy --version")} \e[0m\n"
+      end
+
+      # if [[ -x "$(command -v kubectl)" ]]
+      if test '[ -x "$(command -v kubectl)" ]'
+        puts "\e[0;38m kubectl:\t#{capture("kubectl version")} \e[0m\n"
+      end
+
+      if test '[ -x "$(command -v kubeadm)" ]'
+        puts "\e[0;38m kubeadm:\t#{capture("kubeadm version")} \e[0m\n"
+      end
+
+      if test '[ -x "$(command -v etcd)" ]'
+        puts "\e[0;36m etcd:\t#{capture("etcd --version")} \e[0m\n"
+      end
+
+      if test '[ -x "$(command -v etcdctl)" ]'
+        puts "\e[0;36m etcdctl:\t#{capture("etcdctl version")} \e[0m\n"
+      end
+
+      if test '[ -x "$(command -v etcdutl)" ]'
+        puts "\e[0;36m etcdutl:\t#{capture("etcdutl version")} \e[0m\n"
+      end
     end
-  end
+  
+    desc 'upgrade 192.168.1.101', 'upgrade tool versions for 192.168.1.101 via user deploy'
+    def upgrade(hostip, username='deploy', port=22)
+      on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+        arch = capture(:uname, '-m')
+        if arch == 'x86_64'
+          puts arch
+        else
+          puts arch
+        end
+        if test '[ -x "$(command -v kube-apiserver)" ]'
+          puts "\e[0;33m kube-apiserver:\t#{capture("kube-apiserver --version")} \e[0m\n"
+        end
+
+        if test '[ -x "$(command -v kube-controller-manager)" ]'
+          puts "\e[0;33m kube-controller-manager:\t#{capture("kube-controller-manager --version")} \e[0m\n"
+        end
+
+        if test '[ -x "$(command -v kube-scheduler)" ]'
+          puts "\e[0;33m kube-scheduler:\t#{capture("kube-scheduler --version")} \e[0m\n"
+        end
+
+        if test '[ -x "$(command -v kubelet)" ]'
+          puts "\e[0;32m kubelet:\t#{capture("kubelet --version")} \e[0m\n"
+        end
+
+        if test '[ -x "$(command -v kube-proxy)" ]'
+          puts "\e[0;32m kube-proxy:\t#{capture("kube-proxy --version")} \e[0m\n"
+        end
+
+        # if [[ -x "$(command -v kubectl)" ]]
+        if test '[ -x "$(command -v kubectl)" ]'
+          puts "\e[0;38m kubectl:\t#{capture("kubectl version")} \e[0m\n"
+        end
+
+        if test '[ -x "$(command -v kubeadm)" ]'
+          puts "\e[0;38m kubeadm:\t#{capture("kubeadm version")} \e[0m\n"
+        end
+
+        if test '[ -x "$(command -v etcd)" ]'
+          puts "\e[0;36m etcd:\t#{capture("etcd --version")} \e[0m\n"
+        end
+
+        if test '[ -x "$(command -v etcdctl)" ]'
+          puts "\e[0;36m etcdctl:\t#{capture("etcdctl version")} \e[0m\n"
+        end
+
+        if test '[ -x "$(command -v etcdutl)" ]'
+          puts "\e[0;36m etcdutl:\t#{capture("etcdutl version")} \e[0m\n"
+        end
+      end
+    end
+
 end
 
 K8S.start(ARGV)
