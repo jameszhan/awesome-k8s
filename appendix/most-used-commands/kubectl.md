@@ -228,7 +228,6 @@ kubectl run nginx --image=nginx:alpine --port=80 --restart=Never
 kubectl get pods
 ```
 
-
 #### 访问指定集群 
 
 - [配置对多集群的访问](https://kubernetes.io/zh/docs/tasks/access-application-cluster/configure-access-multiple-clusters/)
@@ -240,4 +239,31 @@ $ KUBECONFIG=/opt/etc/kube/config kubectl cluster-info
 $ KUBECONFIG=/opt/etc/kube/config kubectl config view
 ```
 
+```bash
+$ ETCDCTL_API=3 /usr/local/bin/etcdctl \
+  --cacert=/etc/etcd/ssl/ca.pem \
+  --cert=/etc/etcd/ssl/etcd.pem \
+  --key=/etc/etcd/ssl/etcd-key.pem \
+  --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 \
+  get /registry/pods/geek-apps/nacos-0 --prefix
+```
 
+#### 删除资源
+
+
+
+```bash
+# 删除POD
+$ kubectl delete pod PODNAME --force --grace-period=0
+
+# 删除NAMESPACE
+$ kubectl delete namespace NAMESPACENAME --force --grace-period=0
+```
+
+```bash
+# 删除default namespace下的pod名为pod-to-be-deleted-0
+$ ETCDCTL_API=3 etcdctl del /registry/pods/default/pod-to-be-deleted-0
+
+# 删除需要删除的NAMESPACE
+$ etcdctl del /registry/namespaces/NAMESPACENAME
+```
