@@ -12,7 +12,7 @@ GRANT SELECT ON *.* TO 'pma'@'192.168.1.%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
 GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.80' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
-GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.1001' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* to 'root'@'192.168.1.100' IDENTIFIED BY 'yourrootpass' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 
 SELECT Host, User, Password, authentication_string, is_role, default_role FROM mysql.user;
