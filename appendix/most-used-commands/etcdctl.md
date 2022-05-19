@@ -1,4 +1,17 @@
 ```bash
+$ echo '/sg/test/shopeepaybase-idmaker' | base64
+$ echo '/sg/test/shopeepaybase-idmakes' | base64
+$ curl -L http://10.143.215.171:2379/v3/kv/range \
+  -X POST -d '{"key": "L3NnL3Rlc3Qvc2hvcGVlcGF5YmFzZS1pZG1ha2VyCg==", "range_end": "L3NnL3Rlc3Qvc2hvcGVlcGF5YmFzZS1pZG1ha2VzCg=="}'
+```
+
+
+
+
+
+
+
+```bash
 $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --endpoints=http://127.0.0.1:2379 endpoint health
 $ ETCDCTL_API=3 /usr/local/bin/etcdctl --write-out=table --cacert=/etc/etcd/ssl/ca.pem --cert=/etc/etcd/ssl/etcd.pem --key=/etc/etcd/ssl/etcd-key.pem --endpoints=http://127.0.0.1:2379 endpoint health
 
