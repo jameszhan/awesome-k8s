@@ -145,3 +145,5 @@ appendix/troubleshooting/
 
 secrets/
 jupyter_server_config.json
+
+*-password.txt
