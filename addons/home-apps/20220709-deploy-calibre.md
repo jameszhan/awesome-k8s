@@ -43,6 +43,45 @@ spec:
 EOF
 
 $ cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolume
+metadata:  
+  name: calibre-libraries-pv
+  labels:
+    pv: calibre-libraries-pv
+spec:  
+  capacity:    
+    storage: 128Gi  
+  accessModes:    
+    - ReadWriteMany  
+  persistentVolumeReclaimPolicy: Retain  
+  storageClassName: nfs
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:    
+    path: /volume1/shared/libraries
+    server: 192.168.1.6
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: calibre-libraries-pvc
+  namespace: geek-apps
+spec:
+  storageClassName: nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 128Gi
+  selector:
+    matchLabels:
+      pv: calibre-libraries-pv
+EOF
+
+$ cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -86,6 +125,8 @@ spec:
           name: calibre-config-vol
         - mountPath: "/books"
           name: calibre-library-vol
+        - mountPath: "/libraries"
+          name: calibre-libraries-vol
       volumes:
       - name: calibre-config-vol
         persistentVolumeClaim:
@@ -93,6 +134,9 @@ spec:
       - name: calibre-library-vol
         persistentVolumeClaim:
           claimName: calibre-library-pvc
+      - name: calibre-libraries-vol
+        persistentVolumeClaim:
+          claimName: calibre-libraries-pvc
 EOF
 
 $ cat <<EOF | kubectl apply -f -
