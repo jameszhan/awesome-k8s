@@ -235,20 +235,22 @@ class K8S < Thor
   option :names, :default => 'etcd-01,etcd-02,etcd-03'
   option :clusterips, :default => '192.168.1.61,192.168.1.62,192.168.1.63'
   option :binaries_url, :type => :string, :required => true
-  option :initial_state, :type => :string, :default => "existing"
+  option :initial_state, :type => :string, :default => "new"
   def etcd(hostip, username='deploy', port=22)
     clusterips = options[:clusterips].split(',')
     run_locally do
       execute :cfssl, 'version'
 
-      if test "[ -d /opt/etc/k8s/cfssl/etcd ]"
-        puts "\e[0;32m /opt/etc/k8s/cfssl/etcd have already exists. \e[0m\n"
+      local_dir = "/opt/etc/k8s/cfssl/etcd"
+
+      if test "[ -d #{local_dir} ]"
+        puts "\e[0;32m #{local_dir} have already exists. \e[0m\n"
       else
-        execute :mkdir, '-p /opt/etc/k8s/cfssl/etcd'
+        execute :mkdir, "-p #{local_dir}"
       end
 
-      if test "[ -f /opt/etc/k8s/cfssl/etcd/ca-csr.json ]"
-        puts "\e[0;32m /opt/etc/k8s/cfssl/etcd/ca-csr.json have already exists. \e[0m\n"
+      if test "[ -f #{local_dir}/ca-csr.json ]"
+        puts "\e[0;32m #{local_dir}/ca-csr.json have already exists. \e[0m\n"
       else
         ca_csr_json = StringIO.new <<~JSON
         {
@@ -271,11 +273,11 @@ class K8S < Thor
           }
         }
         JSON
-        upload! ca_csr_json, '/opt/etc/k8s/cfssl/etcd/ca-csr.json'
+        upload! ca_csr_json, "#{local_dir}/ca-csr.json"
       end
 
-      if test "[ -f /opt/etc/k8s/cfssl/etcd/etcd-csr.json ]"
-        puts "\e[0;32m /opt/k8s/etc/cfssl/etcd/etcd-csr.json have already exists. \e[0m\n"
+      if test "[ -f #{local_dir}/etcd-csr.json ]"
+        puts "\e[0;32m #{local_dir}/etcd-csr.json have already exists. \e[0m\n"
       else
         etd_csr_json = StringIO.new <<~JSON
         {
@@ -296,11 +298,11 @@ class K8S < Thor
           ]
         }
         JSON
-        upload! etd_csr_json, '/opt/etc/k8s/cfssl/etcd/etcd-csr.json'
+        upload! etd_csr_json, "#{local_dir}/etcd-csr.json"
       end
 
-      if test "[ -f /opt/etc/k8s/cfssl/etcd/ca-config.json ]"
-        puts "\e[0;32m /opt/etc/k8s/cfssl/etcd/ca-config.json have already exists. \e[0m\n"
+      if test "[ -f #{local_dir}/ca-config.json ]"
+        puts "\e[0;32m #{local_dir}/ca-config.json have already exists. \e[0m\n"
       else
         ca_config_json = StringIO.new <<~JSON
         {
@@ -317,17 +319,17 @@ class K8S < Thor
           }
         }
         JSON
-        upload! ca_config_json, '/opt/etc/k8s/cfssl/etcd/ca-config.json'
+        upload! ca_config_json, "#{local_dir}/ca-config.json"
       end
 
-      within '/opt/etc/k8s/cfssl/etcd/' do
-        if test "[ -f /opt/etc/k8s/cfssl/etcd/ca.pem ]"
+      within local_dir do
+        if test "[ -f #{local_dir}/ca.pem ]"
           puts "\e[0;32m ignore: cfssl gencert -initca ca-csr.json | cfssljson -bare ca. \e[0m\n"
         else
           execute :cfssl, 'gencert -initca ca-csr.json | cfssljson -bare ca'
         end
 
-        if test "[ -f /opt/etc/k8s/cfssl/etcd/etcd.pem ]"
+        if test "[ -f #{local_dir}/etcd.pem ]"
           puts "\e[0;32m ignore: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=k8s-etcd etcd-csr.json | cfssljson -bare etcd. \e[0m\n"
         else
           execute :cfssl, 'gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=k8s-etcd etcd-csr.json | cfssljson -bare etcd'
@@ -433,6 +435,715 @@ class K8S < Thor
       end
 
       sudo :systemctl, 'restart etcd'
+    end
+  end
+
+  desc 'master 192.168.1.62 deploy', 'setup master node for 192.168.1.62 via user deploy'
+  option :binaries_url, :type => :string, :required => true
+  option :clusterips, :default => '192.168.1.61,192.168.1.62,192.168.1.63'
+  option :service_cluster_ip_range, :default => '10.96.0.0/12'
+  option :cluster_cidr, :default => "10.244.0.0/16"
+  def master(hostip, username='deploy', port=22)
+    clusterips = options[:clusterips].split(',')
+    run_locally do
+      execute :cfssl, 'version'
+      local_dir = "/opt/etc/k8s/cfssl/master"
+
+      if test "[ -d #{local_dir} ]"
+        puts "\e[0;32m #{local_dir} have already exists. \e[0m\n"
+      else
+        execute :mkdir, "-p #{local_dir}"
+      end
+
+      if test "[ -f #{local_dir}/ca-config.json ]"
+        puts "\e[0;32m #{local_dir}/ca-config.json have already exists. \e[0m\n"
+      else
+        ca_config_json = StringIO.new <<~JSON
+        {
+          "signing": {
+            "default": {
+              "expiry": "87600h"
+            },
+            "profiles": {
+              "kubernetes": {
+                "usages": ["signing", "key encipherment", "server auth", "client auth"],
+                "expiry": "87600h"
+              }
+            }
+          }
+        }
+        JSON
+        upload! ca_config_json, "#{local_dir}/ca-config.json"
+      end
+
+      if test "[ -f #{local_dir}/admin-csr.json ]"
+        puts "\e[0;32m #{local_dir}/admin-csr.json have already exists. \e[0m\n"
+      else
+        admin_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "admin",
+          "hosts": [],
+          "key": {
+              "algo": "rsa",
+              "size": 2048
+          },
+          "names": [
+              {
+                  "C": "CN",
+                  "ST": "Guangdong",
+                  "L": "Shenzhen",
+                  "O": "system:masters",
+                  "OU": "system"
+              }
+          ]
+        }
+        JSON
+        upload! admin_csr_json, "#{local_dir}/admin-csr.json"
+      end
+
+      if test "[ -f #{local_dir}/kube-apiserver-csr.json ]"
+        puts "\e[0;32m #{local_dir}/kube-apiserver-csr.json have already exists. \e[0m\n"
+      else
+        kube_apiserver_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "kubernetes",
+          "hosts": [
+            "127.0.0.1",
+            "192.168.1.1",
+            "192.168.1.61",
+            "192.168.1.62",
+            "192.168.1.63",
+            "192.168.1.100",
+            "192.168.1.101",
+            "192.168.1.102",
+            "192.168.1.103",
+            "192.168.1.104",
+            "192.168.1.105",
+            "192.168.1.106",
+            "192.168.1.107",
+            "192.168.1.108",
+            "192.168.1.109",
+            "192.168.1.110",
+            "192.168.1.111",
+            "192.168.1.112",
+            "192.168.1.113",
+            "192.168.1.114",
+            "192.168.1.115",
+            "192.168.1.116",
+            "192.168.1.117",
+            "192.168.1.118",
+            "192.168.1.119",
+            "192.168.1.120",
+            "192.168.1.121",
+            "192.168.1.122",
+            "192.168.1.123",
+            "192.168.1.124",
+            "192.168.1.125",
+            "192.168.1.126",
+            "192.168.1.127",
+            "192.168.1.128",
+            "192.168.1.129",
+            "192.168.1.130",
+            "192.168.1.150",
+            "192.168.1.151",
+            "192.168.1.152",
+            "192.168.1.153",
+            "192.168.1.154",
+            "192.168.1.155",
+            "192.168.1.156",
+            "192.168.1.157",
+            "192.168.1.158",
+            "192.168.1.159",
+            "192.168.1.160",
+            "192.168.1.161",
+            "192.168.1.162",
+            "192.168.1.163",
+            "192.168.1.164",
+            "192.168.1.165",
+            "192.168.1.166",
+            "192.168.1.167",
+            "192.168.1.168",
+            "192.168.1.169",
+            "192.168.1.170",
+            "192.168.1.171",
+            "192.168.1.172",
+            "192.168.1.173",
+            "192.168.1.174",
+            "192.168.1.175",
+            "192.168.1.176",
+            "192.168.1.177",
+            "192.168.1.178",
+            "192.168.1.179",
+            "192.168.1.180",
+            "192.168.1.181",
+            "192.168.1.182",
+            "192.168.1.183",
+            "192.168.1.184",
+            "192.168.1.185",
+            "192.168.1.186",
+            "192.168.1.187",
+            "192.168.1.188",
+            "192.168.1.189",
+            "192.168.1.190",
+            "192.168.1.191",
+            "192.168.1.192",
+            "192.168.1.193",
+            "192.168.1.194",
+            "192.168.1.195",
+            "192.168.1.196",
+            "192.168.1.197",
+            "192.168.1.198",
+            "192.168.1.199",
+            "192.168.1.200",
+            "10.96.0.1",
+            "10.96.0.2",
+            "kubernetes",
+            "kubernetes.default",
+            "kubernetes.default.svc",
+            "kubernetes.default.svc.cluster",
+            "kubernetes.default.svc.cluster.local"
+          ],
+          "key": {
+              "algo": "rsa",
+              "size": 2048
+          },
+          "names": [
+              {
+                  "C": "CN",
+                  "ST": "Guangdong",
+                  "L": "Shenzhen",
+                  "O": "k8s",
+                  "OU": "system"
+              }
+          ]
+        }
+        JSON
+        upload! kube_apiserver_csr_json, "#{local_dir}/kube-apiserver-csr.json"
+      end
+
+      if test "[ -f #{local_dir}/kube-controller-manager-csr.json ]"
+        puts "\e[0;32m #{local_dir}/kube-controller-manager-csr.json have already exists. \e[0m\n"
+      else
+        kube_ctl_manager_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "system:kube-controller-manager",
+          "key": {
+              "algo": "rsa",
+              "size": 2048
+          },
+          "hosts": #{clusterips + ['127.0.0.1']},
+          "names": [
+              {
+                  "C": "CN",
+                  "ST": "Guangdong",
+                  "L": "Shenzhen",
+                  "O": "system:kube-controller-manager",
+                  "OU": "system"
+              }
+          ]
+        }
+        JSON
+        upload! kube_ctl_manager_csr_json, "#{local_dir}/kube-controller-manager-csr.json"
+      end
+
+      if test "[ -f #{local_dir}/kube-scheduler-csr.json ]"
+        puts "\e[0;32m #{local_dir}/kube-scheduler-csr.json have already exists. \e[0m\n"
+      else
+        kube_scheduler_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "system:kube-scheduler",
+          "hosts": #{clusterips + ['127.0.0.1']},
+          "key": {
+              "algo": "rsa",
+              "size": 2048
+          },
+          "names": [
+              {
+                  "C": "CN",
+                  "ST": "Guangdong",
+                  "L": "Shenzhen",
+                  "O": "system:kube-scheduler",
+                  "OU": "system"
+              }
+          ]
+        }
+        JSON
+        upload! kube_scheduler_csr_json, "#{local_dir}/kube-scheduler-csr.json"
+      end
+
+      within local_dir do
+        if test "[ -f #{local_dir}/kube-apiserver.pem ]"
+          puts "\e[0;32m ignore: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-apiserver-csr.json | cfssljson -bare kube-apiserver. \e[0m\n"
+        else
+          execute :cfssl, "gencert -ca=/opt/etc/k8s/cfssl/etcd/ca.pem -ca-key=/opt/etc/k8s/cfssl/etcd/ca-key.pem -config=ca-config.json -profile=kubernetes kube-apiserver-csr.json | cfssljson -bare kube-apiserver"
+        end
+
+        if test "[ -f #{local_dir}/admin.pem ]"
+          puts "\e[0;32m ignore: gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes admin-csr.json | cfssljson -bare admin. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -ca=/opt/etc/k8s/cfssl/etcd/ca.pem -ca-key=/opt/etc/k8s/cfssl/etcd/ca-key.pem -config=ca-config.json -profile=kubernetes admin-csr.json | cfssljson -bare admin'
+        end
+
+        if test "[ -f #{local_dir}/kube-controller-manager.pem ]"
+          puts "\e[0;32m ignore: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -ca=/opt/etc/k8s/cfssl/etcd/ca.pem -ca-key=/opt/etc/k8s/cfssl/etcd/ca-key.pem -config=ca-config.json -profile=kubernetes kube-controller-manager-csr.json | cfssljson -bare kube-controller-manager'
+        end
+
+        if test "[ -f #{local_dir}/kube-scheduler.pem ]"
+          puts "\e[0;32m ignore: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=kubernetes kube-scheduler-csr.json | cfssljson -bare kube-scheduler. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -ca=/opt/etc/k8s/cfssl/etcd/ca.pem -ca-key=/opt/etc/k8s/cfssl/etcd/ca-key.pem -config=ca-config.json -profile=kubernetes kube-scheduler-csr.json | cfssljson -bare kube-scheduler'
+        end
+      end
+
+      token_random = capture("head -c 16 /dev/urandom | od -An -t x | tr -d ' '")
+
+      token_csv = StringIO.new <<~JSON
+      #{ token_random },kubelet-bootstrap,10001,"system:kubelet-bootstrap"
+      JSON
+      upload! token_csv, "#{local_dir}/token.csv"
+    end
+
+    binaries_url = options[:binaries_url]
+    service_cluster_ip_range = options[:service_cluster_ip_range]
+    cluster_cidr = options[:cluster_cidr]
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+      if test "[ -d /tmp/kubernetes/server/bin ]"
+        puts "\e[0;32m kubernete binaries has already downloaded. \e[0m\n"
+      else
+        within '/tmp' do
+          execute :wget, "--quiet #{binaries_url}"
+          execute :tar, 'zxvf `ls | grep kubernetes-server-*.tar.gz`'
+        end
+      end
+
+      if test "[ -f /usr/local/bin/kubectl ]"
+        puts "\e[0;32m /usr/local/bin/kubectl has already created. \e[0m\n"
+      else
+        within '/tmp/kubernetes/server/bin' do
+          sudo :mv, "apiextensions-apiserver", "/usr/local/bin"
+          sudo :mv, "kube-aggregator", "/usr/local/bin"
+          sudo :mv, "kube-apiserver", "/usr/local/bin"
+          sudo :mv, "kube-controller-manager", "/usr/local/bin"
+          sudo :mv, "kube-scheduler", "/usr/local/bin"
+          sudo :mv, "kubectl", "/usr/local/bin"
+        end
+      end
+
+      unless test "[ -d /etc/kubernetes/ssl ]"
+        sudo :mkdir, '-p /etc/kubernetes/ssl'
+      end
+
+      files = %W[
+        admin.csr admin-key.pem admin.pem
+        kube-apiserver.csr kube-apiserver-key.pem kube-apiserver.pem
+        kube-controller-manager.csr kube-controller-manager-key.pem kube-controller-manager.pem
+        kube-scheduler.csr kube-scheduler-key.pem kube-scheduler.pem
+      ]
+      files.each do |file|
+        if test "[ -f /etc/kubernetes/ssl/#{file} ]"
+          puts "\e[0;32m /etc/kubernetes/ssl/#{file} has already created. \e[0m\n"
+        else
+          upload! "/opt/etc/k8s/cfssl/master/#{file}", "/tmp/#{file}"
+          sudo :mv, "/tmp/#{file} /etc/kubernetes/ssl"
+        end
+      end
+
+      if test "[ -f /etc/kubernetes/token.csv ]"
+        puts "\e[0;32m /etc/kubernetes/token.csv has already created. \e[0m\n"
+      else
+        upload! "/opt/etc/k8s/cfssl/master/token.csv", "/tmp/token.csv"
+        sudo :mv, "/tmp/token.csv /etc/kubernetes"
+      end
+
+      if test "[ -f /etc/kubernetes/kube-apiserver.conf ]"
+        puts "\e[0;32m /etc/kubernetes/kube-apiserver.conf has already created. \e[0m\n"
+      else
+        etcd_servers = clusterips.each.map {|cip| "https://#{cip}:2379" }.join(',')
+        kube_apiserver_conf = StringIO.new <<~CONF
+        KUBE_APISERVER_OPTS="--enable-admission-plugins=NamespaceLifecycle,NodeRestriction,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota \
+        --anonymous-auth=false \
+        --bind-address=#{hostip} \
+        --secure-port=6443 \
+        --advertise-address=#{hostip} \
+        --insecure-port=0 \
+        --authorization-mode=Node,RBAC \
+        --runtime-config=api/all=true \
+        --enable-bootstrap-token-auth \
+        --service-cluster-ip-range=#{ service_cluster_ip_range } \
+        --token-auth-file=/etc/kubernetes/token.csv \
+        --service-node-port-range=30000-50000 \
+        --tls-cert-file=/etc/kubernetes/ssl/kube-apiserver.pem  \
+        --tls-private-key-file=/etc/kubernetes/ssl/kube-apiserver-key.pem \
+        --kubelet-client-certificate=/etc/kubernetes/ssl/kube-apiserver.pem \
+        --kubelet-client-key=/etc/kubernetes/ssl/kube-apiserver-key.pem \
+        --service-account-issuer=api \
+        --service-account-key-file=/etc/etcd/ssl/ca-key.pem \
+        --service-account-signing-key-file=/etc/etcd/ssl/ca-key.pem  \
+        --client-ca-file=/etc/etcd/ssl/ca.pem \
+        --etcd-cafile=/etc/etcd/ssl/ca.pem \
+        --etcd-certfile=/etc/etcd/ssl/etcd.pem \
+        --etcd-keyfile=/etc/etcd/ssl/etcd-key.pem \
+        --etcd-servers=#{etcd_servers} \
+        --enable-swagger-ui=true \
+        --allow-privileged=true \
+        --apiserver-count=3 \
+        --audit-log-maxage=30 \
+        --audit-log-maxbackup=3 \
+        --audit-log-maxsize=100 \
+        --audit-log-path=/var/log/kube-apiserver-audit.log \
+        --event-ttl=1h \
+        --alsologtostderr=true \
+        --logtostderr=false \
+        --log-dir=/var/log/kubernetes \
+        --v=4"
+        CONF
+
+        # puts kube_apiserver_conf.read
+        upload! kube_apiserver_conf, '/tmp/kube-apiserver.conf'
+        sudo :mv, '/tmp/kube-apiserver.conf /etc/kubernetes'
+      end
+
+      if test "[ -f /usr/lib/systemd/system/kube-apiserver.service ]"
+        puts "\e[0;32m /usr/lib/systemd/system/kube-apiserver.service has already created. \e[0m\n"
+      else
+        kube_apiserver_service = StringIO.new <<~CONF
+        [Unit]
+        Description=Kubernetes API Server
+        Documentation=https://github.com/kubernetes/kubernetes
+        After=etcd.service
+        Wants=etcd.service
+
+        [Service]
+        EnvironmentFile=-/etc/kubernetes/kube-apiserver.conf
+        ExecStart=/usr/local/bin/kube-apiserver $KUBE_APISERVER_OPTS
+        Restart=on-failure
+        RestartSec=5
+        Type=notify
+        LimitNOFILE=65536
+
+        [Install]
+        WantedBy=multi-user.target
+        CONF
+
+        upload! kube_apiserver_service, '/tmp/kube-apiserver.service'
+        sudo :mv, '/tmp/kube-apiserver.service /usr/lib/systemd/system/'
+
+        sudo :systemctl, 'daemon-reload'
+        sudo :systemctl, 'enable kube-apiserver'
+        sudo :systemctl, 'restart kube-apiserver'
+      end
+
+      if test "[ -f /etc/kubernetes/kube.config ]"
+        puts "\e[0;32m /etc/kubernetes/kube.config has already created. \e[0m\n"
+      else
+        within '/etc/kubernetes' do
+          sudo :kubectl, "config set-cluster kubernetes --certificate-authority=/etc/etcd/ssl/ca.pem --embed-certs=true --server=https://#{hostip}:6443 --kubeconfig=kube.config"
+          sudo :kubectl, "config set-credentials admin --client-certificate=/etc/kubernetes/ssl/admin.pem --client-key=/etc/kubernetes/ssl/admin-key.pem --embed-certs=true --kubeconfig=kube.config"
+          sudo :kubectl, "config set-context kubernetes --cluster=kubernetes --user=admin --kubeconfig=kube.config"
+          sudo :kubectl, "config use-context kubernetes --kubeconfig=kube.config"
+        end
+      end
+
+      if test "[ -f /home/#{username}/.kube/config ]"
+        puts "\e[0;32m /home/#{username}/.kube/config has already created. \e[0m\n"
+      else
+        unless test "[ -d /home/#{username}/.kube ]"
+          execute :mkdir, "/home/#{username}/.kube"
+        end
+
+        sudo :cp, "/etc/kubernetes/kube.config", "/home/#{username}/.kube/config"
+        sudo :chown, "-R #{username}:#{username} /home/#{username}/.kube"
+      end
+
+      if test "[ -f /etc/kubernetes/kube-controller-manager.kubeconfig ]"
+        puts "\e[0;32m /etc/kubernetes/kube-controller-manager.kubeconfig has already created. \e[0m\n"
+      else
+        within '/etc/kubernetes' do
+          sudo :kubectl, "config set-cluster kubernetes --certificate-authority=/etc/etcd/ssl/ca.pem --embed-certs=true --server=https://#{hostip}:6443 --kubeconfig=kube-controller-manager.kubeconfig"
+          sudo :kubectl, "config set-credentials system:kube-controller-manager --client-certificate=/etc/kubernetes/ssl/kube-controller-manager.pem --client-key=/etc/kubernetes/ssl/kube-controller-manager-key.pem --embed-certs=true --kubeconfig=kube-controller-manager.kubeconfig"
+          sudo :kubectl, "config set-context system:kube-controller-manager --cluster=kubernetes --user=system:kube-controller-manager --kubeconfig=kube-controller-manager.kubeconfig"
+          sudo :kubectl, "config use-context system:kube-controller-manager --kubeconfig=kube-controller-manager.kubeconfig"
+        end
+      end
+
+      if test "[ -f /etc/kubernetes/kube-controller-manager.conf ]"
+        puts "\e[0;32m /etc/kubernetes/kube-controller-manager.conf has already created. \e[0m\n"
+      else
+        kube_controller_manager_conf = StringIO.new <<~CONF
+        KUBE_CONTROLLER_MANAGER_OPTS="\
+        --secure-port=10257 \
+        --bind-address=0.0.0.0 \
+        --kubeconfig=/etc/kubernetes/kube-controller-manager.kubeconfig \
+        --service-cluster-ip-range=#{ service_cluster_ip_range } \
+        --cluster-name=kubernetes \
+        --cluster-signing-cert-file=/etc/etcd/ssl/ca.pem \
+        --cluster-signing-key-file=/etc/etcd/ssl/ca-key.pem \
+        --root-ca-file=/etc/etcd/ssl/ca.pem \
+        --service-account-private-key-file=/etc/etcd/ssl/ca-key.pem \
+        --allocate-node-cidrs=true \
+        --cluster-cidr=#{ cluster_cidr } \
+        --cluster-signing-duration=87600h \
+        --leader-elect=true \
+        --feature-gates=RotateKubeletServerCertificate=true \
+        --controllers=*,bootstrapsigner,tokencleaner \
+        --horizontal-pod-autoscaler-sync-period=15s \
+        --tls-cert-file=/etc/kubernetes/ssl/kube-controller-manager.pem \
+        --tls-private-key-file=/etc/kubernetes/ssl/kube-controller-manager-key.pem \
+        --use-service-account-credentials=true \
+        --alsologtostderr=true \
+        --logtostderr=false \
+        --log-dir=/var/log/kubernetes \
+        --v=2"
+        CONF
+
+        # puts kube_controller_manager_conf.read
+        upload! kube_controller_manager_conf, '/tmp/kube-controller-manager.conf'
+        sudo :mv, '/tmp/kube-controller-manager.conf /etc/kubernetes'
+      end
+
+      if test "[ -f /usr/lib/systemd/system/kube-controller-manager.service ]"
+        puts "\e[0;32m /usr/lib/systemd/system/kube-controller-manager.service has already created. \e[0m\n"
+      else
+        kube_ctl_manager_service = StringIO.new <<~CONF
+        [Unit]
+        Description=Kubernetes Controller Manager
+        Documentation=https://github.com/kubernetes/kubernetes
+        
+        [Service]
+        EnvironmentFile=-/etc/kubernetes/kube-controller-manager.conf
+        ExecStart=/usr/local/bin/kube-controller-manager $KUBE_CONTROLLER_MANAGER_OPTS
+        Restart=on-failure
+        RestartSec=5
+        
+        [Install]
+        WantedBy=multi-user.target
+        CONF
+
+        upload! kube_ctl_manager_service, '/tmp/kube-controller-manager.service'
+        sudo :mv, '/tmp/kube-controller-manager.service /usr/lib/systemd/system/'
+
+        sudo :systemctl, 'daemon-reload'
+        sudo :systemctl, 'enable kube-controller-manager'
+        sudo :systemctl, 'restart kube-controller-manager'
+      end
+
+      if test "[ -f /etc/kubernetes/kube-scheduler.kubeconfig ]"
+        puts "\e[0;32m /etc/kubernetes/kube-scheduler.kubeconfig has already created. \e[0m\n"
+      else
+        within '/etc/kubernetes' do
+          sudo :kubectl, "config set-cluster kubernetes --certificate-authority=/etc/etcd/ssl/ca.pem --embed-certs=true --server=https://#{hostip}:6443 --kubeconfig=kube-scheduler.kubeconfig"
+          sudo :kubectl, "config set-credentials system:kube-scheduler --client-certificate=/etc/kubernetes/ssl/kube-scheduler.pem --client-key=/etc/kubernetes/ssl/kube-scheduler-key.pem --embed-certs=true --kubeconfig=kube-scheduler.kubeconfig"
+          sudo :kubectl, "config set-context system:kube-scheduler --cluster=kubernetes --user=system:kube-scheduler --kubeconfig=kube-scheduler.kubeconfig"
+          sudo :kubectl, "config use-context system:kube-scheduler --kubeconfig=kube-scheduler.kubeconfig"
+        end
+      end
+
+      if test "[ -f /etc/kubernetes/kube-scheduler.conf ]"
+        puts "\e[0;32m /etc/kubernetes/kube-scheduler.conf has already created. \e[0m\n"
+      else
+        kube_scheduler_conf = StringIO.new <<~CONF
+        KUBE_SCHEDULER_OPTS="--address=127.0.0.1 \
+        --kubeconfig=/etc/kubernetes/kube-scheduler.kubeconfig \
+        --leader-elect=true \
+        --alsologtostderr=true \
+        --logtostderr=false \
+        --log-dir=/var/log/kubernetes \
+        --v=2"
+        CONF
+
+        # puts kube_scheduler_conf.read
+        upload! kube_scheduler_conf, '/tmp/kube-scheduler.conf'
+        sudo :mv, '/tmp/kube-scheduler.conf /etc/kubernetes'
+      end
+
+      if test "[ -f /usr/lib/systemd/system/kube-scheduler.service ]"
+        puts "\e[0;32m /usr/lib/systemd/system/kube-scheduler.service has already created. \e[0m\n"
+      else
+        kube_scheduler_service = StringIO.new <<~CONF
+        [Unit]
+        Description=Kubernetes Scheduler
+        Documentation=https://github.com/kubernetes/kubernetes
+        
+        [Service]
+        EnvironmentFile=-/etc/kubernetes/kube-scheduler.conf
+        ExecStart=/usr/local/bin/kube-scheduler $KUBE_SCHEDULER_OPTS
+        Restart=on-failure
+        RestartSec=5
+        
+        [Install]
+        WantedBy=multi-user.target
+        CONF
+
+        upload! kube_scheduler_service, '/tmp/kube-scheduler.service'
+        sudo :mv, '/tmp/kube-scheduler.service /usr/lib/systemd/system/'
+
+        sudo :systemctl, 'daemon-reload'
+        sudo :systemctl, 'enable kube-scheduler.service'
+        sudo :systemctl, 'restart kube-scheduler.service'
+      end
+
+      # execute :kubectl, "cluster-info"
+      # execute :kubectl, "get componentstatuses"
+      # execute :kubectl, "get all --all-namespaces"
+    end
+  end
+
+  desc 'ha 192.168.1.62 deploy', 'setup high available for 192.168.1.62 via user deploy'
+  option :keepalived_state, :type => :string, :required => true, :banner => 'MASTER|BACKUP'
+  option :virtual_ip, :type => :string, :required => true
+  option :keepalived_priority, :type => :numeric, :required => true, :banner => '200|150|100'
+  option :link_interface, :default => 'ens192'
+  option :virtual_router_id, :type => :numeric, :default => 51
+  option :clusternames, :default => 'k8s-master01,k8s-master02,k8s-master03'
+  option :clusterips, :default => '192.168.1.61,192.168.1.62,192.168.1.63'
+  def ha(hostip, username='ubuntu', port=22)
+    serverips = options[:clusterips].split(',')
+    servernames = options[:clusternames].split(',')
+    keepalived_state = options[:keepalived_state]
+    keepalived_priority = options[:keepalived_priority]
+    virtual_ip = options[:virtual_ip]
+    link_interface = options[:link_interface]
+    virtual_router_id = options[:virtual_router_id]
+
+    peer01, peer02 = serverips - [hostip]
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+
+      if test "[ -f /etc/haproxy/haproxy.cfg ]"
+        puts "\e[0;32m /etc/haproxy/haproxy.cfg has already created. \e[0m\n"
+      else
+        sudo 'apt -yq update'
+        sudo 'apt -yq install haproxy'
+
+        haproxy_cfg = StringIO.new <<~CFG
+        global
+          maxconn  2000
+          ulimit-n  16384
+          log  127.0.0.1 local0 err
+          stats timeout 30s
+      
+        defaults
+          log global
+          mode  http
+          option  httplog
+          timeout connect 5000
+          timeout client  50000
+          timeout server  50000
+          timeout http-request 15s
+          timeout http-keep-alive 15s
+        
+        frontend monitor-web 
+          bind *:33305
+          mode http
+          option httplog 
+          monitor-uri /monitor
+        
+        frontend k8s-apiserver
+          bind 0.0.0.0:8443
+          bind 127.0.0.1:8443
+          mode tcp
+          option tcplog
+          tcp-request inspect-delay 5s
+          default_backend k8s-apiserver
+        
+        backend k8s-apiserver
+          mode tcp
+          option tcp-check
+          balance roundrobin
+          default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
+          server #{servernames[0]} #{serverips[0]}:6443  check
+          server #{servernames[1]} #{serverips[1]}:6443  check
+          server #{servernames[2]} #{serverips[2]}:6443  check
+        CFG
+
+        upload! haproxy_cfg, '/tmp/haproxy.cfg'
+        sudo :mv, '/tmp/haproxy.cfg /etc/haproxy'
+
+        sudo :systemctl, 'restart haproxy.service'
+      end
+
+      if test "[ -f /etc/keepalived/keepalived.conf ]"
+        puts "\e[0;32m /etc/keepalived/keepalived.conf has already created. \e[0m\n"
+      else
+        sudo 'apt -yq update'
+        sudo 'apt -yq install keepalived'
+
+        check_apiserver_sh = StringIO.new <<~SCRIPT
+        #!/usr/bin/env bash
+        err=0
+        for k in $(seq 1 3)
+        do
+            check_code=$(pgrep haproxy)
+            if [[ $check_code == "" ]]; then
+                err=$(expr $err + 1)
+                sleep 1
+                continue
+            else
+                err=0
+                break
+            fi
+        done
+
+        if [[ $err != "0" ]]; then
+            echo "systemctl stop keepalived"
+            systemctl stop keepalived
+            exit 1
+        else
+            exit 0
+        fi
+        SCRIPT
+        upload! check_apiserver_sh, '/tmp/check_apiserver.sh'
+        sudo :mv, '/tmp/check_apiserver.sh /etc/keepalived/'
+        sudo :chown, 'root:root /etc/keepalived/check_apiserver.sh'
+        sudo :chmod, 'u+x /etc/keepalived/check_apiserver.sh'
+
+        keepalived_conf = StringIO.new <<~CONF
+        global_defs {
+          router_id LVS_DEVEL
+          script_user root
+          enable_script_security
+        }
+
+        vrrp_script chk_apiserver {
+          script "/etc/keepalived/check_apiserver.sh"
+          interval 5 
+          weight -5
+          fall 2
+          rise 1
+        }
+
+        vrrp_instance haproxy-vip {
+          state #{keepalived_state}
+          interface #{link_interface}
+          mcast_src_ip #{hostip}
+          unicast_peer {
+              #{peer01}
+              #{peer02}
+          }
+          virtual_ipaddress {
+              #{virtual_ip}
+          }
+          virtual_router_id #{virtual_router_id}
+          priority #{keepalived_priority}
+          nopreempt
+          advert_int 2
+          authentication {
+              auth_type PASS
+              auth_pass K8S_PASS
+          }
+
+          track_script {
+              chk_apiserver
+          } 
+        }
+        CONF
+        upload! keepalived_conf, '/tmp/keepalived.conf'
+        sudo :mv, '/tmp/keepalived.conf /etc/keepalived'
+        sudo :chown, 'root:root /etc/keepalived/keepalived.conf'
+
+        sudo :systemctl, 'restart keepalived.service'
+      end
     end
   end
 
