@@ -1,0 +1,441 @@
+#!/usr/bin/env ruby
+require 'thor'
+require 'sshkit'
+require 'sshkit/sudo'
+require 'sshkit/dsl'
+require_relative 'runner'
+
+SSHKit.config.format = :pretty
+SSHKit.config.output_verbosity = :debug
+
+class K8S < Thor
+  include Actions
+  include SSHKit::DSL
+
+  desc 'user 192.168.1.62 deploy', 'create new user deploy for 192.168.1.62'
+  def user(hostname, username='deploy', port=22)
+    target_host = SSHKit::Host.new(
+      hostname: hostname,
+      port: port,
+      user: SUDO_USER,
+      password: SUDO_PASS,
+      ssh_options: {}
+    )
+
+    pass_cb = PasswordInteractionHandler.new
+
+    on target_host, in: :sequence, wait: 5 do |host|
+      if test "[ -d /home/#{username} ]"
+        puts "\e[0;32m USER #{username} has already created. \e[0m\n"
+      else
+        sudo 'useradd -m -s /bin/bash -u 1001 deploy', interaction_handler: pass_cb
+        sudo 'usermod -aG sudo deploy', interaction_handler: pass_cb
+        sudo 'usermod -aG adm deploy', interaction_handler: pass_cb
+        sudo 'usermod -a -G users deploy', interaction_handler: pass_cb
+        sudo 'usermod -a -G staff deploy', interaction_handler: pass_cb
+      end
+
+      if test "[ -f /etc/sudoers.d/#{username} ]"
+        puts "\e[0;32m USER #{username} is already NOPASSWD sudo user. \e[0m\n"
+      else
+        execute "echo '#{username} ALL = (ALL) NOPASSWD: ALL' > /tmp/sudoer_#{username}"
+        sudo :mv, "/tmp/sudoer_#{username}", "/etc/sudoers.d/#{username}", interaction_handler: pass_cb
+        sudo :chown, "-R root:root /etc/sudoers.d/#{username}", interaction_handler: pass_cb
+        # execute "echo 'deploy ALL = (ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/deploy", interaction_handler: pass_cb
+      end
+
+      if test "[ -d /home/#{username}/.ssh ]"
+        puts "\e[0;32m /home/#{username}/.ssh have already exists. \e[0m\n"
+      else
+        # 本地免密码 SSH 登陆
+        puts "\e[0;33m /home/#{username}/.ssh not exists, create it. \e[0m\n"
+
+        sudo "mkdir /home/#{username}/.ssh", interaction_handler: pass_cb
+        upload! "/home/#{SUDO_USER}/.ssh/id_rsa.pub", '/tmp/id_rsa.pub'
+        upload! "/home/#{SUDO_USER}/.ssh/id_rsa", '/tmp/id_rsa'
+        upload! "/home/#{SUDO_USER}/.ssh/authorized_keys", '/tmp/authorized_keys'
+        # execute "cat /tmp/id_rsa.pub | sudo tee -a /home/#{username}/.ssh/authorized_keys", interaction_handler: pass_cb
+
+        sudo :mv, '/tmp/id_rsa.pub', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+        sudo :mv, '/tmp/id_rsa', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+        sudo :mv, '/tmp/authorized_keys', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+
+        sudo :chown, '-R', "#{username}:#{username}", "/home/#{username}/.ssh", interaction_handler: pass_cb
+        sudo :chmod, '-R', 'go-rwx', "/home/#{username}/.ssh/id_rsa", interaction_handler: pass_cb
+      end
+    end
+  end
+
+  desc 'apt 192.168.1.101 james', 'setup apt source for 192.168.1.10 via user james'
+  def apt(hostip, username='ubuntu', port=22)
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+      arch = capture(:uname, '-m')
+      if arch == 'x86_64'
+        if test "[ -f /etc/apt/sources.list_bak ]"
+          puts "/etc/apt/sources.list has already updated"
+          execute 'export DEBIAN_FRONTEND=noninteractive'
+          sudo 'apt -y update'
+          sudo 'apt -y upgrade'
+          sudo 'apt -y dist-upgrade'
+          sudo 'apt -y autoclean'
+          sudo 'apt -y full-upgrade'
+          sudo 'apt -y autoremove'
+        else
+          # sudo :mv, '/etc/apt/sources.list', '/etc/apt/sources.list_bak'
+
+          # mirrors_url = 'https://mirrors.ustc.edu.cn'
+          # # mirrors_url = 'https://mirrors.tuna.tsinghua.edu.cn'
+          # lsb_release_sc = capture(:lsb_release, '-sc')
+
+          # sources_list = StringIO.new <<~SOURCE_LIST
+          #   deb #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
+          #   deb-src #{mirrors_url}/ubuntu #{lsb_release_sc} main restricted universe multiverse
+
+          #   deb #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
+          #   deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-updates main restricted universe multiverse
+
+          #   deb #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
+          #   deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-backports main restricted universe multiverse
+
+          #   deb #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
+          #   deb-src #{mirrors_url}/ubuntu #{lsb_release_sc}-security main restricted universe multiverse
+          # SOURCE_LIST
+
+          # upload! sources_list, '/tmp/apt-sources.list'
+          # execute 'cat /tmp/apt-sources.list | sudo tee /etc/apt/sources.list'
+
+          execute 'export DEBIAN_FRONTEND=noninteractive'
+          sudo 'apt -y update'
+          sudo 'apt -o Dpkg::Options::="--force-confold" upgrade -q -y'
+          sudo 'apt -o Dpkg::Options::="--force-confold" dist-upgrade -q -y'
+          sudo 'apt -y upgrade'
+          sudo 'apt -y dist-upgrade'
+          sudo 'apt -y autoclean'
+          sudo 'apt -y full-upgrade'
+          sudo 'apt -y autoremove'
+        end
+      else
+        puts "\e[0;32m IGNORE arch #{arch}. \e[0m\n"
+        execute 'export DEBIAN_FRONTEND=noninteractive'
+        sudo 'apt -y update'
+        sudo 'apt -y upgrade'
+        sudo 'apt -y dist-upgrade'
+        sudo 'apt -y autoclean'
+        sudo 'apt -y full-upgrade'
+        sudo 'apt -y autoremove'
+      end
+
+      execute :echo, 'export LC_ALL=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LC_ALL ]'
+      execute :echo, 'export LANG=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LANG ]'
+    end
+  end
+
+  desc 'setup 192.168.1.62 james', 'setup for 192.168.1.62 via user james'
+  def setup(hostip, username='ubuntu', port=22)
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+      sudo :apt, 'install', '-yq', '--no-install-recommends', 'coreutils procps libseccomp2 net-tools sysstat rsync bash-completion socat'
+
+      execute :echo, 'export LC_ALL=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LC_ALL ]'
+      execute :echo, 'export LANG=en_US.UTF-8', '>> ~/.bashrc' if test '[ -z $LANG ]'
+
+      if test('type /usr/sbin/chronyd')
+        puts "ntp has already setup"
+      else
+        sudo 'apt -yq remove ntpd' if test('type ntpd')
+        sudo 'apt -yq update'
+        sudo 'apt -yq install chrony'
+
+        sudo 'timedatectl set-timezone Asia/Shanghai'
+        sudo 'timedatectl set-ntp true'
+
+        sudo 'cp /etc/chrony/chrony.conf /etc/chrony/chrony.conf.bak' if test "[ -f /etc/chrony/chrony.conf ]"
+        chrony_version = capture("sudo chronyd --version | grep -o -E 'version\s*[0-9.]+' | awk '{print $2}'")
+        puts "chrony version: #{chrony_version}"
+
+        chrony_conf = <<~CHRONY_CONF
+          server ntp.aliyun.com iburst
+          server cn.ntp.org.cn iburst
+          server ntp.shu.edu.cn iburst
+          server 0.cn.pool.ntp.org iburst
+          server 1.cn.pool.ntp.org iburst
+          server 2.cn.pool.ntp.org iburst
+          server 3.cn.pool.ntp.org iburst
+          
+          keyfile /etc/chrony/chrony.keys
+          driftfile /var/lib/chrony/chrony.drift
+          logdir /var/log/chrony
+          
+          maxupdateskew 100.0
+          rtcsync
+          makestep 1.0 3
+        CHRONY_CONF
+
+        upload! StringIO.new(chrony_conf), '/tmp/chrony.conf'
+        execute 'cat /tmp/chrony.conf | sudo tee /etc/chrony/chrony.conf'
+
+        sudo :systemctl, 'daemon-reload'
+        sudo :systemctl, 'restart', 'chrony'
+        sudo :chronyc, 'makestep'
+      end
+
+      if test "[ -f /etc/modules-load.d/k8s.conf ]"
+        puts "kernel optimize has already setup"
+      else
+        sudo 'apt -yq update'
+        sudo 'apt -yq install ipvsadm ipset conntrack'
+
+        k8s_mod_cfg = StringIO.new <<~K8S_MOD
+          overlay
+          ip_vs
+          ip_vs_rr
+          ip_vs_wrr
+          ip_vs_lc
+          ip_vs_wlc
+          ip_vs_sh
+          ip_vs_dh
+          br_netfilter
+          nf_conntrack
+        K8S_MOD
+        upload! k8s_mod_cfg, '/tmp/k8s-mod.conf'
+        execute 'cat /tmp/k8s-mod.conf | sudo tee /etc/modules-load.d/k8s.conf'
+
+        k8s_sysctl_cfg = StringIO.new <<~K8S_SYSCTL
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1
+          net.ipv4.ip_forward = 1
+          net.ipv4.tcp_keepalive_time = 600
+          net.ipv4.tcp_keepalive_intvl = 30
+          net.ipv4.tcp_keepalive_probes = 10
+        K8S_SYSCTL
+        upload! k8s_sysctl_cfg, '/tmp/k8s-sysctl.conf'
+        execute 'cat /tmp/k8s-sysctl.conf | sudo tee /etc/sysctl.d/k8s.conf'
+
+        sudo 'sysctl --system'
+
+        ulimit_cfg = StringIO.new <<~ULIMIT
+          * soft nofile 655360
+          * hard nofile 131072
+          * soft nproc 655350
+          * hard nproc 655350
+          * soft memlock unlimited
+          * hard memlock unlimited
+        ULIMIT
+        upload! ulimit_cfg, '/tmp/limits.conf'
+        execute 'cat /tmp/limits.conf | sudo tee /etc/security/limits.conf'
+        execute 'ulimit -SHn 65535'
+
+        sudo 'sed -i -r "/(.*)swap(.*)swap(.*)/d" /etc/fstab'
+        sudo 'swapoff -a'
+      end
+    end
+  end
+
+  desc 'etcd 192.168.1.62 deploy', 'setup etcd cluster for 192.168.1.62'
+  option :name, :type => :string, :required => true
+  option :names, :default => 'etcd-01,etcd-02,etcd-03'
+  option :clusterips, :default => '192.168.1.61,192.168.1.62,192.168.1.63'
+  option :binaries_url, :type => :string, :required => true
+  option :initial_state, :type => :string, :default => "existing"
+  def etcd(hostip, username='deploy', port=22)
+    clusterips = options[:clusterips].split(',')
+    run_locally do
+      execute :cfssl, 'version'
+
+      if test "[ -d /opt/etc/k8s/cfssl/etcd ]"
+        puts "\e[0;32m /opt/etc/k8s/cfssl/etcd have already exists. \e[0m\n"
+      else
+        execute :mkdir, '-p /opt/etc/k8s/cfssl/etcd'
+      end
+
+      if test "[ -f /opt/etc/k8s/cfssl/etcd/ca-csr.json ]"
+        puts "\e[0;32m /opt/etc/k8s/cfssl/etcd/ca-csr.json have already exists. \e[0m\n"
+      else
+        ca_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "etcd-ca",
+          "key": {
+            "algo": "rsa",
+            "size": 2048
+          },
+          "names": [
+            {
+              "C": "CN",
+              "ST": "Guangdong",
+              "L": "Shenzhen",
+              "O": "k8s",
+              "OU": "etcd-ca"
+            }
+          ],
+          "ca": {
+            "expiry": "87600h"
+          }
+        }
+        JSON
+        upload! ca_csr_json, '/opt/etc/k8s/cfssl/etcd/ca-csr.json'
+      end
+
+      if test "[ -f /opt/etc/k8s/cfssl/etcd/etcd-csr.json ]"
+        puts "\e[0;32m /opt/k8s/etc/cfssl/etcd/etcd-csr.json have already exists. \e[0m\n"
+      else
+        etd_csr_json = StringIO.new <<~JSON
+        {
+          "CN": "etcd",
+          "hosts": #{clusterips + ['127.0.0.1']},
+          "key": {
+            "algo": "rsa",
+            "size": 2048
+          },
+          "names": [
+            {
+              "C": "CN",
+              "ST": "Guangdong",
+              "L": "Shenzhen",
+              "O": "k8s",
+              "OU": "etcd"
+            }
+          ]
+        }
+        JSON
+        upload! etd_csr_json, '/opt/etc/k8s/cfssl/etcd/etcd-csr.json'
+      end
+
+      if test "[ -f /opt/etc/k8s/cfssl/etcd/ca-config.json ]"
+        puts "\e[0;32m /opt/etc/k8s/cfssl/etcd/ca-config.json have already exists. \e[0m\n"
+      else
+        ca_config_json = StringIO.new <<~JSON
+        {
+          "signing": {
+            "default": {
+              "expiry": "87600h"
+            },
+            "profiles": {
+              "k8s-etcd": {
+                "usages": ["signing", "key encipherment", "server auth", "client auth"],
+                "expiry": "87600h"
+              }
+            }
+          }
+        }
+        JSON
+        upload! ca_config_json, '/opt/etc/k8s/cfssl/etcd/ca-config.json'
+      end
+
+      within '/opt/etc/k8s/cfssl/etcd/' do
+        if test "[ -f /opt/etc/k8s/cfssl/etcd/ca.pem ]"
+          puts "\e[0;32m ignore: cfssl gencert -initca ca-csr.json | cfssljson -bare ca. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -initca ca-csr.json | cfssljson -bare ca'
+        end
+
+        if test "[ -f /opt/etc/k8s/cfssl/etcd/etcd.pem ]"
+          puts "\e[0;32m ignore: cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=k8s-etcd etcd-csr.json | cfssljson -bare etcd. \e[0m\n"
+        else
+          execute :cfssl, 'gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=k8s-etcd etcd-csr.json | cfssljson -bare etcd'
+        end
+      end
+    end
+
+    etcd_name = options[:name]
+    binaries_url = options[:binaries_url]
+    names = options[:names].split(',')
+    initial_state = options[:initial_state]
+    initial_cluster = names.each_with_index.map {|el, i| "#{el}=https://#{clusterips[i]}:2380" }.join(',')
+    on "#{username}@#{hostip}", in: :sequence, wait: 5 do
+      if test "[ -f /usr/local/bin/etcd ]"
+        puts "\e[0;32m /usr/local/bin/etcd has already created. \e[0m\n"
+      else
+        within '/tmp' do
+          execute :wget, "--quiet #{binaries_url}"
+          execute :tar, 'zxvf `ls | grep etcd*.tar.gz`'
+          sudo :mv, "`ls | grep -v .tar.gz| grep etcd`/etcd* /usr/local/bin"
+        end
+      end
+
+      if test "[ -f /etc/etcd/etcd.conf ]"
+        puts "\e[0;32m /etc/etcd/etcd.conf has already created. \e[0m\n"
+      else
+        etcd_conf = StringIO.new <<~CONF
+        ETCD_NAME="#{etcd_name}"
+        ETCD_DATA_DIR="/var/lib/etcd/default.etcd"
+        ETCD_LISTEN_PEER_URLS="https://#{hostip}:2380"
+        ETCD_LISTEN_CLIENT_URLS="https://#{hostip}:2379,http://127.0.0.1:2379"
+        ETCD_ADVERTISE_CLIENT_URLS="https://#{hostip}:2379"
+        ETCD_INITIAL_ADVERTISE_PEER_URLS="https://#{hostip}:2380"
+        ETCD_INITIAL_CLUSTER="#{initial_cluster}"
+        
+        ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster"
+        ETCD_INITIAL_CLUSTER_STATE="#{initial_state}"
+        CONF
+
+        unless test "[ -d /etc/etcd ]"
+          sudo :mkdir, '-p /etc/etcd'
+        end
+
+        # puts etcd_conf.read
+        upload! etcd_conf, '/tmp/etcd.conf'
+        sudo :mv, '/tmp/etcd.conf /etc/etcd/'
+      end
+
+      unless test "[ -d /var/lib/etcd/default.etcd ]"
+        sudo :mkdir, '-p /var/lib/etcd/default.etcd'
+      end
+
+      unless test "[ -d /etc/etcd/ssl ]"
+        sudo :mkdir, '-p /etc/etcd/ssl'
+      end
+
+      files = %W[ca.csr ca-key.pem ca.pem etcd.csr etcd-key.pem etcd.pem]
+      files.each do |file|
+        if test "[ -f /etc/etcd/ssl/#{file} ]"
+          puts "\e[0;32m /etc/etcd/ssl/#{file} has already created. \e[0m\n"
+        else
+          upload! "/opt/etc/k8s/cfssl/etcd/#{file}", "/tmp/#{file}"
+          sudo :mv, "/tmp/#{file} /etc/etcd/ssl/"
+        end
+      end
+
+      if test "[ -f /usr/lib/systemd/system/etcd.service ]"
+        puts "\e[0;32m /usr/lib/systemd/system/ectd.service has already created. \e[0m\n"
+      else
+        etcd_service = StringIO.new <<~CONF
+        [Unit]
+        Description=Etcd Server
+        After=network.target
+        After=network-online.target
+        Wants=network-online.target
+        
+        [Service]
+        Type=notify
+        EnvironmentFile=-/etc/etcd/etcd.conf
+        WorkingDirectory=/var/lib/etcd/
+        ExecStart=/usr/local/bin/etcd \
+          --cert-file=/etc/etcd/ssl/etcd.pem \
+          --key-file=/etc/etcd/ssl/etcd-key.pem \
+          --trusted-ca-file=/etc/etcd/ssl/ca.pem \
+          --peer-cert-file=/etc/etcd/ssl/etcd.pem \
+          --peer-key-file=/etc/etcd/ssl/etcd-key.pem \
+          --peer-trusted-ca-file=/etc/etcd/ssl/ca.pem \
+          --peer-client-cert-auth \
+          --client-cert-auth
+        Restart=on-failure
+        RestartSec=5
+        LimitNOFILE=65536
+        
+        [Install]
+        WantedBy=multi-user.target
+        CONF
+
+        upload! etcd_service, '/tmp/etcd.service'
+        sudo :mv, '/tmp/etcd.service /usr/lib/systemd/system/'
+
+        sudo :systemctl, 'daemon-reload'
+        sudo :systemctl, 'enable etcd'
+      end
+
+      sudo :systemctl, 'restart etcd'
+    end
+  end
+
+end
+
+K8S.start(ARGV)
