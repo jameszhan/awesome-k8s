@@ -4,11 +4,11 @@ require 'sshkit'
 require 'sshkit/sudo'
 require 'sshkit/dsl'
 
-class K8S < Thor
+class K8sUpgrade < Thor
   include Actions
   include SSHKit::DSL
 
-  desc 'versions 192.168.1.101', 'check tool versions for 192.168.1.101 via user deploy'
+  desc 'versions 192.168.1.62', 'check tool versions for 192.168.1.62 via user deploy'
   def versions(hostip, username='deploy', port=22)
     on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
       if test '[ -x "$(command -v kube-apiserver)" ]'
@@ -31,15 +31,6 @@ class K8S < Thor
         puts "\e[0;32m kube-proxy:\t#{capture("kube-proxy --version")} \e[0m\n"
       end
 
-      # if [[ -x "$(command -v kubectl)" ]]
-      # if test '[ -x "$(command -v kubectl)" ]'
-      #   puts "\e[0;38m kubectl:\t#{capture("kubectl version")} \e[0m\n"
-      # end
-
-      # if test '[ -x "$(command -v kubeadm)" ]'
-      #   puts "\e[0;38m kubeadm:\t#{capture("kubeadm version")} \e[0m\n"
-      # end
-
       if test '[ -x "$(command -v etcd)" ]'
         puts "\e[0;36m etcd:\t#{capture("etcd --version")} \e[0m\n"
       end
@@ -51,12 +42,21 @@ class K8S < Thor
       if test '[ -x "$(command -v etcdutl)" ]'
         puts "\e[0;36m etcdutl:\t#{capture("etcdutl version")} \e[0m\n"
       end
+
+      # if [[ -x "$(command -v kubectl)" ]]
+      # if test '[ -x "$(command -v kubectl)" ]'
+      #   puts "\e[0;38m kubectl:\t#{capture("kubectl version")} \e[0m\n"
+      # end
+
+      # if test '[ -x "$(command -v kubeadm)" ]'
+      #   puts "\e[0;38m kubeadm:\t#{capture("kubeadm version")} \e[0m\n"
+      # end
     end
   end
   
-  desc 'upgrade 192.168.1.101', 'upgrade tool versions for 192.168.1.101 via user deploy'
+  desc 'k8s 192.168.1.61', 'upgrade k8s version for 192.168.1.61 via user deploy'
   option :version, :type => :string, :required => true
-  def upgrade(hostip, username='deploy', port=22)
+  def k8s(hostip, username='deploy', port=22)
     version = options[:version]
     on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
       uname_m = capture(:uname, '-m')
@@ -79,7 +79,7 @@ class K8S < Thor
       end
 
       if test "[ -d /tmp/kubernetes/server/bin ]"
-        puts "\e[0;32m kubernete binaries directory has already exists. \e[0m\n"
+        puts "\e[0;32m kubernetes binaries directory has already exists. \e[0m\n"
       else
         within '/tmp' do
           execute :tar, "zxvf kubernetes-server-linux-#{arch}.tar.gz"
@@ -87,6 +87,26 @@ class K8S < Thor
       end
 
       within '/tmp/kubernetes/server/bin' do
+        if test '[ -x "$(command -v apiextensions-apiserver)" ]'
+          puts "\e[0;33m upgrade kube-apiserver from #{capture("kube-apiserver --version")} to #{version} \e[0m\n"
+          sudo :cp, "-f apiextensions-apiserver /usr/local/bin"
+        end
+
+        if test '[ -x "$(command -v kube-aggregator)" ]'
+          puts "\e[0;33m upgrade apiextensions-apiserver from #{capture("kube-apiserver --version")} to #{version} \e[0m\n"
+          sudo :cp, "-f kube-aggregator /usr/local/bin"
+        end
+
+        if test '[ -x "$(command -v kubectl-convert)" ]'
+          puts "\e[0;33m upgrade kubectl-convert from #{capture("kube-apiserver --version")} to #{version} \e[0m\n"
+          sudo :cp, "-f kubectl-convert /usr/local/bin"
+        end
+
+        if test '[ -x "$(command -v kube-log-runner)" ]'
+          puts "\e[0;33m upgrade kube-log-runner from #{capture("kube-apiserver --version")} to #{version} \e[0m\n"
+          sudo :cp, "-f kube-log-runner /usr/local/bin"
+        end
+
         if test '[ -x "$(command -v kube-apiserver)" ]'
           puts "\e[0;33m upgrade kube-apiserver from #{capture("kube-apiserver --version")} to #{version} \e[0m\n"
           sudo :cp, "-f kube-apiserver /usr/local/bin"
@@ -112,10 +132,10 @@ class K8S < Thor
           sudo :cp, "-f kube-proxy /usr/local/bin"
         end
 
-        # if test '[ -x "$(command -v kubectl)" ]'
-        #   puts "\e[0;38m upgrade kubectl from #{capture("kubectl version")} to #{version}\e[0m\n"
-        #   sudo :cp, "-f kubectl /usr/local/bin"
-        # end
+        if test '[ -x "$(command -v kubectl)" ]'
+          puts "\e[0;38m upgrade kubectl from #{capture("kubectl version")} to #{version}\e[0m\n"
+          sudo :cp, "-f kubectl /usr/local/bin"
+        end
 
         # if test '[ -x "$(command -v kubeadm)" ]'
         #   puts "\e[0;38m upgrade kubeadm from #{capture("kubeadm version")} to #{version}\e[0m\n"
@@ -125,6 +145,57 @@ class K8S < Thor
     end
   end
 
+  desc 'etcd 192.168.1.61', 'upgrade etcd version for 192.168.1.61 via user deploy'
+  option :version, :type => :string, :required => true
+  def etcd(hostip, username='deploy', port=22)
+    version = options[:version]
+    on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
+      uname_m = capture(:uname, '-m')
+      if uname_m == 'x86_64'
+        arch = 'amd64'
+      elsif uname_m == 'aarch64'
+        arch = 'arm64'
+      else
+        puts "\e[0;31m unexpected arch #{uname_m}. \e[0m\n"
+        return
+      end
+
+      binaries_url = "https://github.com/etcd-io/etcd/releases/download/#{version}/etcd-#{version}-linux-#{arch}.tar.gz"
+      if test "[ -f etcd-#{version}-linux-#{arch}.tar.gz ]"
+        puts "\e[0;32m etcd-#{version}-linux-#{arch}.tar.gz has already downloaded \e[0m\n"
+      else
+        within '/tmp' do
+          execute :wget, "--quiet #{binaries_url}"
+        end
+      end
+
+      if test "[ -d /tmp/etcd-#{version}-linux-#{arch} ]"
+        puts "\e[0;32m etcd binaries directory has already exists. \e[0m\n"
+      else
+        within '/tmp' do
+          execute :tar, "zxvf etcd-#{version}-linux-#{arch}.tar.gz"
+        end
+      end
+
+      within "/tmp/etcd-#{version}-linux-#{arch}" do
+        if test '[ -x "$(command -v etcdutl)" ]'
+          puts "\e[0;33m upgrade etcdutl from #{capture("etcdutl version")} to #{version} \e[0m\n"
+          sudo :cp, "-f etcdutl /usr/local/bin"
+        end
+
+        if test '[ -x "$(command -v etcdctl)" ]'
+          puts "\e[0;33m upgrade etcdctl from #{capture("etcdctl version")} to #{version} \e[0m\n"
+          sudo :cp, "-f etcdctl /usr/local/bin"
+        end
+
+        if test '[ -x "$(command -v etcd)" ]'
+          puts "\e[0;33m upgrade etcd from #{capture("etcd --version")} to #{version} \e[0m\n"
+          sudo :cp, "-f etcd /usr/local/bin"
+        end
+      end
+    end
+  end
+
 end
 
-K8S.start(ARGV)
+K8sUpgrade.start(ARGV)
