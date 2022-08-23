@@ -17,8 +17,11 @@ $ kubectl edit deployment metrics-server -n kube-system
 
 建议加上`--kubelet-insecure-tls`参数，取消证书双向验证。
 
-
-
 > 国内用户可以把`image`从`k8s.gcr.io/metrics-server/metrics-server:v0.5.2`替换为`registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server:v0.5.2`。
 
 [metrics-server]: https://github.com/kubernetes-sigs/metrics-server "Kubernetes Metrics Server"
+
+
+```bash
+$ helm upgrade -n kube-system --install metrics-server metrics-server/metrics-server
+```

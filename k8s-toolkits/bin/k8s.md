@@ -64,6 +64,8 @@ $ curl -i --cacert /etc/etcd/ssl/ca.pem --cert /etc/etcd/ssl/etcd.pem --key /etc
 ```bash
 $ ./k8s master 192.168.1.62 deploy \
   --clusterips=192.168.1.61,192.168.1.62,192.168.1.63 \
+  --service-cluster-ip-range=192.168.1.128/25 \
+  --cluster_cidr=10.244.0.0/16 \
   --binaries-url=https://storage.googleapis.com/kubernetes-release/release/v1.23.10/kubernetes-server-linux-amd64.tar.gz
 
 $ curl -i --cacert /opt/etc/k8s/cfssl/etcd/ca.pem \
