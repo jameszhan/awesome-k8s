@@ -51,14 +51,18 @@ class K8S < Thor
         puts "\e[0;33m /home/#{username}/.ssh not exists, create it. \e[0m\n"
 
         sudo "mkdir /home/#{username}/.ssh", interaction_handler: pass_cb
-        upload! "/home/#{SUDO_USER}/.ssh/id_rsa.pub", '/tmp/id_rsa.pub'
-        upload! "/home/#{SUDO_USER}/.ssh/id_rsa", '/tmp/id_rsa'
-        upload! "/home/#{SUDO_USER}/.ssh/authorized_keys", '/tmp/authorized_keys'
+        # upload! "/home/#{SUDO_USER}/.ssh/id_rsa.pub", '/tmp/id_rsa.pub'
+        # upload! "/home/#{SUDO_USER}/.ssh/id_rsa", '/tmp/id_rsa'
+        # upload! "/home/#{SUDO_USER}/.ssh/authorized_keys", '/tmp/authorized_keys'
         # execute "cat /tmp/id_rsa.pub | sudo tee -a /home/#{username}/.ssh/authorized_keys", interaction_handler: pass_cb
 
-        sudo :mv, '/tmp/id_rsa.pub', "/home/#{username}/.ssh/", interaction_handler: pass_cb
-        sudo :mv, '/tmp/id_rsa', "/home/#{username}/.ssh/", interaction_handler: pass_cb
-        sudo :mv, '/tmp/authorized_keys', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+        # sudo :mv, '/tmp/id_rsa.pub', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+        # sudo :mv, '/tmp/id_rsa', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+        # sudo :mv, '/tmp/authorized_keys', "/home/#{username}/.ssh/", interaction_handler: pass_cb
+
+        sudo :cp, "/home/#{SUDO_USER}/.ssh/id_rsa.pub", "/home/#{username}/.ssh/", interaction_handler: pass_cb
+        sudo :cp, "/home/#{SUDO_USER}/.ssh/id_rsa",  "/home/#{username}/.ssh/", interaction_handler: pass_cb
+        sudo :cp, "/home/#{SUDO_USER}/.ssh/authorized_keys", "/home/#{username}/.ssh/", interaction_handler: pass_cb
 
         sudo :chown, '-R', "#{username}:#{username}", "/home/#{username}/.ssh", interaction_handler: pass_cb
         sudo :chmod, '-R', 'go-rwx', "/home/#{username}/.ssh/id_rsa", interaction_handler: pass_cb
@@ -67,7 +71,7 @@ class K8S < Thor
   end
 
   desc 'apt 192.168.1.101 james', 'setup apt source for 192.168.1.10 via user james'
-  def apt(hostip, username='ubuntu', port=22)
+  def apt(hostip, username='james', port=22)
     on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
       arch = capture(:uname, '-m')
       if arch == 'x86_64'
@@ -131,7 +135,7 @@ class K8S < Thor
   end
 
   desc 'setup 192.168.1.62 james', 'setup for 192.168.1.62 via user james'
-  def setup(hostip, username='ubuntu', port=22)
+  def setup(hostip, username='james', port=22)
     on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
       sudo :apt, 'install', '-yq', '--no-install-recommends', 'coreutils procps libseccomp2 net-tools sysstat rsync bash-completion socat'
 
@@ -710,7 +714,7 @@ class K8S < Thor
     cluster_cidr = options[:cluster_cidr]
     on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
       if test "[ -d /tmp/kubernetes/server/bin ]"
-        puts "\e[0;32m kubernete binaries has already downloaded. \e[0m\n"
+        puts "\e[0;32m kubernetes binaries has already downloaded. \e[0m\n"
       else
         within '/tmp' do
           execute :wget, "--quiet #{binaries_url}"

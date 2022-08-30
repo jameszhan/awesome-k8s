@@ -8,6 +8,14 @@ $ gem install bcrypt_pbkdf
 
 ### Master Setup
 
+#### Setup User Deploy
+
+```bash
+$ export SUDO_USER=james
+$ export SUDO_PASS=sudouserpass
+$ ./k8s user 192.168.1.62 deploy
+```
+
 #### Install Etcd
 
 On macOS
@@ -17,7 +25,8 @@ $ ./k8s etcd 192.168.1.62 deploy --name=etcd-02 --initial-state=existing \
   --clusterips=192.168.1.61,192.168.1.62,192.168.1.63 \
   --binaries-url=https://github.com/etcd-io/etcd/releases/download/v3.5.4/etcd-v3.5.4-linux-amd64.tar.gz
 
-$ ssh k8s-master02 /usr/local/bin/etcdctl version
+$ ssh k8s-master02 -t /usr/local/bin/etcdctl version
+$ ssh k8s-master02 -t systemctl status etcd
 
 $ ETCDCTL_API=3 etcdctl --write-out=table \
   --cacert=/opt/etc/k8s/cfssl/etcd/ca.pem \
@@ -35,7 +44,7 @@ $ ETCDCTL_API=3 etcdctl --write-out=table \
   --cacert=/opt/etc/k8s/cfssl/etcd/ca.pem \
   --cert=/opt/etc/k8s/cfssl/etcd/etcd.pem \
   --key=/opt/etc/k8s/cfssl/etcd/etcd-key.pem \
-  --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379  member list
+  --endpoints=https://192.168.1.61:2379,https://192.168.1.62:2379,https://192.168.1.63:2379 member list
 
 $ ETCDCTL_API=3 etcdctl --write-out=json \
   --cacert=/opt/etc/k8s/cfssl/etcd/ca.pem \
@@ -71,6 +80,10 @@ $ ./k8s master 192.168.1.62 deploy \
 $ curl -i --cacert /opt/etc/k8s/cfssl/etcd/ca.pem \
   --cert /opt/etc/k8s/cfssl/master/admin.pem \
   --key /opt/etc/k8s/cfssl/master/admin-key.pem https://192.168.1.62:6443/version
+  
+$ ssh k8s-master02 -t systemctl status kube-apiserver
+$ ssh k8s-master02 -t systemctl status kube-controller-manager
+$ ssh k8s-master02 -t systemctl status kube-scheduler
 ```
 
 #### 配置HA
@@ -80,9 +93,12 @@ $ ./k8s ha 192.168.1.62 deploy \
   --virtual-ip=192.168.1.100 \
   --keepalived-state=MASTER \
   --keepalived-priority=200 \
-  --link-interface=ens192 \
+  --link-interface=ens18 \
   --clusterips=192.168.1.61,192.168.1.62,192.168.1.63 \
   --clusternames=k8s-master01,k8s-master02,k8s-master03
+  
+$ ssh k8s-master02 -t sudo systemctl status keepalived
+$ ssh k8s-master02 -t sudo systemctl status haproxy
 
 $ curl -i http://192.168.1.62:33305/monitor
 $ curl -i --cacert /opt/etc/k8s/cfssl/etcd/ca.pem --cert /opt/etc/k8s/cfssl/master/admin.pem \

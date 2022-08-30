@@ -26,3 +26,7 @@ $ kubectl edit deployment metrics-server -n kube-system
 $ helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 $ helm upgrade -n kube-system --install metrics-server metrics-server/metrics-server
 ```
+
+```bash
+$ docker pull registry.cn-hangzhou.aliyuncs.com/google_containers/metrics-server:v0.6.1
+```
