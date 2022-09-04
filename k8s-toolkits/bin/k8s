@@ -51,14 +51,6 @@ class K8S < Thor
         puts "\e[0;33m /home/#{username}/.ssh not exists, create it. \e[0m\n"
 
         sudo "mkdir /home/#{username}/.ssh", interaction_handler: pass_cb
-        # upload! "/home/#{SUDO_USER}/.ssh/id_rsa.pub", '/tmp/id_rsa.pub'
-        # upload! "/home/#{SUDO_USER}/.ssh/id_rsa", '/tmp/id_rsa'
-        # upload! "/home/#{SUDO_USER}/.ssh/authorized_keys", '/tmp/authorized_keys'
-        # execute "cat /tmp/id_rsa.pub | sudo tee -a /home/#{username}/.ssh/authorized_keys", interaction_handler: pass_cb
-
-        # sudo :mv, '/tmp/id_rsa.pub', "/home/#{username}/.ssh/", interaction_handler: pass_cb
-        # sudo :mv, '/tmp/id_rsa', "/home/#{username}/.ssh/", interaction_handler: pass_cb
-        # sudo :mv, '/tmp/authorized_keys', "/home/#{username}/.ssh/", interaction_handler: pass_cb
 
         sudo :cp, "/home/#{SUDO_USER}/.ssh/id_rsa.pub", "/home/#{username}/.ssh/", interaction_handler: pass_cb
         sudo :cp, "/home/#{SUDO_USER}/.ssh/id_rsa",  "/home/#{username}/.ssh/", interaction_handler: pass_cb
@@ -70,7 +62,7 @@ class K8S < Thor
     end
   end
 
-  desc 'apt 192.168.1.101 james', 'setup apt source for 192.168.1.10 via user james'
+  desc 'apt 192.168.1.62 james', 'setup apt source for 192.168.1.62 via user james'
   def apt(hostip, username='james', port=22)
     on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
       arch = capture(:uname, '-m')

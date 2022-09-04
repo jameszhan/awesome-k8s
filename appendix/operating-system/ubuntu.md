@@ -2,7 +2,6 @@
 * Management:     https://landscape.canonical.com
 * Support:        https://ubuntu.com/advantage
 
-
 ### Ubuntu 常见工具
 
 - juju: [Juju](https://juju.is/)
@@ -13,25 +12,31 @@
 #### [Canonical](https://canonical.com/)
 
 #### [MicroK8s](https://microk8s.io/)
+
 Low-touch Kubernetes for micro clouds, thin edge and IoT
 
 #### [Landscape](https://landscape.canonical.com/)
+
 Landscape is the leading management tool to deploy, monitor and manage your Ubuntu servers.
 
 #### [Multipass](https://multipass.run/)
+
 Multipass uses Hyper-V on Windows, HyperKit on macOS and KVM on Linux for minimal overhead and the fastest possible start time.
 
 #### [Juju](https://jaas.ai/)
 
 #### [MAAS](https://maas.io/)
+
 Very fast server provisioning for your data centre
 
 #### [snapcraft](https://snapcraft.io/)
+
 The app store for Linux
 
 #### [Kubernetes](https://ubuntu.com/kubernetes)
 
 #### [OpenStack](https://ubuntu.com/openstack)
+
 Multi–cloud operations are more cost-effective with a private cloud. Private cloud is more cost–effective with Canonical’s Charmed OpenStack.
 
 #### [cloud-init](https://cloud-init.io/)
@@ -61,4 +66,5 @@ Cloud images are operating system templates and every instance starts out as an 
 ### 附录
 
 #### 资源地址
+
 - [Ubuntu Cloud Images](http://cloud-images.ubuntu.com/)
