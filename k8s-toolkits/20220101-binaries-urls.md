@@ -30,3 +30,5 @@ $ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/sta
 ```bash
 $ curl -LO https://get.helm.sh/helm-v3.8.0-linux-arm64.tar.gz
 ```
+
+[Download Kubernetes](https://www.downloadkubernetes.com/): An easier way to get the binaries you need (or a link to them)
