@@ -93,7 +93,7 @@ $ ./k8s ha 192.168.1.62 deploy \
   --virtual-ip=192.168.1.100 \
   --keepalived-state=MASTER \
   --keepalived-priority=200 \
-  --link-interface=ens192 \
+  --link-interface=eth0 \
   --clusterips=192.168.1.61,192.168.1.62,192.168.1.63 \
   --clusternames=k8s-master01,k8s-master02,k8s-master03
   

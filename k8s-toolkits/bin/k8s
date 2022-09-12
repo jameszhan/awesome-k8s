@@ -28,7 +28,7 @@ class K8S < Thor
       if test "[ -d /home/#{username} ]"
         puts "\e[0;32m USER #{username} has already created. \e[0m\n"
       else
-        sudo 'useradd -m -s /bin/bash -u 1001 deploy', interaction_handler: pass_cb
+        sudo 'useradd -m -s /bin/bash -u 2000 deploy', interaction_handler: pass_cb
         sudo 'usermod -aG sudo deploy', interaction_handler: pass_cb
         sudo 'usermod -aG adm deploy', interaction_handler: pass_cb
         sudo 'usermod -a -G users deploy', interaction_handler: pass_cb
