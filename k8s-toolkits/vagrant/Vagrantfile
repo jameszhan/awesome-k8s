@@ -1,0 +1,63 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
+
+Vagrant.configure("2") do |config|
+
+  config.vagrant.plugins = "vagrant-libvirt"
+
+  (1..2).each do |i|
+    config.vm.define "node01#{i}" do |c|
+      c.vm.box = "generic/ubuntu2204"
+      c.vm.network "public_network", {
+        dev: "vmbr0",
+        mode: "bridge",
+        type: "bridge",
+        model_type: "virtio",
+        ip: "192.168.1.11#{i}"
+      }
+      c.vm.hostname = "k8s-node01#{i}"
+
+      c.vm.provider :libvirt do |v|
+        v.cpus = 4
+        v.memory = 8192
+        v.default_prefix = "k8s-"
+        v.storage_pool_name = "images"
+        v.graphics_type = "none"
+        v.channel type: 'unix', target_name: 'org.qemu.guest_agent.0', target_type: 'virtio'
+      end
+
+      # it's unsupported for vagrant-libvirt
+      c.vm.cloud_init :user_data do |ci|
+        ci.content_type = "text/cloud-config"
+        ci.path = "cloud-init.yaml"
+      end
+
+      c.vm.provision "shell", inline: <<-SHELL
+        export DEBIAN_FRONTEND=noninteractive
+
+        localectl set-locale LANG=zh_CN.UTF-8
+        dpkg-reconfigure --frontend noninteractive locales
+        timedatectl set-timezone Asia/Shanghai
+
+        apt update 2>/dev/null
+        apt -y install net-tools socat 2>/dev/null
+
+        useradd -m -s /bin/bash -u 1001 james
+        usermod -aG sudo james
+        usermod -aG adm james
+        usermod -a -G users james
+        usermod -a -G staff james
+        echo 'james ALL = (ALL) NOPASSWD: ALL' | tee /etc/sudoers.d/james  > /dev/null
+        mkdir -p /home/james/.ssh
+        echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICKlyozoHszgLnnamHPPPyfivgCuv39aItv9eGkgdE8F zizhizhan@gmail.com' | tee -a /home/james/.ssh/authorized_keys
+        chown -R james:james /home/james/.ssh
+
+        echo "initialize k8s-node01#{i} done"
+      SHELL
+    end
+  end
+
+end
+

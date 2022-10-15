@@ -1,0 +1,47 @@
+#cloud-config
+preserve_hostname: false
+system_info:
+  distro: ubuntu
+  default_user:
+    name: james
+    lock_passwd: false
+    gecos: James Zhan
+    groups: [adm, audio, users, staff, cdrom, dialout, dip, floppy, lxd, netdev, plugdev, sudo, video]
+    sudo: ["ALL = (ALL) NOPASSWD: ALL"]
+    shell: /bin/bash
+  package_mirrors:
+    - arches: [i386, amd64]
+      failsafe:
+        primary: https://mirrors.tuna.tsinghua.edu.cn/ubuntu/
+        security: https://mirrors.tuna.tsinghua.edu.cn/ubuntu/
+users:
+  - default
+  - ssh-authorized-keys: ssh-ed25519 AAA...E8F zizhizhan@gmail.com
+  - name: root
+    ssh-authorized-keys:
+      - ssh-ed25519 AAA...E8F zizhizhan@gmail.com
+chpasswd:
+  expire: false
+  list: |
+    root:Hello123456
+    james:Hello123456
+write_files:
+  - path: /etc/cloud/templates/hosts.debian.tmpl
+    content: |
+      192.168.1.61    k8s-master01
+      192.168.1.62    k8s-master02
+      192.168.1.63    k8s-master03
+    append: true
+  - path: /etc/hosts
+    content: |
+      192.168.1.61    k8s-master01
+      192.168.1.62    k8s-master02
+      192.168.1.63    k8s-master03
+    append: true
+packages:
+  - net-tools
+  - socat
+runcmd:
+  - timedatectl set-timezone Asia/Shanghai
+  - localectl set-locale LANG=en_US.UTF-8
+  - echo "Disabled by virt-install" > /etc/cloud/cloud-init.disabled
