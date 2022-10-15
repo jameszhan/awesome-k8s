@@ -1143,84 +1143,95 @@ class K8S < Thor
     end
   end
 
+  # https://docs.docker.com/engine/install/ubuntu/
+  # https://docs.docker.com/engine/install/debian/
   desc 'docker 192.168.1.111 deploy', 'setup docker for 192.168.1.111 via user deploy'
+  option :daemon_json, :type => :boolean, :default => true
   def docker(hostip, username='deploy', port=22)
+    enable_daemon_json = options[:daemon_json]
     on "#{username}@#{hostip}:#{port}", in: :sequence, wait: 5 do
-      unless test('type docker')
+      if test('type docker')
+        puts "\e[0;32m docker have already installed. \e[0m\n"
+      else
+        # install docker
         # sudo 'apt -yq remove docker docker-engine docker.io containerd runc'
         sudo 'apt -yq update'
         sudo 'apt -yq install ca-certificates curl gnupg lsb-release'
 
-        if test "[ -f /usr/share/keyrings/docker-archive-keyring.gpg ]"
-          puts "\e[0;32m /usr/share/keyrings/docker-archive-keyring.gpg has already created. \e[0m\n"
+        lsb_release_sc = capture(:lsb_release, '-sc')
+        lsb_release_si = capture(:lsb_release, '-si').downcase
+        if test "[ -f /etc/apt/keyrings/docker.gpg ]"
+          puts "\e[0;32m /etc/apt/keyrings/docker.gpg has already created. \e[0m\n"
         else
-          execute "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg"
+          # curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          # curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+          execute "curl -fsSL https://download.docker.com/linux/#{lsb_release_si}/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg"
         end
 
+        # echo \
+        #   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
+        #   $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
         if test "[ -f /etc/apt/sources.list.d/docker.list ]"
           puts "\e[0;32m /etc/apt/sources.list.d/docker.list has already created. \e[0m\n"
         else
           arch = capture(:dpkg, '--print-architecture')
-          lsb_release_sc = capture(:lsb_release, '-sc')
           execute <<-SCRIPT
-            echo "deb [arch=#{arch} signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu \
-            #{lsb_release_sc} stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+            echo 'deb [arch=#{arch} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/#{lsb_release_si} #{lsb_release_sc} stable' \
+            | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
           SCRIPT
         end
 
         sudo 'apt -yq update'
-        sudo 'apt -yq install docker-ce docker-ce-cli containerd.io'
-
-        unless test "[ -f /etc/docker/daemon.json ]"
-          daemon_json = StringIO.new <<~JSON
-          {
-            "data-root": "/var/lib/docker",
-            "log-driver": "json-file",
-            "log-opts": {
-              "max-size": "200m",
-              "max-file": "5"
-            },
-            "default-ulimits": {
-              "nofile": {
-                "Name": "nofile",
-                "Hard": 655360,
-                "Soft": 655360
+        sudo 'apt -yq install docker-ce docker-ce-cli containerd.io docker-compose-plugin'
+        if enable_daemon_json
+          unless test "[ -f /etc/docker/daemon.json ]"
+            daemon_json = StringIO.new <<~JSON
+            {
+              "data-root": "/var/lib/docker",
+              "log-driver": "json-file",
+              "log-opts": {
+                "max-size": "200m",
+                "max-file": "5"
               },
-              "nproc": {
-                "Name": "nproc",
-                "Hard": 655360,
-                "Soft": 655360
-              }
-            },
-            "live-restore": true,
-            "oom-score-adjust": -1000,
-            "max-concurrent-downloads": 10,
-            "max-concurrent-uploads": 10,
-            "storage-driver": "overlay2",
-            "storage-opts": [
-              "overlay2.override_kernel_check=true"
-            ],
-            "exec-opts": [
-              "native.cgroupdriver=systemd"
-            ],
-            "registry-mirrors": [
-              "https://yssx4sxy.mirror.aliyuncs.com/"
-            ],
-            "insecure-registries": [
-              "harbor.default.svc.cluster.local"
-            ]
-          }
-          JSON
-          upload! daemon_json, '/tmp/daemon.json'
-          sudo 'mkdir /etc/docker' unless test "[ -d /etc/docker ]"
-          execute 'cat /tmp/daemon.json | sudo tee /etc/docker/daemon.json > /dev/null'
+              "default-ulimits": {
+                "nofile": {
+                  "Name": "nofile",
+                  "Hard": 655360,
+                  "Soft": 655360
+                },
+                "nproc": {
+                  "Name": "nproc",
+                  "Hard": 655360,
+                  "Soft": 655360
+                }
+              },
+              "live-restore": true,
+              "oom-score-adjust": -1000,
+              "max-concurrent-downloads": 10,
+              "max-concurrent-uploads": 10,
+              "storage-driver": "overlay2",
+              "storage-opts": [
+                "overlay2.override_kernel_check=true"
+              ],
+              "exec-opts": [
+                "native.cgroupdriver=systemd"
+              ],
+              "registry-mirrors": [
+                "https://yssx4sxy.mirror.aliyuncs.com/"
+              ],
+              "insecure-registries": [
+                "harbor.default.svc.cluster.local"
+              ]
+            }
+            JSON
+            upload! daemon_json, '/tmp/daemon.json'
+            sudo 'mkdir /etc/docker' unless test "[ -d /etc/docker ]"
+            execute 'cat /tmp/daemon.json | sudo tee /etc/docker/daemon.json > /dev/null'
+          end
         end
 
         sudo "usermod -aG docker #{username}"
-
         sudo :systemctl, 'restart docker'
-      else
-        puts "\e[0;32m docker have already installed. \e[0m\n"
       end
     end
   end
