@@ -23,3 +23,11 @@ $ ./k8s setup 192.168.1.112 deploy
 $ ./k8s setup 192.168.1.119 deploy
 ```
 
+
+
+
+
+
+## FAQ
+
+- https://stackoverflow.com/questions/42908659/why-is-ruby-giving-an-error-point-is-not-on-curve

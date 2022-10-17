@@ -290,6 +290,7 @@ $ kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate 
 $ kubectl get nodes
 ```
 
+
 ## 测试集群工作
 
 ```bash
