@@ -1,3 +1,5 @@
+# Awesome k8s
+
 ## 准备工作
 
 ### 本地开发环境设置
@@ -338,3 +340,9 @@ $ ansible-playbook -i hosts -l k8s_new_nodes k8s-node.yml -u deploy -v
 # 重启节点服务器
 $ ansible -i hosts k8s_new_nodes -m reboot -u deploy --become -v
 ```
+
+## 鸣谢
+
+Thank [JetBrains](https://www.jetbrains.com/) for providing tools in developing.
+
+![JetBrains Logos](images/jb_beam.png)
