@@ -75,9 +75,20 @@ spec:
         app.kubernetes.io/name: supernotes
         app.kubernetes.io/instance: supernotes
     spec:
+      initContainers:
+        - name: fix-permissions
+          image: debian:bullseye-slim
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /app/supernotes/media
+              name: supernotes-vol
+          securityContext:
+            runAsUser: 0
+          command: ['/bin/sh', '-c']
+          args: ['chown -R 1026:100 /app/supernotes/media && chmod ug+rwx /app/supernotes/media']
       containers:
         - name: supernotes
-          image: "jameszhan/supernotes:0.0.6"
+          image: "jameszhan/supernotes:0.0.7"
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: "/app/supernotes/media"
