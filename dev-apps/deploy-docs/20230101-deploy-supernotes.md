@@ -88,7 +88,7 @@ spec:
           args: ['chown -R 1026:100 /app/supernotes/media && chmod ug+rwx /app/supernotes/media']
       containers:
         - name: supernotes
-          image: "jameszhan/supernotes:0.0.7"
+          image: "jameszhan/supernotes:0.1.0"
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: "/app/supernotes/media"
@@ -102,12 +102,18 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /
+              path: /health
               port: http
+              httpHeaders:
+                - name: Host
+                  value: sn.zizhizhan.com:8000
           readinessProbe:
             httpGet:
-              path: /
+              path: /health
               port: http
+              httpHeaders:
+                - name: Host
+                  value: sn.zizhizhan.com:8000
           resources:
             requests:
               cpu: 2000m
