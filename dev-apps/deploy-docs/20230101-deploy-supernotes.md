@@ -88,7 +88,7 @@ spec:
           args: ['chown -R 1026:100 /app/supernotes/media && chmod ug+rwx /app/supernotes/media']
       containers:
         - name: supernotes
-          image: "jameszhan/supernotes:0.1.3"
+          image: "jameszhan/supernotes:0.1.5"
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: "/app/supernotes/media"
