@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-standalone
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: redis-standalone
+  template:
+    metadata:
+      labels:
+        name: redis-standalone
+    spec:
+      containers:
+        - name: redis-standalone
+          image: redis:5.0.12
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - "exec redis-server /redis/etc/redis.conf"
+          ports:
+            - containerPort: 6379
+              name: redis
+              protocol: TCP
+          volumeMounts:
+            - name: redis-config-vol
+              mountPath: /redis/etc/
+            - name: data-vol
+              mountPath: /redis/data
+      volumes:
+        - name: redis-config-vol
+          configMap:
+            name: redis-standalone-conf
+        - name: data-vol
+          hostPath:
+            path: /opt/var/data/redis/
