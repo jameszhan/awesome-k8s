@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: redis-standalone
   labels:
-    app: redis-standalone
+    name: redis-standalone
 spec:
   type: NodePort
   ports:
@@ -11,4 +11,4 @@ spec:
       targetPort: 6379
       nodePort: 30379
   selector:
-    app: redis-standalone
+    name: redis-standalone
