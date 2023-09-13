@@ -1060,7 +1060,28 @@
 
 这样，无论从教学还是从研究的角度，这个分类都会更加一致和全面。
 
+你提到了一个非常好的问题。时间复杂性和空间复杂性确实有更多的分类，我之前列出的只是一些最基础的。这些复杂性通常是用大 O 符号（\(O\)）来描述的，表示算法性能的上界。以下是一些更详细的子类：
 
+### 时间复杂性 (Time Complexity)
+1. 常量时间 (Constant Time) — \(O(1)\)
+2. 对数时间 (Logarithmic Time) — \(O(\log n)\)
+3. 线性时间 (Linear Time) — \(O(n)\)
+4. 线性对数时间 (Linear Logarithmic Time) — \(O(n \log n)\)
+5. 平方时间 (Quadratic Time) — \(O(n^2)\)
+6. 立方时间 (Cubic Time) — \(O(n^3)\)
+7. 指数时间 (Exponential Time) — \(O(2^n)\)
+8. 阶乘时间 (Factorial Time) — \(O(n!)\)
+
+### 空间复杂性 (Space Complexity)
+1. 常量空间 (Constant Space) — \(O(1)\)
+2. 对数空间 (Logarithmic Space) — \(O(\log n)\)
+3. 线性空间 (Linear Space) — \(O(n)\)
+4. 平方空间 (Quadratic Space) — \(O(n^2)\)
+5. 立方空间 (Cubic Space) — \(O(n^3)\)
+6. 指数空间 (Exponential Space) — \(O(2^n)\)
+7. 阶乘空间 (Factorial Space) — \(O(n!)\)
+
+这样的分类更全面地涵盖了不同算法可能会遇到的时间和空间复杂性。当然，实际应用中可能还会有其他更复杂或特殊的复杂性类别，但这些应该是最常见的。
 
 
 
