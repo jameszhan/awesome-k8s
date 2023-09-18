@@ -95,10 +95,6 @@
   - 面向对象编程
   - 编译器与解释器
   - 并发编程
-  - 计算机编程语言基础
-  - 计算机编程语言设计
-  - 计算机编程语言实现
-  - 计算机编程语言应用
   - Imperative programming languages (e.g. C, C++, Java)
   - Object-oriented programming languages (e.g. Python, Java, C++)
   - Functional programming languages (e.g. Haskell, Lisp)
@@ -118,9 +114,6 @@
   - 人工智能系统
   - 专家系统
   - 模式识别
-  - 人工智能基础
-  - 人工智能算法
-  - 人工智能应用
 - 人工智能与机器学习(Artificial Intelligence and Machine Learning)
   - 机器学习算法(Machine learning algorithms)
   - 深度学习(Deep learning (e.g. neural networks, convolutional neural networks))
@@ -130,9 +123,6 @@
   - Supervised learning (e.g. linear regression, logistic regression)
   - Unsupervised learning (e.g. clustering, dimensionality reduction)
 - 机器学习(Machine learning)
-  - 机器学习基础
-  - 机器学习算法
-  - 机器学习应用
   - Supervised learning
   - Unsupervised learning
   - Reinforcement learning
@@ -178,10 +168,6 @@
   - 操作系统结构
   - 文件管理
   - 输入输出系统
-  - 计算机操作系统基础
-  - 计算机操作系统设计
-  - 计算机操作系统实现
-  - 计算机操作系统应用
 - 网络/计算机网络(Computer Networks)
   - 网络协议(Network protocols)
   - 网络安全(Network security)
@@ -193,10 +179,6 @@
   - 计算机网络体系结构
   - 网络设备
   - 无线与移动网络
-  - 计算机网络基础
-  - 计算机网络协议
-  - 计算机网络安全
-  - 计算机网络应用
   - Network topologies
   - Network architecture
   - Internet of Things (IoT)
@@ -207,9 +189,6 @@
   - 虚拟现实和增强现实
   - 图像生成
   - 图像处理
-  - 计算机图形学基础
-  - 计算机图形学算法
-  - 计算机图形学应用
 - 计算机图形学与可视化
   - 渲染算法
   - 图像处理
@@ -277,29 +256,8 @@
   - 数据挖掘
   - 数据可视化
   - 大数据
-- 自然语言处理
-  - 自然语言处理基础
-  - 自然语言处理算法
-  - 自然语言处理应用
-- 云计算与分布式计算
-  - 虚拟化技术
-  - 分布式文件系统
-  - 分布式计算框架
-- 云计算(Cloud Computing)
-  - Cloud computing models
-  - Cloud service providers
-  - Cloud security
-  - Cloud management
-- Web开发(Web Development)
-  - Web technologies
-  - Web design
-  - Web development frameworks
-  - Web security
-- Internet of Things (IoT)
-  - IoT devices
-  - IoT protocols
-  - IoT security
-  - IoT applications
+
+
 
 
 
