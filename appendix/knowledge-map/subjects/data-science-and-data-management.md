@@ -1,6 +1,6 @@
 ## 数据科学与数据管理 (Data Science and Data Management)
 
-- [] 数据科学 (Data Science)
+- [ ] 数据科学 (Data Science)
     - [ ] 数据分析 (Data Analytics)
         - [ ] 描述性分析 (Descriptive Analytics)
         - [ ] 推断性分析 (Inferential Analytics)
@@ -28,10 +28,15 @@
         - [ ] 时序数据库 (Time-series Databases)
         - [ ] 图数据库 (Graph Databases)
         - [ ] 分布式数据库 (Distributed Databases)
+        - [ ] 数据库查询语言 (Database Query Languages)
+        - [ ] 数据库设计 (Database Design)
+        - [ ] 数据库实现 (Database Implementation)
+        - [ ] 数据库应用 (Database Applications)
     - [ ] 数据模型与优化 (Data Modeling and Optimization)
         - [ ] 数据模型设计 (Data Model Design)
         - [ ] 查询优化 (Query Optimization)
         - [ ] 数据库索引 (Database Indexing)
+        - [ ] 事务和并发控制 (Transactions and Concurrency Control)
     - [ ] 数据存储与架构 (Data Storage and Architecture)
         - [ ] 数据湖 (Data Lakes)
             - [ ] 数据湖架构 (Data Lake Architecture)
@@ -47,6 +52,6 @@
         - [ ] 数据安全与合规性 (Data Security and Compliance)
             - [ ] 数据加密 (Data Encryption)
             - [ ] 数据掩码与脱敏 (Data Masking and Anonymization)
-            - [ ] 数据审计（Data Auditing）
-        - [ ] 数据备份与恢复（Data Backup and Recovery）
+            - [ ] 数据审计 (Data Auditing)
+        - [ ] 数据备份与恢复 (Data Backup and Recovery)
 

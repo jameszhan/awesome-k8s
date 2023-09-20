@@ -12,18 +12,18 @@
             - [ ] 选择排序 (Selection Sorts)
                 - [ ] 简单选择排序 (Selection Sort)
                 - [ ] 堆排序 (Heap Sort)
-            - [ ] 综合排序（Composite Sorts）
+            - [ ] 综合排序 （Composite Sorts)
                 - [ ] 归并排序 (Merge Sort)
         - [ ] 非基于比较的排序 (Non-comparison-based Sorting)
-            - [ ] 计数排序（Counting Sort）
-            - [ ] 基数排序（Radix Sort）
-            - [ ] 桶排序（Bucket Sort）
+            - [ ] 计数排序 (Counting Sort)
+            - [ ] 基数排序 (Radix Sort)
+            - [ ] 桶排序 (Bucket Sort)
     - [ ] 查找算法 (Search Algorithms)
         - [ ] 线性查找 (Linear Search)
         - [ ] 二分查找 (Binary Search)
         - [ ] 哈希查找 (Hash Search)
             - [ ] 开放寻址法 (Open Addressing)
-            - [ ] 链地址法 (Chaining)
+            - [ ] 链地址法 (Separate Chaining)
         - [ ] 树形查找 (Tree-based Search)
         - [ ] 图查找 (Graph Search)
         - [ ] 字符串查找 (String Search)
@@ -33,6 +33,7 @@
         - [ ] 近似查找 (Approximate Search)
             - [ ] 局部敏感哈希 (Locality-Sensitive Hashing)
             - [ ] 最近邻搜索 (Nearest Neighbor Search)
+        - [ ] 分布式查找 (Distributed Search)
 
 - [ ] 数据结构 (Data Structures)
     - [ ] 线性数据结构 (Linear Data Structures)
@@ -70,7 +71,7 @@
         - [ ] 集合与字典 (Sets and Dictionaries)
             - [ ] 集合 (Sets)
             - [ ] 字典 (Dictionaries)
-                - [ ] 哈希表 (Hash Table)
+                - [ ] 哈希表 (Hash Tables)
         - [ ] 空间分割结构 (Spatial Partitioning Structures)
             - [ ] 四叉树 (Quadtree)
             - [ ] kd-tree (kd-tree)
@@ -92,11 +93,11 @@
         - [ ] 分支界限法 (Branch and Bound)
             - [ ] 旅行商问题 (Travelling Salesman Problem)
             - [ ] 0-1背包问题 (0-1 Knapsack Problem)
-        - [ ] 减治法（Decrease and Conquer）
-            - [ ] 汉诺塔问题（Tower of Hanoi）
+        - [ ] 减治法 (Decrease and Conquer)
+            - [ ] 汉诺塔问题 (Tower of Hanoi)
             - [ ] Josephus问题 (Josephus Problem)
-        - [ ] 变换与征服（Transform and Conquer）
-            - [ ] 高斯消元法（Gaussian Elimination）
+        - [ ] 变换与征服 (Transform and Conquer)
+            - [ ] 高斯消元法 (Gaussian Elimination)
             - [ ] 平衡二叉树的构建 (Balanced Tree Construction)
         - [ ] 随机与概率算法 (Randomized and Probabilistic Algorithms)
             - [ ] 蒙特卡洛模拟 (Monte Carlo Simulation)
@@ -153,7 +154,7 @@
 
 - [ ] 高级算法 (Advanced Algorithms)
     - [ ] 图算法 (Graph Algorithms)
-        - [ ] 图的优化问题（Graph Optimization Problems）
+        - [ ] 图的优化问题 (Graph Optimization Problems)
             - [ ] 最短路径 (Shortest Path)
                 - [ ] Dijkstra算法 (Dijkstra's Algorithm)
                 - [ ] Floyd-Warshall算法 (Floyd-Warshall Algorithm)
@@ -163,18 +164,19 @@
             - [ ] 网络流问题 (Network Flow Problems)
                 - [ ] Ford-Fulkerson算法 (Ford-Fulkerson Algorithm)
                 - [ ] Edmonds-Karp算法 (Edmonds-Karp Algorithm)
-        - [ ] 图的连通性问题（Graph Connectivity）
+                - [ ] 最大流最小割 (Max Flow Min Cut)
+        - [ ] 图的连通性问题 (Graph Connectivity)
             - [ ] 强连通分量 (Strongly Connected Components)
             - [ ] 割点与桥 (Articulation Points & Bridges)
-        - [ ] 图的遍历与搜索（Graph Traversal and Search）
+        - [ ] 图的遍历与搜索 (Graph Traversal and Search)
             - [ ] 深度优先搜索 (Depth-First Search)
             - [ ] 广度优先搜索 (Breadth-First Search)
             - [ ] 双向搜索 (Bidirectional Search)
             - [ ] A*搜索算法 (A Star Search Algorithm)
-        - [ ] 图的着色与匹配（Graph Coloring & Matching）
+        - [ ] 图的着色与匹配 (Graph Coloring & Matching)
             - [ ] 图着色 (Graph Coloring)
             - [ ] 最大匹配 (Maximum Matching)
-        - [ ] 其他图属性与问题（Other Graph Properties & Problems）
+        - [ ] 其他图属性与问题 (Other Graph Properties & Problems)
             - [ ] 拓扑排序 (Topological Sort)
             - [ ] 环检测 (Cycle Detection)
     - [ ] 数学算法 (Mathematical Algorithms)
@@ -235,9 +237,9 @@
             - [ ] Byzantine Fault Tolerance	(Byzantine Fault Tolerance)
             - [ ] 多版本时间戳 (Multi-Version Timestamp)
         - [ ] 分布式锁算法 (Distributed Lock Algorithms)
-            - [ ] Chubby锁服务 (Chubby Lock Service)
-            - [ ] 分布式读写锁 (Distributed Reader-Writer Locks)
             - [ ] 分布式互斥锁 (Distributed Mutex Locks)
+            - [ ] 分布式读写锁 (Distributed Reader-Writer Locks)
+            - [ ] Chubby锁服务 (Chubby Lock Service)
     - [ ] 容错与恢复算法 (Fault-Tolerance and Recovery Algorithms)
         - [ ] 纠删码 (Erasure Coding)
         - [ ] 状态机复制 (State Machine Replication)
@@ -250,7 +252,4 @@
         - [ ] 分布式范围查询 (Distributed Range Queries)
         - [ ] 流言协议 (Gossip Protocols)
         - [ ] 分布式最近邻搜索 (Distributed Nearest Neighbors)
-
-
-    
-    
+ 
