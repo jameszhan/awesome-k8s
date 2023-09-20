@@ -1,27 +1,52 @@
-9. **数据科学 (Data Science)**
-    - 数据挖掘 (Data Mining)
-    - 数据分析 (Data Analytics)
-    - 数据可视化 (Data Visualization)
-    - 大数据 (Big Data)
+## 数据科学与数据管理 (Data Science and Data Management)
 
-6. **数据管理与数据科学 (Data Management and Data Science)**
-    - 数据库系统 (Database Systems)
-        - 关系数据库 (Relational Databases)
-        - 非关系数据库 (Non-Relational Databases)
-        - 数据模型与优化 (Data Modeling and Optimization)
-    - 数据挖掘与分析 (Data Mining and Analytics)
-    - 数据可视化 (Data Visualization)
-    - 大数据与云计算 (Big Data and Cloud Computing)
+- [] 数据科学 (Data Science)
+    - [ ] 数据分析 (Data Analytics)
+        - [ ] 描述性分析 (Descriptive Analytics)
+        - [ ] 推断性分析 (Inferential Analytics)
+        - [ ] 预测性分析 (Predictive Analytics)
+        - [ ] 规范性分析 (Prescriptive Analytics)
+    - [ ] 数据挖掘 (Data Mining)
+        - [ ] 关联规则挖掘 (Association Rule Mining)
+        - [ ] 聚类分析 (Clustering Analysis)
+        - [ ] 分类与预测 (Classification and Prediction)
+        - [ ] 文本挖掘 (Text Mining)
+        - [ ] 异常检测 (Anomaly Detection)
+    - [ ] 数据可视化 (Data Visualization)
+        - [ ] 仪表板与报告 (Dashboards and Reports)
+        - [ ] 交互式可视化 (Interactive Visualization)
+    - [ ] 大数据 (Big Data)
+        - [ ] 批处理 (Batch Processing)
+        - [ ] 实时处理 (Real-time Processing)
+        - [ ] 数据存储 (Data Storage)
+        - [ ] 分布式计算 (Distributed Computing)
+- [ ] 数据管理 (Data Management)
+    - [ ] 数据库系统 (Database Systems)
+        - [ ] 关系数据库 (Relational Databases)
+        - [ ] NoSQL数据库 (NoSQL Databases)
+        - [ ] 内存数据库 (In-memory Databases)
+        - [ ] 时序数据库 (Time-series Databases)
+        - [ ] 图数据库 (Graph Databases)
+        - [ ] 分布式数据库 (Distributed Databases)
+    - [ ] 数据模型与优化 (Data Modeling and Optimization)
+        - [ ] 数据模型设计 (Data Model Design)
+        - [ ] 查询优化 (Query Optimization)
+        - [ ] 数据库索引 (Database Indexing)
+    - [ ] 数据存储与架构 (Data Storage and Architecture)
+        - [ ] 数据湖 (Data Lakes)
+            - [ ] 数据湖架构 (Data Lake Architecture)
+            - [ ] 数据湖管理与治理 (Data Lake Management and Governance)
+        - [ ] 数据仓库 (Data Warehouses)
+            - [ ] ETL过程 (ETL Processes)
+            - [ ] 数据立方体与多维分析 (Data Cubes and OLAP)
+    - [ ] 实时分析与流处理 (Real-time Analytics and Stream Processing)
+        - [ ] 实时分析 (Real-time Analytics)
+        - [ ] 流处理 (Stream Processing)
+    - [ ] 数据治理与安全 (Data Governance and Security)
+        - [ ] 数据质量管理 (Data Quality Management)
+        - [ ] 数据安全与合规性 (Data Security and Compliance)
+            - [ ] 数据加密 (Data Encryption)
+            - [ ] 数据掩码与脱敏 (Data Masking and Anonymization)
+            - [ ] 数据审计（Data Auditing）
+        - [ ] 数据备份与恢复（Data Backup and Recovery）
 
-- 数据管理与大数据 (Data Management and Big Data)
-    - 关系型数据库 (Relational Databases)
-    - 数据挖掘与分析 (Data Mining and Analytics)
-
-
-
-
-在Flink SQL开发过程中，我有一个数据源，来源于Kafka，数据表主要字段有log_timestamp, trace_id, span_id, parent_span_id, service_name, api_name。我需要以5分钟为窗口，聚合所有相关数据，满足条件如下：
-1. 时间窗口为5分钟，滚动更新
-2. 在指定5分钟窗口内，窗口数据进行笛卡尔Join，同一份数据分别记为a表和b表
-3. 满足条件a.trace_id = b.trace_id 并且 a.span_id = b.parent_span_id
-4. 得到JOIN后的数据视图后，在按照service_name, api_name进行分组，即目标表格记录包含如下字段：window_start, window_end, source_service_name, source_api_name, target_service_name, target_api_name。
