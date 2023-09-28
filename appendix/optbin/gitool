@@ -1,0 +1,120 @@
+#!/usr/bin/env python
+import os
+import subprocess
+import click
+
+def human_readable_size(size):
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size < 1024.0:
+            break
+        size /= 1024.0
+    return f"{size: >6.2f}{unit}"
+
+
+def git_pull(repo_path):
+    try:
+        output = subprocess.check_output(["git", "-C", repo_path, "pull"], universal_newlines=True, stderr=subprocess.STDOUT).strip()
+        click.echo(click.style(output, fg="bright_green"))
+    except subprocess.CalledProcessError as e:
+        click.echo(click.style(f"Error occurred: {e.output.strip()}", fg="bright_red"))
+
+
+def is_git_repo_dirty(repo_path):
+    """
+    Check if the Git repository at the given path is dirty.
+
+    :param repo_path: The path to the Git repository.
+    :return: True if the repository is dirty, False if it is clean, None if an error occurs.
+    """
+    try:
+        # Run the `git status` command with the `--porcelain` option for easy parsing
+        output = subprocess.check_output(
+            ["git", "-C", repo_path, "status", "--porcelain"],
+            universal_newlines=True,  # Convert the output to a string
+            stderr=subprocess.STDOUT,  # Capture error output
+        ).strip()
+
+        # If the output is non-empty, the repository is dirty
+        return bool(output)
+    except subprocess.CalledProcessError as e:
+        # If an error occurs (e.g., the specified path is not a Git repository), return None
+        print(f"Error occurred: {e.output.strip()}, repo_path: {repo_path}")
+        return None
+
+
+def get_git_remote_url(repo_path):
+    """
+    Get the remote URL of a Git repository.
+
+    :param repo_path: The path to the Git repository.
+    :return: The remote URL of the repository, or None if an error occurs.
+    """
+    try:
+        remote_url = subprocess.check_output(
+            ["git", "-C", repo_path, "config", "--get", "remote.origin.url"],
+            universal_newlines=True,
+            stderr=subprocess.STDOUT,
+        ).strip()
+        return remote_url
+    except subprocess.CalledProcessError as e:
+        if output := e.output.strip():
+            return 'Not Found: {output}'
+        else:
+            return "Not Found"
+
+
+def get_directory_size(path):
+    """
+    Get the size of a directory using the 'du' command.
+
+    :param path: The path to the directory.
+    :return: The size of the directory in bytes.
+    """
+    try:
+        # Execute the 'du' command and get the total size of the directory in kilobytes
+        total_size = subprocess.check_output(['du', '-sk', path], universal_newlines=True)
+        # The output of 'du' command is in the format "size\tpath". Extract the size.
+        size_kb = int(total_size.split('\t')[0])
+        # Convert the size to bytes
+        size_bytes = size_kb * 1024
+        return size_bytes
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred: {e}")
+        return None
+
+@click.group()
+def cli():
+    pass
+
+@cli.command()
+@click.argument('directory')
+def du(directory):
+    """This show git directories size."""
+    git_dirs = {}
+    for foldername, subfolders, filenames in os.walk(directory):
+        if '.git' in subfolders:
+            dir_size = get_directory_size(foldername)
+            git_dirs[foldername] = {"size": dir_size}
+
+    for k, d in sorted(git_dirs.items(), key=lambda x: x[1]["size"], reverse=True):
+        click.echo(f'{human_readable_size(d["size"])}\t {k} ({get_git_remote_url(k)})')
+
+
+@cli.command()
+@click.argument('directory')
+def pull(directory):
+    """This update git repostory."""
+    for foldername, subfolders, filenames in os.walk(directory):
+        if '.git' in subfolders:
+            if is_git_repo_dirty(foldername):
+                click.echo(click.style(f'\nIGNORE {foldername}({get_git_remote_url(foldername)})', fg='yellow'))
+            else:
+                click.echo(click.style(f'\n{foldername}({get_git_remote_url(foldername)})', fg='bright_cyan'))
+                git_pull(foldername)
+
+
+
+
+if __name__ == '__main__':
+    cli()
+
