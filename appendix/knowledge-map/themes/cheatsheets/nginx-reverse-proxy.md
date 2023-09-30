@@ -66,32 +66,28 @@ server {
 EOF
 ```
 
-### 代理POE
+### 增加 Basic Auth
+
+#### 安装`apache2-utils`
 
 ```bash
-$ openssl s_client -connect poe.com:443
+$ sudo apt -y update
+$ sudo apt install apache2-utils
+```
 
-$ cat <<EOF | sudo tee /etc/nginx/sites-available/reverse-proxy.conf > /dev/null
-server {
-    listen 443 ssl http2;
-    server_name poe.localgpt.net;
-    
-    ssl_certificate /etc/letsencrypt/live/localgpt.net/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/localgpt.net/privkey.pem;
+#### 创建密码文件
 
-    location / {
-        proxy_pass https://poe.com;
-        proxy_set_header Host poe.com;        
-        proxy_ssl_server_name on;
-        proxy_ssl_protocols TLSv1.3;
-        proxy_ssl_ciphers ECDHE-RSA-AES256-GCM-SHA384;
-        
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
+```bash
+$ sudo htpasswd -c /etc/nginx/.htpasswd user_name
+```
+
+#### 在Nginx配置文件中添加以下内容
+
+```nginx
+location / {
+    auth_basic "Restricted Content";
+    auth_basic_user_file /etc/nginx/.htpasswd;
 }
-EOF
 ```
 
 ### 重启服务
