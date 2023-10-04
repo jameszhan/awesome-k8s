@@ -51,5 +51,8 @@ $ vagrant up --provider=hyperv
 
 ```powershell
 $ vagrant init
+
+# 调整Vagrantfile的配置
+$ vagrant up
 ```
 

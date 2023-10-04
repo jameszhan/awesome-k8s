@@ -51,7 +51,7 @@ Vagrant.configure("2") do |config|
         usermod -a -G staff james
         echo 'james ALL = (ALL) NOPASSWD: ALL' | tee /etc/sudoers.d/james  > /dev/null
         mkdir -p /home/james/.ssh
-        echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICKlyozoHszgLnnamHPPPyfivgCuv39aItv9eGkgdE8F zizhizhan@gmail.com' | tee -a /home/james/.ssh/authorized_keys
+        echo 'ssh-ed25519 AAAAC... zizhizhan@gmail.com' | tee -a /home/james/.ssh/authorized_keys
         chown -R james:james /home/james/.ssh
 
         echo "initialize k8s-node01#{i} done"
