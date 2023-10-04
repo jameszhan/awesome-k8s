@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+import os
+import subprocess
+import json
+import requests
+import click
+import paramiko
+
+
+def run_command(cli, cmd):
+    stdin, stdout, stderr = cli.exec_command(cmd)
+
+    error_output = stderr.read().decode().strip()
+    normal_output = stdout.read().decode().strip()
+
+    if error_output:
+        click.echo(click.style(error_output, fg="bright_red"))
+    if normal_output:
+        click.echo(click.style(normal_output, fg="bright_green"))
+
+
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+@click.argument('hostip')
+@click.option('--username', default='ubuntu', help='Username')
+@click.option('--port', default=22, help='SSH Port')
+def apt(hostip, username='ubuntu', port=22):
+    """setup apt source for ip via user ubuntu"""
+    with paramiko.SSHClient() as client:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(hostip, port=port, username=username)
+
+        stdin, stdout, stderr = client.exec_command('uname -m')
+        arch = stdout.read().decode().strip()
+
+        if arch == 'x86_64':
+            stdin, stdout, stderr = client.exec_command('[ -f /etc/apt/sources.list_bak ] && echo "exists"')
+            if stdout.read().decode().strip() == "exists":
+                click.echo(click.style("/etc/apt/sources.list has already updated", fg="bright_green"))
+                client.exec_command('export DEBIAN_FRONTEND=noninteractive')
+                client.exec_command('sudo apt-get -y update')
+                client.exec_command('sudo apt-get -y upgrade')
+                client.exec_command('sudo apt-get -y dist-upgrade')
+                client.exec_command('sudo apt-get -y autoclean')
+                client.exec_command('sudo apt-get -y full-upgrade')
+                client.exec_command('sudo apt-get -y autoremove')
+            else:
+                client.exec_command('export DEBIAN_FRONTEND=noninteractive')
+                run_command(client, 'sudo apt-get -y update')
+                run_command(client, 'sudo apt-get -y upgrade')
+                run_command(client, 'sudo apt-get -y dist-upgrade')
+                run_command(client, 'sudo apt-get -y autoclean')
+                run_command(client, 'sudo apt-get -y full-upgrade')
+                run_command(client, 'sudo apt-get -y autoremove')
+
+
+if __name__ == '__main__':
+    cli()
