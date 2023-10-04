@@ -1,14 +1,40 @@
 #!/usr/bin/env python
 import os
 import subprocess
+import json
+import requests
 import click
+
+
+GitHubKeys = {
+    "subscribers_count": "Watch",
+    "forks_count": "Fork",
+    "stargazers_count": "Star",
+}
+
 
 def human_readable_size(size):
     for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
         if size < 1024.0:
             break
         size /= 1024.0
-    return f"{size: >6.2f}{unit}"
+    return f"{size: <6.2f}{unit}"
+
+
+def git_api(owner, repo):
+    url = f"https://api.github.com/repos/{owner}/{repo}"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = response.json()
+        for k in data:
+            if k.endswith('count'):
+                if k in GitHubKeys:
+                    click.echo(click.style(f'{GitHubKeys[k]}({k}): {data[k]}', fg="green"))
+                else:
+                    click.echo(click.style(f'{k}: {data[k]}', fg="green"))
+    else:
+        click.echo(click.style(f"Failed to retrieve information for {owner}/{repo}. Status code: {response.status_code}", fg="bright_red"))
 
 
 def git_pull(repo_path):
@@ -113,6 +139,14 @@ def pull(directory):
                 git_pull(foldername)
 
 
+# gitool show --repo torvalds/linux
+@cli.command()
+@click.option('--owner', help='Git Repository Owner.')
+@click.option('--repo', help='Git Repository Name.')
+def show(owner, repo):
+    if '/' in repo:
+        owner, repo = repo.split('/', 1)
+    git_api(owner, repo)
 
 
 if __name__ == '__main__':
