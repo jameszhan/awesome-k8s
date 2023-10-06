@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import os
 import subprocess
+import re
 import json
 import requests
 import click
-
 
 GitHubKeys = {
     "subscribers_count": "Watch",
@@ -34,12 +34,30 @@ def git_api(owner, repo):
                 else:
                     click.echo(click.style(f'{k}: {data[k]}', fg="green"))
     else:
-        click.echo(click.style(f"Failed to retrieve information for {owner}/{repo}. Status code: {response.status_code}", fg="bright_red"))
+        click.echo(
+            click.style(f"Failed to retrieve information for {owner}/{repo}. Status code: {response.status_code}",
+                        fg="bright_red"))
+
+
+def extract_owner_repo(git_url):
+    ssh_pattern = r"git@.*github\.com:(.+)/(.+)\.git"
+    https_pattern = r"https://github\.com/(.+)/(.+)\.git"
+
+    match = re.match(ssh_pattern, git_url)
+    if match:
+        return match.groups()
+
+    match = re.match(https_pattern, git_url)
+    if match:
+        return match.groups()
+
+    return None, None
 
 
 def git_pull(repo_path):
     try:
-        output = subprocess.check_output(["git", "-C", repo_path, "pull"], universal_newlines=True, stderr=subprocess.STDOUT).strip()
+        output = subprocess.check_output(["git", "-C", repo_path, "pull"], universal_newlines=True,
+                                         stderr=subprocess.STDOUT).strip()
         click.echo(click.style(output, fg="bright_green"))
     except subprocess.CalledProcessError as e:
         click.echo(click.style(f"Error occurred: {e.output.strip()}", fg="bright_red"))
@@ -108,9 +126,11 @@ def get_directory_size(path):
         print(f"Error occurred: {e}")
         return None
 
+
 @click.group()
 def cli():
     pass
+
 
 @cli.command()
 @click.argument('directory')
@@ -137,6 +157,17 @@ def pull(directory):
             else:
                 click.echo(click.style(f'\n{foldername}({get_git_remote_url(foldername)})', fg='bright_cyan'))
                 git_pull(foldername)
+
+
+@cli.command()
+@click.argument('directory')
+def info(directory):
+    """This show git repostory info."""
+    for foldername, subfolders, filenames in os.walk(directory):
+        if '.git' in subfolders:
+            git_url = get_git_remote_url(foldername)
+            click.echo(click.style(f'\n{foldername}({git_url})', fg='bright_cyan'))
+            git_api(*extract_owner_repo(git_url))
 
 
 # gitool show --repo torvalds/linux

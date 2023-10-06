@@ -6,7 +6,7 @@ ENV['VAGRANT_DEFAULT_PROVIDER'] = 'hyperv'
 
 Vagrant.configure("2") do |config|
     (1..3).each do |i|
-        config.vm.define "node01#{i}" do |c|
+        config.vm.define "k8s-node01#{i}" do |c|
             c.vm.box = "generic/ubuntu2204"
 
             c.vm.network "public_network", bridge: "global-bridge", ip: "192.168.1.11#{i}"
@@ -19,11 +19,6 @@ Vagrant.configure("2") do |config|
                 v.maxmemory = 8192
                 v.vmname = "k8s-node01#{i}"
                 v.mac = "00:15:5D:01:52:0#{i}"
-            end
-
-            c.vm.cloud_init :user_data do |ci|
-                ci.content_type = "text/cloud-config"
-                ci.path = "cloud-init.yaml"
             end
 
             c.vm.provision "shell", inline: <<-SHELL
