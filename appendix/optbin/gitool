@@ -102,7 +102,7 @@ def get_git_remote_url(repo_path):
         return remote_url
     except subprocess.CalledProcessError as e:
         if output := e.output.strip():
-            return 'Not Found: {output}'
+            return f'Not Found: {output}'
         else:
             return "Not Found"
 
@@ -149,20 +149,21 @@ def du(directory):
 @cli.command()
 @click.argument('directory')
 def pull(directory):
-    """This update git repostory."""
+    """This update git repository."""
     for foldername, subfolders, filenames in os.walk(directory):
         if '.git' in subfolders:
-            if is_git_repo_dirty(foldername):
-                click.echo(click.style(f'\nIGNORE {foldername}({get_git_remote_url(foldername)})', fg='yellow'))
+            remote_url = get_git_remote_url(foldername)
+            if not remote_url or is_git_repo_dirty(foldername):
+                click.echo(click.style(f'\nIGNORE {foldername}({remote_url})', fg='yellow'))
             else:
-                click.echo(click.style(f'\n{foldername}({get_git_remote_url(foldername)})', fg='bright_cyan'))
+                click.echo(click.style(f'\n{foldername}({remote_url})', fg='bright_cyan'))
                 git_pull(foldername)
 
 
 @cli.command()
 @click.argument('directory')
 def info(directory):
-    """This show git repostory info."""
+    """This show git repository info."""
     for foldername, subfolders, filenames in os.walk(directory):
         if '.git' in subfolders:
             git_url = get_git_remote_url(foldername)
