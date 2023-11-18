@@ -1,3 +1,0 @@
-
-updatedb
-locate python

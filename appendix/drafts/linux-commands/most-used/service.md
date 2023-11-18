@@ -1,3 +1,0 @@
-```bash
-$ service --status-all
-```

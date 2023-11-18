@@ -1,5 +1,0 @@
-
-
-```bash
-$ sudo killall nginx
-```

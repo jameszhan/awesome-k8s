@@ -1,6 +1,0 @@
-
-
-
-```bash
-$ sudo raspi-config
-```
