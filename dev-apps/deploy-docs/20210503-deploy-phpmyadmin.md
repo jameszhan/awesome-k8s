@@ -61,3 +61,18 @@ $ kubectl logs check-pma-config -n geek-apps
 
 $ open https://pma.zizhizhan.com
 ```
+
+#### 更新配置
+
+```bash
+$ kubectl edit cm -n geek-apps pma-config
+$ kubectl get cm -n geek-apps pma-config -o yaml
+
+# 重启容器
+$ kubectl delete pods -n geek-apps --selector="app=phpmyadmin"
+
+# 更新部署镜像到 image: phpmyadmin:5.2.1
+$ kubectl edit deployment -n geek-apps synology-phpmyadmin
+
+$ kubectl delete ingress phpmyadmin-ingress -n geek-apps
+```
