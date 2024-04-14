@@ -7,24 +7,26 @@ import click
 import paramiko
 
 
-def run_command(cli, cmd):
+def run_command(cli, cmd, debug=True):
     stdin, stdout, stderr = cli.exec_command(cmd)
-
-    error_output = stderr.read().decode().strip()
-    normal_output = stdout.read().decode().strip()
-
-    if error_output:
-        click.echo(click.style(error_output, fg="bright_red"))
-    if normal_output:
-        click.echo(click.style(normal_output, fg="bright_green"))
+    if stdout.channel.recv_exit_status() == 0:
+        normal_output = stdout.read().decode().strip()
+        if debug:
+            click.echo(click.style(normal_output, fg="bright_green"))
+        return normal_output
+    else:
+        error_output = stderr.read().decode().strip()
+        if debug:
+            click.echo(click.style(error_output, fg="bright_red"))
+        return error_output
 
 
 @click.group()
-def cli():
+def k8s():
     pass
 
 
-@cli.command()
+@k8s.command()
 @click.argument('hostip')
 @click.option('--username', default='ubuntu', help='Username')
 @click.option('--port', default=22, help='SSH Port')
@@ -58,5 +60,152 @@ def apt(hostip, username='ubuntu', port=22):
                 run_command(client, 'sudo apt-get -y autoremove')
 
 
+@k8s.command()
+@click.argument('hostip')
+@click.option('--username', default='ubuntu', help='Username')
+@click.option('--port', default=22, help='SSH Port')
+def versions(hostip, username='ubuntu', port=22):
+    """show versions"""
+    click.echo(click.style(f"Show versions on {hostip}", fg="bright_green"))
+    with paramiko.SSHClient() as client:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(hostip, port=port, username=username)
+
+        tools = {
+            "kube-apiserver": "kube-apiserver --version",
+            "kube-controller-manager": "kube-controller-manager --version",
+            "kube-scheduler": "kube-scheduler --version",
+            "kubelet": "kubelet --version",
+            "kube-proxy": "kube-proxy --version",
+            "etcd": "etcd --version | head -n 1",
+            "etcdctl": "etcdctl version",
+            "etcdutl": "etcdutl version",
+            "kubectl": "kubectl version --client --short",
+            "kubeadm": "kubeadm version -o short",
+            "docker": "docker --version"
+        }
+
+        for tool, cmd in tools.items():
+            stdin, stdout, stderr = client.exec_command(f'test -x "$(command -v {tool})"')
+            if stdout.channel.recv_exit_status() == 0:
+                version = run_command(client, cmd, False)
+                click.echo(click.style(f"{tool}: {version}", fg="bright_green"))
+
+
+@k8s.command()
+@click.argument('hostip')
+@click.option('--username', default='deploy', help='Username for SSH login')
+@click.option('--port', default=22, help='Port for SSH')
+@click.option('--version', required=True, help='Kubernetes version to deploy')
+def upgrade_k8s(hostip, version, username='ubuntu', port=22):
+    """upgrade k8s version"""
+    click.echo(click.style(f"Upgrade k8s version on {hostip} to {version}", fg="bright_green"))
+    with paramiko.SSHClient() as ssh:
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostip, port=port, username=username)
+
+        uname_m = run_command(ssh, 'uname -m')
+        if uname_m == 'x86_64':
+            arch = 'amd64'
+        elif uname_m == 'aarch64':
+            arch = 'arm64'
+        else:
+            click.echo(f"Unexpected architecture: {uname_m}")
+            return
+
+        binaries_url = f"https://storage.googleapis.com/kubernetes-release/release/{version}/kubernetes-server-linux-{arch}.tar.gz"
+        tmp_path = "/tmp"
+
+        _, stdout, _ = ssh.exec_command(f"test -f {tmp_path}/kubernetes-server-linux-{arch}.tar.gz")
+        if stdout.channel.recv_exit_status() == 1:  # file not exists
+            run_command(ssh, f"cd {tmp_path} && wget --quiet {binaries_url}")
+
+        _, stdout, _ = ssh.exec_command(f"test -d {tmp_path}/kubernetes/server/bin")
+        if stdout.channel.recv_exit_status() == 1:  # directory not exists
+            run_command(ssh, f"cd {tmp_path} && tar zxvf kubernetes-server-linux-{arch}.tar.gz")
+
+        # Upgrade each component
+        service_components = ["kube-apiserver", "kube-controller-manager", "kube-scheduler", "kubelet", "kube-proxy"]
+        tool_components = {
+            "kubectl": "kubectl version --client --short",
+            "kubeadm": "kubeadm version -o short"
+        }
+
+        click.echo(click.style(f"Start to upgrade components on {hostip}", fg="bright_green"))
+        for component in service_components:
+            stdin, stdout, stderr = ssh.exec_command(f'test -x "$(command -v {component})"')
+            if stdout.channel.recv_exit_status() == 0:
+                old_version = run_command(ssh, f"{component} --version", False)
+                if old_version != f'Kubernetes {version}':
+                    run_command(ssh, f"sudo systemctl stop {component}")
+                    _, stdout, _ = ssh.exec_command(f"test -f {tmp_path}/kubernetes/server/bin/{component}")
+                    if stdout.channel.recv_exit_status() == 0:
+                        click.echo(f"Upgrading {component} from {old_version} to {version}")
+                        run_command(ssh, f"sudo cp {tmp_path}/kubernetes/server/bin/{component} /usr/local/bin/")
+                    run_command(ssh, f"sudo systemctl start {component}")
+
+        for component, version_cmd in tool_components.items():
+            stdin, stdout, stderr = ssh.exec_command(f'test -x "$(command -v {component})"')
+            if stdout.channel.recv_exit_status() == 0:
+                old_version = run_command(ssh, f"{version_cmd}", False)
+                if old_version != version:
+                    _, stdout, _ = ssh.exec_command(f"test -f {tmp_path}/kubernetes/server/bin/{component}")
+                    if stdout.channel.recv_exit_status() == 0:
+                        click.echo(f"Upgrading {component} from {old_version} to {version}")
+                        run_command(ssh, f"sudo cp {tmp_path}/kubernetes/server/bin/{component} /usr/local/bin/")
+
+
+@k8s.command()
+@click.argument('hostip')
+@click.option('--username', default='deploy', help='Username for SSH login')
+@click.option('--port', default=22, help='SSH port number')
+@click.option('--version', required=True, help='ETCD version to deploy')
+def upgrade_etcd(hostip, version, username='ubuntu', port=22):
+    """Upgrade etcd version on a specified host via SSH."""
+    click.echo(click.style(f"Upgrade etcd version on {hostip} to {version}", fg="bright_green"))
+    with paramiko.SSHClient() as ssh:
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostip, port=port, username=username)
+
+        arch = run_command(ssh, "uname -m")
+        if arch == "x86_64":
+            arch = "amd64"
+        elif arch == "aarch64":
+            arch = "arm64"
+        else:
+            click.echo(f"Unexpected architecture: {arch}")
+            return
+
+        tar_file = f"etcd-{version}-linux-{arch}.tar.gz"
+        binaries_url = f"https://github.com/etcd-io/etcd/releases/download/{version}/{tar_file}"
+        remote_tar_path = f"/tmp/{tar_file}"
+        extract_dir = f"/tmp/etcd-{version}-linux-{arch}"
+
+        _, stdout, _ = ssh.exec_command(f"test -f {remote_tar_path}")
+        if stdout.channel.recv_exit_status() == 1:  # file not exists
+            run_command(ssh, f"cd /tmp && wget --quiet {binaries_url}")
+        _, stdout, _ = ssh.exec_command(f"test -d {extract_dir}")
+        if stdout.channel.recv_exit_status() == 1:  # directory not exists
+            run_command(ssh, f"cd /tmp && tar zxvf {tar_file}")
+
+        components = {
+            "etcd": ("etcd --version | head -n 1", True),
+            "etcdctl": ("etcdctl version", False),
+            "etcdutl": ("etcdutl version", False),
+        }
+        click.echo(click.style(f"Start to upgrade components on {hostip}", fg="bright_green"))
+        for component, (version_cmd, is_service) in components.items():
+            _, stdout, _ = ssh.exec_command(f"test -f /usr/local/bin/{component}")
+            if stdout.channel.recv_exit_status() == 0:
+                old_version = run_command(ssh, version_cmd)
+                click.echo(f"Upgrading {component} from {old_version} to {version}")
+                if is_service:
+                    run_command(ssh, f"sudo systemctl stop {component}")
+                run_command(ssh, f"sudo cp {extract_dir}/{component} /usr/local/bin/")
+                if is_service:
+                    run_command(ssh, f"sudo systemctl start {component}")
+
+
+
 if __name__ == '__main__':
-    cli()
+    k8s()
